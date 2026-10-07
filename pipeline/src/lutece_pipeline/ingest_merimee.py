@@ -56,6 +56,7 @@ SOURCE_COLUMNS = [
     "Description_de_l_edifice",
     "Statut_juridique_de_l_edifice",
     "Date_de_la_derniere_mise_a_jour",
+    "Observations",
 ]
 
 OUTPUT_SCHEMA = pa.schema(
@@ -73,6 +74,8 @@ OUTPUT_SCHEMA = pa.schema(
         ("protection_raw", pa.string()),
         ("protection_desc", pa.string()),
         ("protection_dates_raw", pa.string()),
+        ("protection_lifted", pa.bool_()),
+        ("observations", pa.string()),
         ("construction_century", pa.int8()),
         ("earliest_dated_year", pa.int16()),
         ("period_raw", pa.string()),
@@ -85,6 +88,8 @@ OUTPUT_SCHEMA = pa.schema(
     ]
 )
 
+# Words found in the notices whose order was struck off, cancelled or repealed.
+LIFTED_PATTERN = re.compile(r"radi|annul|abrog", re.IGNORECASE)
 ARCHITECT_ROLE = re.compile(r"architecte|ma[iî]tre d(?:e l)?['’]\s?(?:oe|œ)uvre")
 
 
@@ -191,6 +196,20 @@ def parse_protection_level(value: str | None) -> str | None:
     return None
 
 
+def is_protection_lifted(
+    notice_type: str, protection: str | None, *texts: str | None
+) -> bool:
+    """Tell whether a protection file has lost its protection.
+
+    Such a notice has no protection level left, and its texts say that the order
+    was cancelled, repealed or struck off. A current protection that merely
+    replaced an older, repealed one does not count.
+    """
+    if notice_type != "protection" or protection is not None:
+        return False
+    return any(LIFTED_PATTERN.search(text or "") for text in texts)
+
+
 def parse_century(abbreviated: str | None, full_text: str | None) -> int | None:
     """Return the earliest construction century, e.g. 17 for "17e s.;18e s.".
 
@@ -251,20 +270,29 @@ def normalize_notice(row: Mapping[str, str | None]) -> dict[str, object]:
         )
     lat, lon = coordinates or (None, None)
     authors = split_values(row["Auteur_de_l_edifice"])
+    notice_type = parse_notice_type(row["Typologie_du_dossier"])
+    protection = parse_protection_level(row["Typologie_de_la_protection"])
     return {
         "merimee_id": row["Reference"],
         "name": row["Titre_editorial_de_la_notice"],
-        "notice_type": parse_notice_type(row["Typologie_du_dossier"]),
+        "notice_type": notice_type,
         "denominations": split_values(row["Denomination_de_l_edifice"]),
         "domain": row["Domaine"],
         "address": row["Adresse_forme_editoriale"] or row["Adresse_forme_index"],
         "arrondissement": parse_arrondissement(row["COG_Insee_lors_de_la_protection"]),
         "lat": lat,
         "lon": lon,
-        "protection": parse_protection_level(row["Typologie_de_la_protection"]),
+        "protection": protection,
         "protection_raw": row["Typologie_de_la_protection"],
         "protection_desc": row["Precision_de_la_protection"],
         "protection_dates_raw": row["Date_et_typologie_de_la_protection"],
+        "protection_lifted": is_protection_lifted(
+            notice_type,
+            protection,
+            row["Observations"],
+            row["Precision_de_la_protection"],
+        ),
+        "observations": row["Observations"],
         "construction_century": parse_century(
             row["Format_abrege_du_siecle_de_construction"],
             row["Siecle_de_la_campagne_principale_de_construction"],
@@ -299,6 +327,7 @@ def summarize(notices: pd.DataFrame) -> dict[str, int]:
         "notices": len(notices),
         "renvoi_notices": int((notices["notice_type"] == "renvoi").sum()),
         "missing_protection": int(notices["protection"].isna().sum()),
+        "protection_lifted": int(notices["protection_lifted"].sum()),
         "missing_coordinates": int(notices["lat"].isna().sum()),
         "missing_address": int(notices["address"].isna().sum()),
         "missing_period": int(no_period.sum()),

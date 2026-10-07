@@ -79,6 +79,8 @@ même jour.
 | `protection_raw` | texte | `Typologie_de_la_protection` | valeur d'origine, dont « partiellement » |
 | `protection_desc` | texte | `Precision_de_la_protection` | |
 | `protection_dates_raw` | texte | `Date_et_typologie_de_la_protection` | |
+| `protection_lifted` | booléen | `Observations`, `Precision_de_la_protection` | vrai pour un dossier de protection sans niveau de protection dont les textes mentionnent une radiation, une annulation ou une abrogation |
+| `observations` | texte | `Observations` | |
 | `construction_century` | entier | `Format_abrege_du_siecle_de_construction` | siècle le plus ancien ; à défaut lu dans `Siecle_de_la_campagne_principale_de_construction` |
 | `earliest_dated_year` | entier | `Datation_de_l_edifice` | année la plus ancienne citée ; elle peut dater une campagne de travaux postérieure à la construction |
 | `period_raw` | texte | `Siecle_de_la_campagne_principale_de_construction` | |
@@ -93,8 +95,12 @@ même jour.
 
 - 1 893 notices : 1 414 inscrites, 464 classées, 15 sans protection renseignée.
   Ces 15 ne sont pas des monuments à capturer : 10 ont vu leur protection
-  annulée ou radiée (le champ `Observations` de la source, non repris ici, en
-  donne le détail) et 5 sont des notices de renvoi vers une autre notice.
+  radiée, abrogée ou annulée (`protection_lifted`, le détail est dans
+  `observations` ou `protection_desc`) et 5 sont des notices de renvoi vers une
+  autre notice. Le jeu porte donc sur 1 878 notices au plus.
+- 221 notices encore protégées mentionnent aussi une abrogation dans leurs
+  observations : il s'agit d'une ancienne protection remplacée par l'actuelle.
+  Elles ne sont pas marquées `protection_lifted`.
 - Coordonnées : 3 notices sans coordonnées, et 1 point aberrant écarté
   (`PA75110005`, « 48.00000000000001,2 »).
 - 53 notices sans adresse, 255 sans siècle ni année, 1 149 sans texte

@@ -168,6 +168,41 @@ def test_unparseable_period_stays_empty(notices: pd.DataFrame) -> None:
     assert pd.isna(notices.loc["PA00085795", "construction_century"])  # "Moyen Age"
 
 
+@pytest.mark.parametrize(
+    ("notice_type", "protection", "texts", "expected"),
+    [
+        ("protection", None, ("inscription par arrêté de 1928, radié en 2008",), True),
+        ("protection", None, (None, "inscription annulée par jugement"), True),
+        ("protection", None, ("arrêté abrogé par l'arrêté de radiation",), True),
+        # A protection replaced by a newer one still stands.
+        ("protection", "classé", ("Inscription 1927 (arrêté) abrogée.",), False),
+        # A cross-reference never carried a protection of its own.
+        ("renvoi", None, ("Voir notice PA00086620",), False),
+        # No level and no explanation: not known to be lifted.
+        ("protection", None, (None, None), False),
+    ],
+)
+def test_is_protection_lifted(
+    notice_type: str,
+    protection: str | None,
+    texts: tuple[str | None, ...],
+    expected: bool,
+) -> None:
+    assert merimee.is_protection_lifted(notice_type, protection, *texts) is expected
+
+
+def test_delisted_notice_is_flagged_with_its_observations(
+    notices: pd.DataFrame,
+) -> None:
+    rail = notices.loc["PA00086620"]  # a stair rail struck off the list in 2008
+    assert bool(rail["protection_lifted"])
+    assert pd.isna(rail["protection"])
+    assert "radié de l'inscription" in rail["observations"]
+    assert not notices.loc["PA00125441", "protection_lifted"]  # cross-reference
+    assert not notices.loc["PA00085795", "protection_lifted"]  # protected church
+    assert int(notices["protection_lifted"].sum()) == 1
+
+
 def test_renvoi_notice_has_no_protection(notices: pd.DataFrame) -> None:
     canal = notices.loc["PA00125441"]
     assert canal["notice_type"] == "renvoi"
@@ -195,6 +230,7 @@ def test_summary_counts_the_gaps(notices: pd.DataFrame) -> None:
         "notices": 11,
         "renvoi_notices": 1,
         "missing_protection": 2,
+        "protection_lifted": 1,
         "missing_coordinates": 2,
         "missing_address": 1,
         "missing_period": 2,
