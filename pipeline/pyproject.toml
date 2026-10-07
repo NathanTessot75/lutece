@@ -8,9 +8,11 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
+    "geopandas>=1.2.0",
     "httpx>=0.28.1",
     "pandas>=3.0.6",
     "pyarrow>=25.0.1",
+    "shapely>=2.2.0",
 ]
 
 [project.scripts]

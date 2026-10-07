@@ -20,6 +20,7 @@ uv run ruff format .    # formatage
 |---|---|---|---|
 | 1. `ingest_merimee` | `uv run python -m lutece_pipeline.ingest_merimee` | CSV national Mérimée (data.gouv.fr) | `data/interim/merimee.parquet` |
 | 2. `ingest_wikidata` | `uv run python -m lutece_pipeline.ingest_wikidata` | `merimee.parquet`, service de requêtes Wikidata | `data/interim/wikidata_items.parquet`, `data/interim/wikidata_merimee_links.parquet` |
+| 3. `ingest_osm` | `uv run python -m lutece_pipeline.ingest_osm` | `merimee.parquet`, `wikidata_merimee_links.parquet`, API Overpass | `data/interim/osm_objects.parquet`, `data/interim/osm_merimee_links.parquet` |
 
 Options :
 
@@ -27,10 +28,12 @@ Options :
   `--offline` réutilise la copie locale sans accès réseau.
 - `ingest_wikidata --offline` rejoue l'étape à partir des dernières réponses
   enregistrées dans `data/raw/wikidata/snapshot.json`.
+- `ingest_osm --offline` fait de même à partir de `data/raw/osm/snapshot.json`.
 
 Les fichiers Parquet se lisent avec `pd.read_parquet(chemin)`. Ajouter
 `dtype_backend="pyarrow"` conserve les entiers avec valeurs manquantes au lieu
-de les convertir en réels.
+de les convertir en réels. `osm_objects.parquet` contient des géométries : le
+lire avec `geopandas.read_parquet(chemin)`.
 
 ## Données
 
@@ -41,6 +44,9 @@ quelles de la base Mérimée (ministère de la Culture, Licence Ouverte 2.0,
 version du 1er octobre 2026), limitées aux colonnes lues par l'étape.
 `tests/fixtures/wikidata_snapshot.json` contient les réponses réelles de
 Wikidata (CC0) pour ces mêmes notices, enregistrées le 7 octobre 2026.
+`tests/fixtures/osm_snapshot.json` contient les 12 objets OpenStreetMap liés à
+ces notices (© les contributeurs d'OpenStreetMap, licence ODbL), enregistrés le
+même jour.
 
 ## Source Mérimée
 
@@ -145,6 +151,71 @@ plusieurs-à-plusieurs.
   Boissonnade, 14e) y est porté par l'hôtel du 28 rue Geoffroy-l'Asnier (4e).
   L'étape `resolve_entities` devra contrôler la distance entre les sources.
 
+## Source OpenStreetMap
+
+- **Service** : API Overpass, <https://overpass-api.de/api/interpreter>.
+  Données © les contributeurs d'OpenStreetMap, licence ODbL : attribution
+  obligatoire, et partage à l'identique de la base dérivée.
+- **Deux clés de rapprochement** : l'étiquette `ref:mhs` (identifiant Mérimée)
+  et l'étiquette `wikidata`, quand elle désigne l'un des éléments trouvés par
+  `ingest_wikidata`.
+- **Requêtes** : les objets portant `ref:mhs` à Paris, avec leur géométrie ;
+  puis la liste des objets portant `wikidata` à Paris, sans géométrie (environ
+  17 000) ; enfin la géométrie des seuls objets retenus, par lots de 400
+  identifiants.
+- **Robustesse** : mêmes reprises que pour Wikidata. Overpass signale aussi
+  certains échecs dans une réponse 200, par un champ `remark` : l'étape les
+  traite comme des erreurs.
+
+### Géométries
+
+| Objet OSM | Géométrie produite |
+|---|---|
+| nœud | point |
+| chemin fermé | polygone, sauf route ou clôture non marquée `area=yes` |
+| chemin ouvert | ligne |
+| relation `multipolygon` | anneaux recousus quel que soit l'ordre des chemins, trous retirés |
+| autre relation (`site`, `associatedStreet`, `public_transport`…) | union des chemins fermés, chacun comptant pour une surface ; à défaut les lignes, puis les nœuds |
+
+Les géométries invalides sont réparées. Une relation `associatedStreet`
+regroupe une rue et ses immeubles : elle décrit le voisinage d'un monument
+plutôt que le monument. La colonne `relation_type` permet de l'écarter.
+
+### Colonnes de `osm_objects.parquet`
+
+GeoParquet en WGS84 (EPSG:4326), une ligne par objet lié à au moins une notice.
+
+| Colonne | Type | Contenu |
+|---|---|---|
+| `osm_type` | texte | `node`, `way` ou `relation` |
+| `osm_id` | entier | unique pour un type donné |
+| `relation_type` | texte | étiquette `type` des relations, vide sinon |
+| `name`, `ref_mhs`, `wikidata`, `building` | texte | étiquettes du même nom |
+| `tags` | texte | toutes les étiquettes, en JSON |
+| `geometry` | géométrie | voir ci-dessus |
+
+### Colonnes de `osm_merimee_links.parquet`
+
+Une ligne par paire notice / objet : `merimee_id`, `osm_type`, `osm_id`, puis
+`via_ref_mhs` et `via_wikidata`, qui indiquent quelle étiquette désigne la
+notice. La relation est plusieurs-à-plusieurs.
+
+### Constats (réponses du 7 octobre 2026)
+
+- 2 154 objets retenus : 494 nœuds, 1 256 chemins, 404 relations (335
+  `multipolygon`, 44 `associatedStreet`, 10 `site`, 10 `public_transport`,
+  4 `street`, 1 `waterway`).
+- 1 705 notices sur 1 893 ont au moins un objet ; 188 n'en ont aucun. 799 sont
+  atteintes par `ref:mhs`, 1 667 par `wikidata`, 761 par les deux.
+- 1 376 notices ont une emprise : un chemin ou une relation `multipolygon` ou
+  `site` de surface non nulle. Surface médiane 428 m², de 110 m² (1er décile) à
+  2 707 m² (9e décile).
+- 261 notices ont plusieurs objets, jusqu'à 17 ; 15 objets désignent plusieurs
+  notices.
+- Le point Mérimée est à 0 m de la géométrie OSM en médiane (il tombe dedans)
+  et à 48 m au 9e décile ; 99 paires sur 2 168 dépassent 100 m, 19 dépassent
+  500 m.
+
 ## Écarts constatés avec le SPEC
 
 - §5.1 : le portail `data.culture.gouv.fr` redirige vers
@@ -159,3 +230,9 @@ plusieurs-à-plusieurs.
   identifiants.
 - §4 : `SPARQLWrapper` n'est pas utilisé, `httpx` suffit pour interroger le
   service.
+- §5.2, étape 3 : `ref:mhs` seul n'atteint que 799 notices (42 %). L'étiquette
+  `wikidata` est ajoutée comme seconde clé, ce qui porte la couverture à 1 705
+  notices (90 %).
+- §5.2, étape 3 : les « emprises des bâtiments autour » sont reportées à
+  l'étape `geometry`, qui saura quelles notices restent sans emprise (décision
+  du 7 octobre 2026).
