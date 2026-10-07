@@ -1,0 +1,203 @@
+{
+ "fetched_at": "2026-10-07T19:35:04+00:00",
+ "links": [
+  {
+   "merimee": "PA75170009",
+   "item": "http://www.wikidata.org/entity/Q109626718"
+  },
+  {
+   "merimee": "PA00085795",
+   "item": "http://www.wikidata.org/entity/Q1338207"
+  },
+  {
+   "merimee": "PA00086579",
+   "item": "http://www.wikidata.org/entity/Q1418711"
+  },
+  {
+   "merimee": "PA75030005",
+   "item": "http://www.wikidata.org/entity/Q15057808"
+  },
+  {
+   "merimee": "PA00086620",
+   "item": "http://www.wikidata.org/entity/Q15950844"
+  },
+  {
+   "merimee": "PA00086088",
+   "item": "http://www.wikidata.org/entity/Q2055787"
+  },
+  {
+   "merimee": "PA00086088",
+   "item": "http://www.wikidata.org/entity/Q3368000"
+  },
+  {
+   "merimee": "PA00085786",
+   "item": "http://www.wikidata.org/entity/Q22920960"
+  },
+  {
+   "merimee": "PA00085794",
+   "item": "http://www.wikidata.org/entity/Q2379572"
+  },
+  {
+   "merimee": "PA00085809",
+   "item": "http://www.wikidata.org/entity/Q3145412"
+  },
+  {
+   "merimee": "PA75110005",
+   "item": "http://www.wikidata.org/entity/Q3517708"
+  },
+  {
+   "merimee": "PA00125441",
+   "item": "http://www.wikidata.org/entity/Q860172"
+  }
+ ],
+ "items": [
+  {
+   "item": "http://www.wikidata.org/entity/Q1338207",
+   "label": "église Saint-Eustache de Paris",
+   "sitelinks": "34",
+   "article": "https://fr.wikipedia.org/wiki/%C3%89glise_Saint-Eustache_de_Paris",
+   "articleTitle": "Église Saint-Eustache de Paris",
+   "coords": "Point(2.345 48.863333333)",
+   "commonsCats": "Église Saint-Eustache de Paris",
+   "images": "http://commons.wikimedia.org/wiki/Special:FilePath/St.-Eustache.jpg",
+   "inceptions": "1532-01-01T00:00:00Z",
+   "architects": "",
+   "types": "église"
+  },
+  {
+   "item": "http://www.wikidata.org/entity/Q2379572",
+   "label": "église Notre-Dame-de-l'Assomption",
+   "sitelinks": "11",
+   "article": "https://fr.wikipedia.org/wiki/%C3%89glise_Notre-Dame-de-l%27Assomption_de_Paris",
+   "articleTitle": "Église Notre-Dame-de-l'Assomption de Paris",
+   "coords": "Point(2.32551 48.86744)",
+   "commonsCats": "Église Notre-Dame-de-l'Assomption de Paris",
+   "images": "http://commons.wikimedia.org/wiki/Special:FilePath/Eglise%20Notre-Dame-de-l%27Assomption%2C%20Rue%20Saint-Honor%C3%A9%2C%20Paris%209%20January%202016.jpg",
+   "inceptions": "1676-01-01T00:00:00Z",
+   "architects": "Charles Errard",
+   "types": "église"
+  },
+  {
+   "item": "http://www.wikidata.org/entity/Q109626718",
+   "label": "ancienne usine des cafés Patin",
+   "sitelinks": "1",
+   "article": "https://fr.wikipedia.org/wiki/Usine_des_caf%C3%A9s_Patin",
+   "articleTitle": "Usine des cafés Patin",
+   "coords": "Point(2.31607 48.88187)",
+   "commonsCats": "",
+   "images": "http://commons.wikimedia.org/wiki/Special:FilePath/Fa%C3%A7ade%20du%208%20rue%20de%20Levis%20%C3%A0%20Paris.jpg",
+   "architects": "",
+   "types": "usine"
+  },
+  {
+   "item": "http://www.wikidata.org/entity/Q860172",
+   "label": "canal Saint-Martin",
+   "sitelinks": "38",
+   "article": "https://fr.wikipedia.org/wiki/Canal_Saint-Martin",
+   "articleTitle": "Canal Saint-Martin",
+   "coords": "Point(2.366666666 48.847222222)",
+   "commonsCats": "Canal Saint-Martin",
+   "images": "http://commons.wikimedia.org/wiki/Special:FilePath/Paris%20Canal%20St-Martin%20%C3%A9cluses%20R%C3%A9collets%202013.jpg",
+   "architects": "",
+   "types": "canal"
+  },
+  {
+   "item": "http://www.wikidata.org/entity/Q22920960",
+   "label": "café-bar, 3 rue Étienne-Marcel",
+   "sitelinks": "1",
+   "coords": "Point(2.350556 48.863611)",
+   "commonsCats": "3 rue Étienne-Marcel, Paris",
+   "images": "http://commons.wikimedia.org/wiki/Special:FilePath/Paris%203%20rue%20%C3%89tienne-Marcel.JPG",
+   "architects": "",
+   "types": "café|bar"
+  },
+  {
+   "item": "http://www.wikidata.org/entity/Q1418711",
+   "label": "Nation",
+   "sitelinks": "27",
+   "article": "https://fr.wikipedia.org/wiki/Nation_(m%C3%A9tro_de_Paris)",
+   "articleTitle": "Nation (métro de Paris)",
+   "coords": "Point(2.39583 48.84827)",
+   "commonsCats": "Nation (Paris Metro)",
+   "images": "http://commons.wikimedia.org/wiki/Special:FilePath/Acc%C3%A8s%20Station%20Nation%20M%C3%A9tro%20Paris%20Place%20Nation%20-%20Paris%20XII%20%28FR75%29%20-%202022-07-06%20-%203.jpg",
+   "architects": "",
+   "types": "terminus|gare ou arrêt de transport en commun souterrain|station de métro"
+  },
+  {
+   "item": "http://www.wikidata.org/entity/Q2055787",
+   "label": "passage Choiseul",
+   "sitelinks": "7",
+   "article": "https://fr.wikipedia.org/wiki/Passage_Choiseul",
+   "articleTitle": "Passage Choiseul",
+   "coords": "Point(2.33575344 48.86901986)",
+   "commonsCats": "Passage Choiseul (Paris)",
+   "images": "http://commons.wikimedia.org/wiki/Special:FilePath/Passage%20Choiseul.JPG",
+   "inceptions": "1827-01-01T00:00:00Z",
+   "architects": "Antoine Tavernier|François Mazois",
+   "types": "passages couverts de Paris|passage"
+  },
+  {
+   "item": "http://www.wikidata.org/entity/Q3368000",
+   "label": "passage Sainte-Anne",
+   "sitelinks": "3",
+   "article": "https://fr.wikipedia.org/wiki/Passage_Sainte-Anne",
+   "articleTitle": "Passage Sainte-Anne",
+   "coords": "Point(2.33592 48.868)",
+   "commonsCats": "Passage Sainte-Anne (Paris)",
+   "images": "http://commons.wikimedia.org/wiki/Special:FilePath/P1170048%20Paris%20II%20passage%20Sainte-Anne%20rwk.jpg",
+   "inceptions": "1829-01-01T00:00:00Z",
+   "architects": "",
+   "types": "passages couverts de Paris|passage"
+  },
+  {
+   "item": "http://www.wikidata.org/entity/Q3145412",
+   "label": "hôtel Baudard de Saint-James",
+   "sitelinks": "3",
+   "article": "https://fr.wikipedia.org/wiki/H%C3%B4tel_Baudard_de_Saint-James",
+   "articleTitle": "Hôtel Baudard de Saint-James",
+   "coords": "Point(2.33008 48.8669)",
+   "commonsCats": "Hôtel Baudard de Saint-James",
+   "images": "http://commons.wikimedia.org/wiki/Special:FilePath/H%C3%B4tel%20Baudard%20de%20Saint-James%20-%20Fa%C3%A7ade.jpg",
+   "inceptions": "1702-01-01T00:00:00Z",
+   "architects": "Jacques Gabriel",
+   "types": "hôtel particulier"
+  },
+  {
+   "item": "http://www.wikidata.org/entity/Q15950844",
+   "label": "hôtel du 28 rue Geoffroy-l'Asnier",
+   "sitelinks": "1",
+   "article": "https://fr.wikipedia.org/wiki/H%C3%B4tel_du_28_rue_Geoffroy-l%27Asnier",
+   "articleTitle": "Hôtel du 28 rue Geoffroy-l'Asnier",
+   "coords": "Point(2.3568 48.855)",
+   "commonsCats": "",
+   "architects": "",
+   "types": "hôtel particulier"
+  },
+  {
+   "item": "http://www.wikidata.org/entity/Q15057808",
+   "label": "monument à la République",
+   "sitelinks": "8",
+   "article": "https://fr.wikipedia.org/wiki/Monument_%C3%A0_la_R%C3%A9publique",
+   "articleTitle": "Monument à la République",
+   "coords": "Point(2.363818 48.86751)",
+   "commonsCats": "Monument à la République",
+   "images": "http://commons.wikimedia.org/wiki/Special:FilePath/A%20la%20Gloire%20de%20la%20R%C3%A9publique%20Fran%C3%A7aise.jpg",
+   "inceptions": "1883-01-01T00:00:00Z",
+   "architects": "",
+   "types": "statue"
+  },
+  {
+   "item": "http://www.wikidata.org/entity/Q3517708",
+   "label": "temple protestant du Foyer de l'Âme",
+   "sitelinks": "4",
+   "article": "https://fr.wikipedia.org/wiki/Temple_protestant_du_Foyer_de_l%27%C3%82me",
+   "articleTitle": "Temple protestant du Foyer de l'Âme",
+   "coords": "Point(2.3694 48.8558)",
+   "commonsCats": "Temple protestant du Foyer de l'Âme",
+   "images": "http://commons.wikimedia.org/wiki/Special:FilePath/P1150057%20Paris%20XI%20rue%20du%20Pasteur-Wagner%20n%C2%B07bis%20rwk.jpg",
+   "inceptions": "1907-03-17T00:00:00Z",
+   "architects": "",
+   "types": "temple protestant"
+  }
+ ]
+}

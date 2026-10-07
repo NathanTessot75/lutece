@@ -19,9 +19,18 @@ uv run ruff format .    # formatage
 | Étape | Commande | Entrée | Sortie |
 |---|---|---|---|
 | 1. `ingest_merimee` | `uv run python -m lutece_pipeline.ingest_merimee` | CSV national Mérimée (data.gouv.fr) | `data/interim/merimee.parquet` |
+| 2. `ingest_wikidata` | `uv run python -m lutece_pipeline.ingest_wikidata` | `merimee.parquet`, service de requêtes Wikidata | `data/interim/wikidata_items.parquet`, `data/interim/wikidata_merimee_links.parquet` |
 
-Options de `ingest_merimee` : `--refresh` retélécharge le CSV même s'il est à
-jour, `--offline` réutilise la copie locale sans accès réseau.
+Options :
+
+- `ingest_merimee --refresh` retélécharge le CSV même s'il est à jour ;
+  `--offline` réutilise la copie locale sans accès réseau.
+- `ingest_wikidata --offline` rejoue l'étape à partir des dernières réponses
+  enregistrées dans `data/raw/wikidata/snapshot.json`.
+
+Les fichiers Parquet se lisent avec `pd.read_parquet(chemin)`. Ajouter
+`dtype_backend="pyarrow"` conserve les entiers avec valeurs manquantes au lieu
+de les convertir en réels.
 
 ## Données
 
@@ -30,6 +39,8 @@ jour, `--offline` réutilise la copie locale sans accès réseau.
 Les 13 notices de `tests/fixtures/merimee_sample.csv` sont extraites telles
 quelles de la base Mérimée (ministère de la Culture, Licence Ouverte 2.0,
 version du 1er octobre 2026), limitées aux colonnes lues par l'étape.
+`tests/fixtures/wikidata_snapshot.json` contient les réponses réelles de
+Wikidata (CC0) pour ces mêmes notices, enregistrées le 7 octobre 2026.
 
 ## Source Mérimée
 
@@ -83,10 +94,68 @@ version du 1er octobre 2026), limitées aux colonnes lues par l'étape.
 - Pour 15 notices, `earliest_dated_year` est postérieure d'au moins deux siècles
   à `construction_century` (palais du Louvre : 12e siècle, année 1808).
 
-## Écarts constatés avec SPEC §5.1
+## Source Wikidata
 
-- Le portail `data.culture.gouv.fr` redirige vers `culture.data.gouv.fr` et son
-  ancienne API ne répond plus. La base est désormais diffusée sur data.gouv.fr,
-  sous forme d'un fichier national à filtrer localement.
-- Le SPEC annonçait des coordonnées « parfois » présentes : 1 890 notices
-  parisiennes sur 1 893 en ont.
+- **Service** : <https://query.wikidata.org/sparql>, données sous licence CC0.
+  Le client s'identifie par un en-tête `User-Agent` avec contact, comme le
+  demande Wikimedia.
+- **Jointure** : exacte, sur la propriété P380 (identifiant Mérimée), à partir
+  des identifiants de `merimee.parquet`, par lots de 300.
+- **Détails** : une seconde requête lit les propriétés des éléments trouvés,
+  par lots de 250. Les propriétés à plusieurs valeurs sont concaténées par le
+  service puis départagées ici, toujours de la même façon (première valeur dans
+  l'ordre alphabétique, ou premier point situé dans Paris).
+- **Robustesse** : le service renvoie parfois des erreurs 429 ou 5xx pendant
+  quelques secondes ; chaque requête est retentée jusqu'à cinq fois.
+
+### Colonnes de `wikidata_merimee_links.parquet`
+
+Une ligne par paire `merimee_id` / `qid`. La relation est
+plusieurs-à-plusieurs.
+
+### Colonnes de `wikidata_items.parquet`
+
+| Colonne | Type | Propriété | Règle |
+|---|---|---|---|
+| `qid` | texte | | identifiant de l'élément, unique |
+| `label_fr` | texte | libellé | en français |
+| `lat`, `lon` | réels | P625 | premier point situé dans Paris, vides sinon |
+| `commons_category` | texte | P373 | |
+| `frwiki_title`, `frwiki_url` | texte | lien de site | article de Wikipédia en français |
+| `image_file` | texte | P18 | nom du fichier sur Commons |
+| `inception_year` | entier | P571 | année la plus ancienne |
+| `architects` | liste | P84 | libellés en français |
+| `instance_of` | liste | P31 | libellés en français (« hôtel particulier », « église »…) |
+| `sitelinks` | entier | | nombre de liens vers les projets Wikimedia |
+
+### Constats (réponses du 7 octobre 2026)
+
+- 1 885 notices sur 1 893 ont au moins un élément Wikidata ; 8 n'en ont pas
+  (`PA00085987`, `PA00088785`, `PA75080012`, `PA75090010`, `PA75140018`,
+  `PA75170008`, `PA75180003`, `PA75180005`).
+- 2 004 liens vers 1 990 éléments. 59 notices ont plusieurs éléments, jusqu'à
+  19 pour le cimetière du Père-Lachaise (le cimetière et ses tombes) ; 13
+  éléments sont rattachés à plusieurs notices.
+- Par élément : 3 sans coordonnées dans Paris, 75 sans catégorie Commons, 59
+  sans image, 1 081 sans article Wikipédia en français, 1 498 sans architecte,
+  1 483 sans date de création.
+- Les points Wikidata et Mérimée d'une même paire sont distants de 10 m en
+  médiane et de 66 m au 9e décile ; 61 paires sur 1 997 dépassent 200 m.
+- Certains liens sont faux côté Wikidata : `PA00086620` (immeuble du 21 rue
+  Boissonnade, 14e) y est porté par l'hôtel du 28 rue Geoffroy-l'Asnier (4e).
+  L'étape `resolve_entities` devra contrôler la distance entre les sources.
+
+## Écarts constatés avec le SPEC
+
+- §5.1 : le portail `data.culture.gouv.fr` redirige vers
+  `culture.data.gouv.fr` et son ancienne API ne répond plus. La base est
+  désormais diffusée sur data.gouv.fr, sous forme d'un fichier national à
+  filtrer localement.
+- §5.1 : le SPEC annonçait des coordonnées « parfois » présentes ; 1 890
+  notices parisiennes sur 1 893 en ont.
+- §5.2, étape 2 : la requête géographique proposée (`wdt:P131* wd:Q90`) met
+  une vingtaine de secondes et ramène 2 019 identifiants, dont une partie hors
+  de notre liste. Elle est remplacée par une jointure exacte sur nos
+  identifiants.
+- §4 : `SPARQLWrapper` n'est pas utilisé, `httpx` suffit pour interroger le
+  service.
