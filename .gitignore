@@ -1,0 +1,27 @@
+# macOS
+.DS_Store
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Pipeline data: large and reproducible, only the folder structure is versioned
+pipeline/data/raw/*
+pipeline/data/interim/*
+pipeline/data/processed/*
+!pipeline/data/*/.gitkeep
+
+# Evaluation test set: metadata is versioned, photos are not (SPEC §8)
+eval/testset/**/*.[jJ][pP][gG]
+eval/testset/**/*.[jJ][pP][eE][gG]
+eval/testset/**/*.[hH][eE][iI][cC]
+eval/testset/**/*.[pP][nN][gG]
