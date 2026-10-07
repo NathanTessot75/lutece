@@ -1,4 +1,3 @@
-import json
 import logging
 from pathlib import Path
 from typing import Any
@@ -6,11 +5,8 @@ from typing import Any
 import pandas as pd
 import pytest
 
-from lutece_pipeline import ingest_merimee as merimee
-from lutece_pipeline import ingest_osm as osm
-from lutece_pipeline import ingest_wikidata as wikidata
 from lutece_pipeline import resolve_entities as resolve
-from lutece_pipeline.tables import to_records, write_parquet
+from lutece_pipeline.tables import to_records
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -66,30 +62,6 @@ def notice(merimee_id: str = "PA1", **overrides: object) -> dict[str, Any]:
         "arrondissement": 1,
     }
     return base | overrides
-
-
-@pytest.fixture(scope="module")
-def fixture_tables(tmp_path_factory: pytest.TempPathFactory) -> Path:
-    """The three ingestion outputs, built from the real fixture answers."""
-    folder = tmp_path_factory.mktemp("interim")
-    notices = merimee.normalize(
-        merimee.read_paris_notices(FIXTURES / "merimee_sample.csv")
-    )
-    write_parquet(notices, merimee.OUTPUT_SCHEMA, folder / "merimee.parquet")
-    snapshot = json.loads((FIXTURES / "wikidata_snapshot.json").read_text())
-    wikidata_links = wikidata.build_links(snapshot["links"])
-    items = wikidata.build_items(snapshot["items"])
-    write_parquet(items, wikidata.ITEMS_SCHEMA, folder / "wikidata_items.parquet")
-    write_parquet(
-        wikidata_links, wikidata.LINKS_SCHEMA, folder / "wikidata_links.parquet"
-    )
-    elements = json.loads((FIXTURES / "osm_snapshot.json").read_text())["elements"]
-    osm_links = osm.build_links(
-        elements, set(notices["merimee_id"]), osm.notices_by_item(wikidata_links)
-    )
-    write_parquet(osm_links, osm.LINKS_SCHEMA, folder / "osm_links.parquet")
-    osm.build_objects(elements).to_parquet(folder / "osm_objects.parquet", index=False)
-    return folder
 
 
 def run_main(
@@ -351,10 +323,10 @@ def test_review_lists_doubtful_choices_and_missing_items() -> None:
     assert doubtful["entity_url"] == "https://www.wikidata.org/wiki/Q2"
 
 
-def test_measures_on_real_records(fixture_tables: Path) -> None:
-    notices = to_records(pd.read_parquet(fixture_tables / "merimee.parquet"))
-    items = to_records(pd.read_parquet(fixture_tables / "wikidata_items.parquet"))
-    links = to_records(pd.read_parquet(fixture_tables / "wikidata_links.parquet"))
+def test_measures_on_real_records(interim_tables: Path) -> None:
+    notices = to_records(pd.read_parquet(interim_tables / "merimee.parquet"))
+    items = to_records(pd.read_parquet(interim_tables / "wikidata_items.parquet"))
+    links = to_records(pd.read_parquet(interim_tables / "wikidata_links.parquet"))
     pairs = {
         (item["merimee_id"], item["entity_id"]): item
         for item in resolve.measure_wikidata_pairs(notices, items, links)
@@ -371,9 +343,9 @@ def test_measures_on_real_records(fixture_tables: Path) -> None:
 
 
 def test_run_on_real_tables(
-    fixture_tables: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    interim_tables: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    run_main(fixture_tables, tmp_path, monkeypatch)
+    run_main(interim_tables, tmp_path, monkeypatch)
 
     links = pd.read_parquet(tmp_path / "entity_links.parquet")
     assert list(links.columns) == resolve.LINKS_SCHEMA.names
@@ -405,7 +377,7 @@ def test_run_on_real_tables(
 
 
 def test_run_applies_the_recorded_decisions(
-    fixture_tables: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    interim_tables: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     decisions = (
         "PA00086620,wikidata,Q15950844,reject,other building\n"
@@ -413,7 +385,7 @@ def test_run_applies_the_recorded_decisions(
         "PA75110005,osm,way/63648393,accept,same temple\n"
         "PA00086579,wikidata,Q1418711,accept,same station\n"
     )
-    run_main(fixture_tables, tmp_path, monkeypatch, decisions)
+    run_main(interim_tables, tmp_path, monkeypatch, decisions)
 
     entities = pd.read_parquet(tmp_path / "entities.parquet").set_index("merimee_id")
     assert pd.isna(entities.loc["PA00086620", "wikidata_qid"])

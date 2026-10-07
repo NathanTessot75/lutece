@@ -28,13 +28,13 @@ from rapidfuzz import fuzz
 from shapely.geometry.base import BaseGeometry
 
 from lutece_pipeline import ingest_merimee, ingest_osm, ingest_wikidata
+from lutece_pipeline.geo import LAMBERT_93, project_points
 from lutece_pipeline.ingest_merimee import split_values
 from lutece_pipeline.paths import INTERIM_DIR, REVIEW_DIR
 from lutece_pipeline.tables import from_rows, to_records, write_parquet
 
 logger = logging.getLogger(__name__)
 
-LAMBERT_93 = "EPSG:2154"  # the metric projection used in France
 # A Wikidata point this close to the Mérimée point confirms the link (94 % of pairs).
 NEAR_ITEM_METERS = 100.0
 # Same for an OSM geometry: the Mérimée point lies inside 78 % of the footprints.
@@ -151,18 +151,6 @@ def address_matches(address: str | None, entity_name: str | None) -> bool:
 def text_or_none(value: object) -> str | None:
     """Return the value when it is text, None for the missing-value markers."""
     return value if isinstance(value, str) else None
-
-
-def project_points(records: Sequence[Record], key: str) -> dict[str, BaseGeometry]:
-    """Project the records that have coordinates to Lambert-93, by identifier."""
-    located = [record for record in records if record["lat"] is not None]
-    points = gpd.GeoSeries(
-        gpd.points_from_xy(
-            [record["lon"] for record in located], [record["lat"] for record in located]
-        ),
-        crs="EPSG:4326",
-    ).to_crs(LAMBERT_93)
-    return {record[key]: point for record, point in zip(located, points, strict=True)}
 
 
 def distance_between(
