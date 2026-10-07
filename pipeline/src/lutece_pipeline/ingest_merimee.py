@@ -18,9 +18,10 @@ from pathlib import Path
 import httpx
 import pandas as pd
 import pyarrow as pa
-import pyarrow.parquet as pq
 
+from lutece_pipeline.geo import is_in_paris
 from lutece_pipeline.paths import INTERIM_DIR, RAW_DIR
+from lutece_pipeline.tables import from_rows, write_parquet
 
 logger = logging.getLogger(__name__)
 
@@ -32,9 +33,6 @@ RAW_CSV = RAW_DIR / "merimee" / "merimee.csv"
 OUTPUT_PARQUET = INTERIM_DIR / "merimee.parquet"
 
 PARIS_DEPARTMENT = "75"
-# Generous bounding box around Paris, both woods included, used to reject bogus points.
-PARIS_LAT_RANGE = (48.80, 48.91)
-PARIS_LON_RANGE = (2.22, 2.48)
 
 SOURCE_COLUMNS = [
     "Reference",
@@ -180,11 +178,7 @@ def parse_coordinates(value: str | None) -> tuple[float, float] | None:
     if match is None:
         return None
     lat, lon = float(match.group(1)), float(match.group(2))
-    in_paris = (
-        PARIS_LAT_RANGE[0] <= lat <= PARIS_LAT_RANGE[1]
-        and PARIS_LON_RANGE[0] <= lon <= PARIS_LON_RANGE[1]
-    )
-    return (lat, lon) if in_paris else None
+    return (lat, lon) if is_in_paris(lat, lon) else None
 
 
 def parse_protection_level(value: str | None) -> str | None:
@@ -289,8 +283,7 @@ def normalize_notice(row: Mapping[str, str | None]) -> dict[str, object]:
 def normalize(raw: pd.DataFrame) -> pd.DataFrame:
     """Turn the source rows into one typed row per notice, following OUTPUT_SCHEMA."""
     rows = [normalize_notice(row) for row in raw.to_dict("records")]
-    table = pa.Table.from_pylist(rows, schema=OUTPUT_SCHEMA)
-    notices = table.to_pandas(types_mapper=pd.ArrowDtype)
+    notices = from_rows(rows, OUTPUT_SCHEMA)
     duplicated = notices.loc[notices["merimee_id"].duplicated(), "merimee_id"].tolist()
     if duplicated:
         raise ValueError(f"Duplicated Mérimée references: {duplicated}")
@@ -314,15 +307,6 @@ def summarize(notices: pd.DataFrame) -> dict[str, int]:
     }
 
 
-def write_notices(notices: pd.DataFrame, destination: Path) -> None:
-    """Write the normalized notices as Parquet."""
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    table = pa.Table.from_pandas(notices, schema=OUTPUT_SCHEMA, preserve_index=False)
-    # Drop the pandas metadata: it records the Arrow list dtypes under names that
-    # pandas cannot parse back, which breaks a plain pd.read_parquet of the file.
-    pq.write_table(table.replace_schema_metadata(None), destination)
-
-
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Ingest the Mérimée notices of protected buildings located in Paris."
@@ -344,7 +328,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if not args.offline:
         download_source(RAW_CSV, refresh=args.refresh)
     notices = normalize(read_paris_notices(RAW_CSV))
-    write_notices(notices, OUTPUT_PARQUET)
+    write_parquet(notices, OUTPUT_SCHEMA, OUTPUT_PARQUET)
 
     logger.info("Wrote %d notices to %s", len(notices), OUTPUT_PARQUET)
     for label, count in summarize(notices).items():
