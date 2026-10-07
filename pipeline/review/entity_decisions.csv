@@ -1,0 +1,69 @@
+merimee_id,source,entity_id,decision,note
+PA00085829,osm,way/54106184,accept,Immeuble d'angle étiqueté avec l'élément Wikidata de l'hôtel Lully ; point Mérimée décalé de 89 m.
+PA00085852,osm,way/53590964,accept,Un des immeubles de la rue Bertin-Poirée couverts par la notice : emprise partielle.
+PA00085992,osm,relation/3262297,accept,Palais du Louvre ; l'écart tient à l'étendue du domaine.
+PA00085992,osm,way/227483542,accept,"Arc de triomphe du Carrousel, dans le domaine du Louvre et des Tuileries (secondaire)."
+PA00085992,wikidata,Q1075988,accept,Même palais ; l'écart tient à l'étendue du domaine.
+PA00085992,wikidata,Q631104,accept,"Arc de triomphe du Carrousel, élément du domaine (secondaire)."
+PA00085993,osm,relation/3300400,accept,Palais-Royal.
+PA00085993,wikidata,Q329948,accept,Même palais.
+PA00086005,wikidata,Q1583780,primary,La Samaritaine dans son ensemble ; le choix automatique était l'un de ses magasins.
+PA00086086,wikidata,Q669850,accept,Même station de métro.
+PA00086088,wikidata,Q2055787,primary,Le passage Choiseul est l'élément principal de la notice ; le passage Sainte-Anne en est une branche.
+PA00086100,osm,way/56301534,accept,Ancienne église du prieuré : emprise partielle du site.
+PA00086100,wikidata,Q656302,accept,"Même site : le prieuré Saint-Martin-des-Champs est l'ancienne abbaye, aujourd'hui CNAM."
+PA00086121,osm,way/56692682,accept,"Immeuble étiqueté avec l'élément Wikidata, à 53 m du point Mérimée."
+PA00086219,osm,way/57720415,reject,"Hôtel d'Assy : Wikipédia le situe 58 bis rue des Francs-Bourgeois, alors que la notice porte sur le n° 56 (hôtel de Fontenay)."
+PA00086283,wikidata,Q13426612,accept,Même hôtel : Wikipédia le situe 9 rue de Sévigné. Coordonnées Wikidata décalées de 580 m.
+PA00086448,wikidata,Q2382361,accept,"Même lieu : Wikipédia situe le Café de la Gare 41 rue du Temple, adresse de l'ancienne auberge."
+PA00086475,wikidata,Q3142856,accept,"Même prison, dont il reste des vestiges."
+PA00086549,wikidata,Q176582,accept,Même station de métro.
+PA00086550,osm,way/313420213,accept,Objet portant ref:mhs à la station République.
+PA00086565,wikidata,Q3055287,accept,Mêmes entrepôts de Bercy.
+PA00086570,wikidata,Q747541,primary,La gare elle-même ; le choix automatique était une fresque de la gare.
+PA00086576,wikidata,Q508256,accept,"Même station ; l'entourage a été déplacé en 1985 boulevard Beaumarchais, toujours à Bastille."
+PA00086578,wikidata,Q614049,accept,Même station de métro.
+PA00086579,wikidata,Q1418711,accept,Même station de métro ; la notice n'a pas de point Mérimée.
+PA00086583,wikidata,Q1141316,primary,Le palais de la Porte Dorée ; le choix automatique était sa façade sculptée.
+PA00086588,wikidata,Q22922096,accept,"Même bâtiment, déplacé au parc de la Villette : le point Mérimée donne l'ancienne adresse du 12e, le point Wikidata l'emplacement actuel."
+PA00086592,osm,way/293232028,reject,"Héliport de la Pitié-Salpêtrière, étiqueté avec l'élément Wikidata de l'hôpital : ce n'est pas le monument."
+PA00086607,osm,way/79611339,accept,"Maison du Fontainier, 42-44 avenue de l'Observatoire : c'est l'élément protégé (étiquette ref:mhs)."
+PA00086607,wikidata,Q13518160,primary,"La protection porte sur le regard dit pavillon des Fontainiers, 42 avenue de l'Observatoire : c'est la maison du Fontainier."
+PA00086607,wikidata,Q2859246,accept,"Pont-aqueduc d'Arcueil et de Cachan : partie du même aqueduc, hors de Paris (secondaire)."
+PA00086617,wikidata,Q2945681,accept,Même hôpital.
+PA00086620,wikidata,Q15950844,reject,"Autre bâtiment : hôtel du 28 rue Geoffroy-l'Asnier (4e), à 2,4 km, qui correspond à la notice PA75040007."
+PA00086633,wikidata,Q3315941,accept,"La protection porte sur la mire de l'Observatoire, située dans le parc."
+PA00086637,wikidata,Q3527526,accept,Même théâtre.
+PA00086655,osm,way/80266021,accept,Bâtiment portant ref:mhs.
+PA00086655,wikidata,Q125967928,accept,Même institut.
+PA00086661,wikidata,Q22809465,accept,"Même collège, 391 rue de Vaugirard."
+PA00086700,wikidata,Q517739,accept,Même station de métro.
+PA00086731,osm,way/75750140,accept,Ateliers Berthier : ce sont les anciens ateliers de décors de l'Opéra.
+PA00086750,wikidata,Q807893,reject,"L'entourage Guimard protégé a été déplacé en 1987 à l'angle des avenues Secrétan et Simon-Bolivar (19e) ; l'élément décrit la station Barbès-Rochechouart d'origine, à 1,8 km. Rejet confirmé par Nathan le 7 octobre 2026."
+PA00086770,wikidata,Q568195,accept,Même station de métro.
+PA00086780,osm,relation/11838120,primary,"Le cimetière lui-même. Sans cette décision, l'emprise retenue était la tombe d'Adolphe Thiers."
+PA00086786,wikidata,Q946826,accept,Même station ; accès place Martin-Nadaud.
+PA00088392,osm,way/59846865,accept,Église du Val-de-Grâce : emprise partielle de l'abbaye.
+PA00088392,wikidata,Q2601262,accept,L'église est le premier élément protégé de l'abbaye.
+PA00088420,wikidata,Q188856,primary,Le Panthéon ; le choix automatique était son dôme.
+PA00088482,wikidata,Q730948,primary,Le Jardin des plantes ; le choix automatique était la rotonde de la ménagerie.
+PA00088507,wikidata,Q3001716,reject,"L'élément est le couvent des Grands-Augustins, détruit, quai des Grands-Augustins (540 m). L'École des beaux-arts occupe l'ancien couvent des Petits-Augustins : le titre de la notice est trompeur. Rejet confirmé par Nathan le 7 octobre 2026."
+PA00088581,osm,relation/555535,accept,"Immeuble étiqueté avec l'élément Wikidata, à 55 m du point Mérimée."
+PA00088622,wikidata,Q19294660,accept,Même hôtel : Wikipédia le situe 47-49 rue Saint-André-des-Arts. Coordonnées Wikidata décalées de 383 m.
+PA00088653,osm,relation/975955,accept,Palais du Luxembourg (étiquette ref:mhs).
+PA00088653,wikidata,Q329852,accept,Même palais.
+PA00088789,osm,way/244749667,accept,"Chapelle de la maison mère des Filles de la Charité, 140 rue du Bac : emprise partielle."
+PA00088872,wikidata,Q1519529,accept,Même station de métro.
+PA00088899,wikidata,Q1071456,accept,"Même restaurant, 7 rue du Faubourg-Montmartre."
+PA00088992,wikidata,Q1392037,accept,Même station de métro.
+PA75040011,osm,way/53657341,accept,"Bâtiment de type presbytère, à 53 m du point Mérimée."
+PA75110005,osm,way/63648393,accept,Même temple ; pas de point Mérimée valide pour mesurer la distance.
+PA75110005,wikidata,Q3517708,accept,Même temple (nom et adresse) ; le point Mérimée était aberrant.
+PA75120002,osm,way/129268313,accept,Cimetière de Picpus.
+PA75130005,wikidata,Q3126064,accept,Même bâtiment : la halle Freyssinet est l'ancienne halle des messageries d'Austerlitz.
+PA75130009,wikidata,Q124300325,accept,Même pavillon ; l'élément Wikidata n'a pas de coordonnées.
+PA75180004,osm,way/23762981,accept,Basilique du Sacré-Cœur.
+PA75180004,wikidata,Q28785,accept,Même basilique.
+PA75190001,wikidata,Q2944288,accept,Même bâtiment : le Centquatre occupe les anciennes pompes funèbres municipales.
+PA75200003,osm,way/63196025,accept,"Ancien réservoir de l'hôpital Saint-Louis : ouvrage des eaux de Belleville, ensemble dispersé."
+PA75200003,osm,way/63212791,accept,"Regard du Chaudron : ouvrage des eaux de Belleville, ensemble dispersé."
