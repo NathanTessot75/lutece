@@ -12,7 +12,7 @@ import json
 import logging
 import re
 import time
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
 from itertools import batched
 from pathlib import Path
@@ -22,17 +22,15 @@ import httpx
 import pandas as pd
 import pyarrow as pa
 
-from lutece_pipeline import ingest_merimee
+from lutece_pipeline import ingest_merimee, web
 from lutece_pipeline.geo import is_in_paris
 from lutece_pipeline.paths import INTERIM_DIR, RAW_DIR
 from lutece_pipeline.tables import from_rows, write_parquet
+from lutece_pipeline.web import Pause
 
 logger = logging.getLogger(__name__)
 
 WDQS_URL = "https://query.wikidata.org/sparql"
-# Wikimedia asks automated clients to identify themselves with a contact.
-USER_AGENT = "LutecePipeline/0.1 (tessotnathan75@gmail.com)"
-MAX_ATTEMPTS = 5
 LINK_BATCH_SIZE = 300
 ITEM_BATCH_SIZE = 250
 # Pause between two batches, to stay a polite client of the public endpoint.
@@ -101,50 +99,25 @@ ITEMS_SCHEMA = pa.schema(
     ]
 )
 
-type Pause = Callable[[float], None]
 type Row = dict[str, str]
 
 
 def make_client(transport: httpx.BaseTransport | None = None) -> httpx.Client:
     """Create the HTTP client used to talk to the Wikidata Query Service."""
-    headers = {"Accept": "application/sparql-results+json", "User-Agent": USER_AGENT}
-    return httpx.Client(transport=transport, headers=headers, timeout=120.0)
+    return web.make_client(
+        accept="application/sparql-results+json", transport=transport
+    )
 
 
 def run_query(
     client: httpx.Client, query: str, *, pause: Pause = time.sleep
 ) -> list[Row]:
-    """Run a SPARQL query and return its rows as {variable: value} dicts.
-
-    The public endpoint regularly answers 429 or 5xx for a few seconds, so those
-    responses and network errors are retried with a growing delay.
-    """
-    reason = ""
-    for attempt in range(1, MAX_ATTEMPTS + 1):
-        delay = 2.0**attempt
-        try:
-            response = client.post(WDQS_URL, data={"query": query})
-        except httpx.TransportError as error:
-            reason = repr(error)
-        else:
-            if response.status_code == httpx.codes.OK:
-                bindings = response.json()["results"]["bindings"]
-                return [
-                    {name: cell["value"] for name, cell in binding.items()}
-                    for binding in bindings
-                ]
-            if response.status_code != 429 and response.status_code < 500:
-                response.raise_for_status()
-            reason = f"HTTP {response.status_code}"
-            retry_after = response.headers.get("retry-after", "")
-            if retry_after.isdigit():
-                delay = float(retry_after)
-        if attempt < MAX_ATTEMPTS:
-            logger.warning(
-                "Wikidata query failed (%s), retrying in %.0f s", reason, delay
-            )
-            pause(delay)
-    raise RuntimeError(f"Wikidata query failed after {MAX_ATTEMPTS} attempts: {reason}")
+    """Run a SPARQL query and return its rows as {variable: value} dicts."""
+    response = web.post_form(client, WDQS_URL, {"query": query}, pause=pause)
+    bindings = response.json()["results"]["bindings"]
+    return [
+        {name: cell["value"] for name, cell in binding.items()} for binding in bindings
+    ]
 
 
 def fetch_links(

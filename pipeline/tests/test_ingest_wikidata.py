@@ -200,40 +200,6 @@ def test_query_is_retried_after_a_transient_error() -> None:
     assert pauses == [2.0, 7.0]
 
 
-def test_query_gives_up_after_too_many_failures() -> None:
-    requests: list[httpx.Request] = []
-    pauses: list[float] = []
-
-    def handler(request: httpx.Request) -> httpx.Response:
-        requests.append(request)
-        return httpx.Response(503)
-
-    with (
-        wikidata.make_client(httpx.MockTransport(handler)) as client,
-        pytest.raises(RuntimeError, match="HTTP 503"),
-    ):
-        wikidata.run_query(client, "SELECT 1", pause=pauses.append)
-
-    assert len(requests) == wikidata.MAX_ATTEMPTS
-    assert pauses == [2.0, 4.0, 8.0, 16.0]
-
-
-def test_malformed_query_is_not_retried() -> None:
-    requests: list[httpx.Request] = []
-
-    def handler(request: httpx.Request) -> httpx.Response:
-        requests.append(request)
-        return httpx.Response(400, request=request)
-
-    with (
-        wikidata.make_client(httpx.MockTransport(handler)) as client,
-        pytest.raises(httpx.HTTPStatusError),
-    ):
-        wikidata.run_query(client, "SELECT", pause=lambda seconds: None)
-
-    assert len(requests) == 1
-
-
 def test_links_are_fetched_in_batches(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(wikidata, "LINK_BATCH_SIZE", 2)
     queries: list[str] = []
