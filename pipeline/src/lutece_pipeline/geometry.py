@@ -2,7 +2,8 @@
 
 The footprint is, in order of preference: the OSM footprints confirmed by
 resolve_entities merged together; else the confirmed OSM lines (covered passages,
-ramparts, canal) widened into a strip; else a circle around the reference point.
+ramparts, canal) widened into a strip; else the building found next to the point
+by nearby_buildings; else a circle around the reference point.
 
 The reference point lies on the OSM geometry when there is one. Otherwise it is
 the OSM node tagged with the Mérimée reference, else the Mérimée point, else the
@@ -49,6 +50,8 @@ SIMPLIFY_TOLERANCE_METERS = 1.0
 # Beyond this gap between the Mérimée and Wikidata points, one of them is wrong.
 POINT_DISAGREEMENT_METERS = 100.0
 # Relations that describe the surroundings of a monument rather than the monument.
+# Slack allowed when checking that a point is inside a building found nearby.
+INSIDE_TOLERANCE_METERS = 0.01
 POINT_CHOICES = frozenset({"merimee", "wikidata", "manual"})
 SURROUNDINGS_RELATION_TYPES = frozenset(
     {"associatedStreet", "street", "public_transport"}
@@ -60,6 +63,7 @@ OSM_OBJECTS_PARQUET = ingest_osm.OBJECTS_PARQUET
 ENTITIES_PARQUET = resolve_entities.ENTITIES_PARQUET
 ENTITY_LINKS_PARQUET = resolve_entities.LINKS_PARQUET
 OVERRIDES_CSV = REVIEW_DIR / "geometry_overrides.csv"
+NEARBY_PARQUET = INTERIM_DIR / "nearby_buildings.parquet"
 GEOMETRIES_PARQUET = INTERIM_DIR / "geometries.parquet"
 REVIEW_CSV = INTERIM_DIR / "geometries_to_review.csv"
 
@@ -280,6 +284,26 @@ def locate(
     return Location(point, point_source, point.buffer(BUFFER_RADIUS_METERS), "buffer")
 
 
+def adopt_nearby_building(
+    location: Location, entity_id: str, building: BaseGeometry
+) -> Location:
+    """Replace the circle of a notice by the building that contains its point.
+
+    The point must still be inside: one corrected since the search may have moved.
+    """
+    if location.footprint_source != "buffer":
+        return location
+    if location.point.distance(building) > INSIDE_TOLERANCE_METERS:
+        return location
+    footprint = simplify(building)
+    # Simplifying can push the outline past a point that stands close to a wall.
+    if footprint.distance(location.point) > INSIDE_TOLERANCE_METERS:
+        footprint = building
+    return Location(
+        location.point, location.point_source, footprint, "osm_nearby", (entity_id,)
+    )
+
+
 def build_geometries(
     notices: Sequence[Record],
     entities: Sequence[Record],
@@ -287,8 +311,21 @@ def build_geometries(
     items: Sequence[Record],
     objects: gpd.GeoDataFrame,
     overrides: Mapping[str, Override],
+    nearby: gpd.GeoDataFrame | None = None,
 ) -> gpd.GeoDataFrame:
-    """Compute one row per notice: reference point, footprint and where they come from."""
+    """Compute one row per notice: reference point, footprint and where they come from.
+
+    `nearby` is the output of the nearby_buildings step; without it, the notices
+    that OSM does not link keep a circle.
+    """
+    buildings: dict[str, tuple[str, BaseGeometry]] = {}
+    if nearby is not None:
+        # Only the buildings that contain the point: the evaluation shows that the
+        # closest building, when the point is outside, is right two times out of three.
+        inside = nearby[nearby["match"] == "contains"].to_crs(LAMBERT_93)
+        buildings = {
+            row.merimee_id: (row.entity_id, row.geometry) for row in inside.itertuples()
+        }
     notice_points = project_points(notices, "merimee_id")
     item_points = project_points(items, "qid")
     manual_points = project_points(
@@ -328,6 +365,8 @@ def build_geometries(
         )
         if location is None:
             raise ValueError(f"{merimee_id} has no point in any source")
+        if merimee_id in buildings:
+            location = adopt_nearby_building(location, *buildings[merimee_id])
         gap = (
             float(notice_point.distance(wikidata_point))
             if notice_point is not None and wikidata_point is not None
@@ -435,7 +474,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     if stale:
         logger.warning("%d corrections match no notice: %s", len(stale), stale)
 
-    geometries = build_geometries(notices, entities, links, items, objects, overrides)
+    nearby = gpd.read_parquet(NEARBY_PARQUET) if NEARBY_PARQUET.exists() else None
+    geometries = build_geometries(
+        notices, entities, links, items, objects, overrides, nearby
+    )
     review = build_review(notices, entities, items, geometries)
     GEOMETRIES_PARQUET.parent.mkdir(parents=True, exist_ok=True)
     geometries.to_parquet(GEOMETRIES_PARQUET, index=False)

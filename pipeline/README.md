@@ -22,7 +22,8 @@ uv run ruff format .    # formatage
 | 2. `ingest_wikidata` | `uv run python -m lutece_pipeline.ingest_wikidata` | `merimee.parquet`, service de requêtes Wikidata | `data/interim/wikidata_items.parquet`, `data/interim/wikidata_merimee_links.parquet` |
 | 3. `ingest_osm` | `uv run python -m lutece_pipeline.ingest_osm` | `merimee.parquet`, `wikidata_merimee_links.parquet`, API Overpass | `data/interim/osm_objects.parquet`, `data/interim/osm_merimee_links.parquet` |
 | 4. `resolve_entities` | `uv run python -m lutece_pipeline.resolve_entities` | les sorties des étapes 1 à 3, `review/entity_decisions.csv` | `data/interim/entities.parquet`, `data/interim/entity_links.parquet`, `data/interim/entities_to_review.csv` |
-| 5. `geometry` | `uv run python -m lutece_pipeline.geometry` | les sorties des étapes 1 à 4, `review/geometry_overrides.csv` | `data/interim/geometries.parquet`, `data/interim/geometries_to_review.csv` |
+| 5a. `nearby_buildings` | `uv run python -m lutece_pipeline.nearby_buildings` | les sorties des étapes 1 à 4, API Overpass | `data/interim/nearby_buildings.parquet`, `data/interim/nearby_buildings_evaluation.csv` |
+| 5b. `geometry` | `uv run python -m lutece_pipeline.geometry` | les sorties des étapes 1 à 5a, `review/geometry_overrides.csv` | `data/interim/geometries.parquet`, `data/interim/geometries_to_review.csv` |
 
 Options :
 
@@ -31,6 +32,10 @@ Options :
 - `ingest_wikidata --offline` rejoue l'étape à partir des dernières réponses
   enregistrées dans `data/raw/wikidata/snapshot.json`.
 - `ingest_osm --offline` fait de même à partir de `data/raw/osm/snapshot.json`.
+- `nearby_buildings --offline` fait de même à partir de
+  `data/raw/osm/nearby_buildings.json`. En ligne, chaque lot obtenu est
+  sauvegardé : après un échec du serveur, relancer la commande reprend là où
+  elle s'était arrêtée.
 
 Les fichiers Parquet se lisent avec `pd.read_parquet(chemin)`. Ajouter
 `dtype_backend="pyarrow"` conserve les entiers avec valeurs manquantes au lieu
@@ -48,7 +53,9 @@ version du 1er octobre 2026), limitées aux colonnes lues par l'étape.
 Wikidata (CC0) pour ces mêmes notices, enregistrées le 7 octobre 2026.
 `tests/fixtures/osm_snapshot.json` contient les 12 objets OpenStreetMap liés à
 ces notices (© les contributeurs d'OpenStreetMap, licence ODbL), enregistrés le
-même jour.
+même jour. `tests/fixtures/osm_nearby_snapshot.json` contient, sous la même
+licence, les 37 bâtiments OpenStreetMap situés à moins de 30 m de cinq de ces
+notices.
 
 ## Source Mérimée
 
@@ -310,6 +317,59 @@ Une décision qui ne correspond plus à aucune paire est signalée dans le journ
   station Barbès-Rochechouart (`PA00086750`), aujourd'hui avenue Secrétan. Pour
   le premier, le point Mérimée indique encore l'ancienne adresse.
 
+## Bâtiments autour
+
+Beaucoup d'immeubles protégés ne portent aucune étiquette OSM qui les relie à
+leur notice. L'étape `nearby_buildings` leur cherche une emprise : le bâtiment
+OSM dans lequel tombe leur point de référence.
+
+### Règle
+
+- **Notices visées** : les monuments protégés dont la dénomination principale
+  désigne un bâtiment et qui n'ont ni emprise ni ligne OSM. Une liste de 37
+  dénominations (`NOT_A_BUILDING` : station de métro, fontaine, tombeau, pont,
+  passage couvert, jardin, cimetière, grand ensemble…) écarte les petits
+  objets, les ouvrages linéaires, les espaces ouverts et les ensembles.
+- **Recherche** : les bâtiments OSM (`building=*`) à moins de 30 m du point,
+  demandés à Overpass par lots de 30 points.
+- **Choix** : le bâtiment qui contient le point, le plus petit s'il y en a
+  plusieurs. Si le point est dehors, le bâtiment le plus proche à moins de 15 m
+  est noté (`match = nearest`) mais n'est pas retenu comme emprise.
+
+### Évaluation
+
+La règle est appliquée à 300 notices tirées au hasard (graine fixe) parmi les
+1 283 monuments de type bâtiment dont l'emprise OSM est déjà connue, en partant
+du point Mérimée. Le choix est correct si au moins la moitié du bâtiment choisi
+est dans l'emprise connue.
+
+| Cas | Notices | Bon bâtiment |
+|---|---|---|
+| le point est dans un bâtiment | 274 | 262, soit 96 % |
+| le point est dehors, bâtiment le plus proche | 19 | 13, soit 68 % |
+| aucun bâtiment à portée | 7 | |
+| ensemble | 300 | 275, soit 92 % (± 3 points à 95 %) |
+
+D'où la décision de ne retenir que le premier cas. Limite : les notices
+évaluées sont celles qu'OSM relie déjà à leur notice ; rien ne garantit que les
+autres, souvent des immeubles anonymes, se comportent de même. Le détail par
+notice est dans `nearby_buildings_evaluation.csv`.
+
+### Résultat (réponses du 7 octobre 2026)
+
+- 356 notices visées : le point de 338 d'entre elles tombe dans un bâtiment,
+  17 sont à côté d'un bâtiment et 1 n'en a aucun à portée.
+- 24 bâtiments sont retenus pour plusieurs notices (53 notices), le plus
+  souvent plusieurs boutiques protégées d'un même immeuble.
+- Le serveur Overpass a renvoyé 32 erreurs pour 22 lots : il a fallu quatre
+  exécutions, chacune reprenant la précédente.
+
+### Colonnes de `nearby_buildings.parquet`
+
+GeoParquet en WGS84, une ligne par notice visée ayant un bâtiment à portée :
+`merimee_id`, `entity_id` (`way/123`), `match` (`contains` ou `nearest`),
+`distance_m`, `building` (l'étiquette OSM) et `geometry`.
+
 ## Géométries des monuments
 
 L'étape `geometry` donne à chaque notice un point de référence et une emprise.
@@ -323,7 +383,12 @@ Par ordre de préférence :
 |---|---|---|
 | `osm_footprint` | fusion des emprises OSM confirmées par `resolve_entities`, y compris l'objet choisi par un relecteur | 1 374 |
 | `osm_line` | lignes OSM confirmées (passages couverts, enceinte, canal), élargies de 3 m de chaque côté ; les relations de type rue ou pôle de transport sont exclues | 41 |
-| `buffer` | cercle de 10 m de rayon autour du point de référence | 478 |
+| `osm_nearby` | bâtiment OSM contenant le point de référence, trouvé par `nearby_buildings` | 338 |
+| `buffer` | cercle de 10 m de rayon autour du point de référence | 140 |
+
+Parmi les 1 878 monuments protégés, 1 749 (93 %) ont ainsi une emprise réelle
+et 129 un cercle : surtout des entourages de métro, des fontaines et des
+vestiges d'enceinte.
 
 Les emprises issues d'OSM sont simplifiées avec une tolérance de 1 m, calculée
 en Lambert-93. La précision d'un GPS de téléphone est de 5 m au mieux.
@@ -373,8 +438,10 @@ GeoParquet en WGS84 (EPSG:4326), une ligne par notice : `merimee_id`,
 
 - 32 emprises sont en plusieurs morceaux. Le schéma du SPEC §5.3 prévoit un
   `polygon` : il faudra un `multipolygon` au chargement.
-- La simplification ramène les emprises OSM de 51 222 à 21 101 sommets pour
-  1 % d'écart de surface ; l'ensemble des emprises pèse 52 817 sommets.
+- La simplification ramène les emprises OSM liées de 51 222 à 21 101 sommets
+  pour 1 % d'écart de surface ; l'ensemble des emprises pèse 35 566 sommets.
+  Une emprise trouvée par `nearby_buildings` garde son tracé complet quand la
+  simplification ferait sortir le point de référence.
 - 17 notices avaient des points en désaccord. 12 ont été tranchées en
   géocodant l'adresse avec la Base Adresse Nationale : le point Mérimée était
   le bon 9 fois, le point Wikidata 3 fois. 4 ne sont pas des monuments. Il en
@@ -399,10 +466,10 @@ GeoParquet en WGS84 (EPSG:4326), une ligne par notice : `merimee_id`,
 - §5.2, étape 3 : `ref:mhs` seul n'atteint que 799 notices (42 %). L'étiquette
   `wikidata` est ajoutée comme seconde clé, ce qui porte la couverture à 1 705
   notices (90 %).
-- §5.2, étape 3 : les « emprises des bâtiments autour » sont reportées à
-  l'étape `geometry`, qui saura quelles notices restent sans emprise (décision
-  du 7 octobre 2026).
+- §5.2, étape 3 : les « emprises des bâtiments autour » ne sont pas chargées
+  en bloc. L'étape `nearby_buildings` les demande seulement pour les monuments
+  restés sans emprise après le rapprochement (décision du 7 octobre 2026).
 - §5.2, étape 4 : l'appariement par distance et similarité de nom sert à
   contrôler les liens exacts plutôt qu'à en créer. La recherche d'un bâtiment
   par proximité, pour les notices sans objet OSM, relève de l'étape
-  `geometry`.
+  `nearby_buildings`.
