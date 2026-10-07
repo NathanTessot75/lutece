@@ -249,3 +249,9 @@ def test_offline_run_writes_the_parquet_file(
 
     assert pq.read_schema(output).equals(merimee.OUTPUT_SCHEMA, check_metadata=False)
     assert pq.read_metadata(output).num_rows == 11
+    # A plain pandas read, without Arrow dtypes, must work for the next steps.
+    reloaded = pd.read_parquet(output)
+    assert list(reloaded.columns) == merimee.OUTPUT_SCHEMA.names
+    assert list(
+        reloaded.loc[reloaded["merimee_id"] == "PA00086579", "architects"].item()
+    ) == ["GUIMARD Hector"]

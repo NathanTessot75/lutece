@@ -18,6 +18,7 @@ from pathlib import Path
 import httpx
 import pandas as pd
 import pyarrow as pa
+import pyarrow.parquet as pq
 
 from lutece_pipeline.paths import INTERIM_DIR, RAW_DIR
 
@@ -316,7 +317,10 @@ def summarize(notices: pd.DataFrame) -> dict[str, int]:
 def write_notices(notices: pd.DataFrame, destination: Path) -> None:
     """Write the normalized notices as Parquet."""
     destination.parent.mkdir(parents=True, exist_ok=True)
-    notices.to_parquet(destination, index=False)
+    table = pa.Table.from_pandas(notices, schema=OUTPUT_SCHEMA, preserve_index=False)
+    # Drop the pandas metadata: it records the Arrow list dtypes under names that
+    # pandas cannot parse back, which breaks a plain pd.read_parquet of the file.
+    pq.write_table(table.replace_schema_metadata(None), destination)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
