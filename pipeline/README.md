@@ -22,6 +22,7 @@ uv run ruff format .    # formatage
 | 2. `ingest_wikidata` | `uv run python -m lutece_pipeline.ingest_wikidata` | `merimee.parquet`, service de requêtes Wikidata | `data/interim/wikidata_items.parquet`, `data/interim/wikidata_merimee_links.parquet` |
 | 3. `ingest_osm` | `uv run python -m lutece_pipeline.ingest_osm` | `merimee.parquet`, `wikidata_merimee_links.parquet`, API Overpass | `data/interim/osm_objects.parquet`, `data/interim/osm_merimee_links.parquet` |
 | 4. `resolve_entities` | `uv run python -m lutece_pipeline.resolve_entities` | les sorties des étapes 1 à 3, `review/entity_decisions.csv` | `data/interim/entities.parquet`, `data/interim/entity_links.parquet`, `data/interim/entities_to_review.csv` |
+| 5. `geometry` | `uv run python -m lutece_pipeline.geometry` | les sorties des étapes 1 à 4, `review/geometry_overrides.csv` | `data/interim/geometries.parquet`, `data/interim/geometries_to_review.csv` |
 
 Options :
 
@@ -90,8 +91,10 @@ même jour.
 
 ### Constats sur les notices parisiennes (version du 1er octobre 2026)
 
-- 1 893 notices : 1 414 inscrites, 464 classées, 15 sans protection renseignée
-  (dont 5 notices de renvoi).
+- 1 893 notices : 1 414 inscrites, 464 classées, 15 sans protection renseignée.
+  Ces 15 ne sont pas des monuments à capturer : 10 ont vu leur protection
+  annulée ou radiée (le champ `Observations` de la source, non repris ici, en
+  donne le détail) et 5 sont des notices de renvoi vers une autre notice.
 - Coordonnées : 3 notices sans coordonnées, et 1 point aberrant écarté
   (`PA75110005`, « 48.00000000000001,2 »).
 - 53 notices sans adresse, 255 sans siècle ni année, 1 149 sans texte
@@ -300,6 +303,78 @@ Une décision qui ne correspond plus à aucune paire est signalée dans le journ
   aujourd'hui au parc de la Villette, et l'entourage Guimard de l'ancienne
   station Barbès-Rochechouart (`PA00086750`), aujourd'hui avenue Secrétan. Pour
   le premier, le point Mérimée indique encore l'ancienne adresse.
+
+## Géométries des monuments
+
+L'étape `geometry` donne à chaque notice un point de référence et une emprise.
+Elle ne fait aucun appel réseau.
+
+### Emprise
+
+Par ordre de préférence :
+
+| `footprint_source` | Origine | Notices |
+|---|---|---|
+| `osm_footprint` | fusion des emprises OSM confirmées par `resolve_entities`, y compris l'objet choisi par un relecteur | 1 374 |
+| `osm_line` | lignes OSM confirmées (passages couverts, enceinte, canal), élargies de 3 m de chaque côté ; les relations de type rue ou pôle de transport sont exclues | 41 |
+| `buffer` | cercle de 10 m de rayon autour du point de référence | 478 |
+
+Les emprises issues d'OSM sont simplifiées avec une tolérance de 1 m, calculée
+en Lambert-93. La précision d'un GPS de téléphone est de 5 m au mieux.
+
+### Point de référence
+
+| `point_source` | Règle | Notices |
+|---|---|---|
+| `osm_footprint` | point à l'intérieur de l'emprise principale | 1 374 |
+| `osm_line` | point de la ligne le plus proche du point Mérimée | 41 |
+| `osm_node` | nœud OSM portant `ref:mhs`, le plus proche du point Mérimée | 119 |
+| `merimee` | point de la notice | 353 |
+| `wikidata` | point de l'élément Wikidata principal | 6 |
+| `manual` | coordonnées saisies par un relecteur | 0 |
+
+Sans géométrie OSM pour arbitrer, deux points Mérimée et Wikidata distants de
+plus de 100 m signalent une erreur dans l'une des sources : la notice est
+marquée `point_doubtful`.
+
+### Revue manuelle
+
+`data/interim/geometries_to_review.csv` liste les monuments dont le point est
+douteux, avec un lien vers la carte pour chacun des deux points. Les notices
+sans protection en sont exclues.
+
+Les choix sont consignés dans `review/geometry_overrides.csv`, versionné.
+Colonnes : `merimee_id`, `use`, `lat`, `lon`, `note`.
+
+| `use` | Effet |
+|---|---|
+| `merimee` | le point Mérimée est retenu |
+| `wikidata` | le point de l'élément Wikidata principal est retenu |
+| `manual` | les coordonnées `lat` et `lon` de la ligne sont retenues |
+
+Un choix remplace le point de référence et lève le doute. Si l'emprise est un
+cercle, il est tracé autour du point choisi.
+
+### Colonnes de `geometries.parquet`
+
+GeoParquet en WGS84 (EPSG:4326), une ligne par notice : `merimee_id`,
+`ref_lat`, `ref_lon`, `point_source`, `footprint_source`, `footprint_objects`
+(identifiants OSM utilisés, séparés par `;`), `footprint_area_m2`,
+`point_gap_m` (écart entre les points Mérimée et Wikidata), `point_doubtful`,
+`point_reviewed` et `geometry` (l'emprise).
+
+### Constats (7 octobre 2026)
+
+- 32 emprises sont en plusieurs morceaux. Le schéma du SPEC §5.3 prévoit un
+  `polygon` : il faudra un `multipolygon` au chargement.
+- La simplification ramène les emprises OSM de 51 222 à 21 101 sommets pour
+  1 % d'écart de surface ; l'ensemble des emprises pèse 52 817 sommets.
+- 17 notices avaient des points en désaccord. 12 ont été tranchées en
+  géocodant l'adresse avec la Base Adresse Nationale : le point Mérimée était
+  le bon 9 fois, le point Wikidata 3 fois. 4 ne sont pas des monuments. Il en
+  reste une sans adresse pour trancher, le parc Montsouris (`PA00086633`).
+- L'usine élévatrice des eaux (`PA00086588`) a été déplacée au parc de la
+  Villette : son point Mérimée indique encore l'ancienne adresse.
 
 ## Écarts constatés avec le SPEC
 
