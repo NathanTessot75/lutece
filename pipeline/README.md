@@ -21,6 +21,7 @@ uv run ruff format .    # formatage
 | 1. `ingest_merimee` | `uv run python -m lutece_pipeline.ingest_merimee` | CSV national Mérimée (data.gouv.fr) | `data/interim/merimee.parquet` |
 | 2. `ingest_wikidata` | `uv run python -m lutece_pipeline.ingest_wikidata` | `merimee.parquet`, service de requêtes Wikidata | `data/interim/wikidata_items.parquet`, `data/interim/wikidata_merimee_links.parquet` |
 | 3. `ingest_osm` | `uv run python -m lutece_pipeline.ingest_osm` | `merimee.parquet`, `wikidata_merimee_links.parquet`, API Overpass | `data/interim/osm_objects.parquet`, `data/interim/osm_merimee_links.parquet` |
+| 4. `resolve_entities` | `uv run python -m lutece_pipeline.resolve_entities` | les sorties des étapes 1 à 3, `review/entity_decisions.csv` | `data/interim/entities.parquet`, `data/interim/entity_links.parquet`, `data/interim/entities_to_review.csv` |
 
 Options :
 
@@ -216,6 +217,90 @@ notice. La relation est plusieurs-à-plusieurs.
   et à 48 m au 9e décile ; 99 paires sur 2 168 dépassent 100 m, 19 dépassent
   500 m.
 
+## Rapprochement des entités
+
+En version 1, un monument est exactement une notice Mérimée. L'étape
+`resolve_entities` ne fait aucun appel réseau : elle contrôle les liens trouvés
+par les étapes 2 et 3, puis retient pour chaque notice un élément Wikidata
+principal et une emprise OSM principale.
+
+### Règles
+
+Chaque paire notice / objet est mesurée :
+
+- `distance_m` : distance en mètres (projection Lambert-93) entre le point
+  Mérimée et le point Wikidata ou la géométrie OSM ; 0 si le point est dedans.
+- `name_similarity` : score de 0 à 100 calculé par `rapidfuzz`
+  (`token_sort_ratio`) sur les noms sans accents, ponctuation ni petits mots.
+  Un nom simplement contenu dans l'autre ne score pas haut : « Place Vendôme »
+  ne doit pas ressembler à chacun des hôtels de la place.
+- `address_match` : vrai si le nom de l'objet reprend une adresse de la notice
+  avec son numéro, comme « immeuble, 5 rue de Condé ».
+
+Une paire est `confirmed` si l'une de ces conditions est remplie, `doubtful`
+sinon :
+
+| Condition | Seuil |
+|---|---|
+| objet proche | 100 m pour Wikidata, 50 m pour OSM |
+| même nom | score d'au moins 90 |
+| nom reprenant l'adresse | `address_match` |
+
+L'objet principal d'une notice est le meilleur candidat non rejeté :
+
+- **Wikidata** : confirmé avant douteux, puis nom le plus proche, distance la
+  plus courte, plus grand nombre de liens de site.
+- **OSM** : seules les emprises sont candidates (chemin, ou relation
+  `multipolygon` ou `site`, de surface non nulle). Confirmée avant douteuse,
+  puis étiquette `ref:mhs`, distance la plus courte, plus grande surface.
+
+### Revue manuelle
+
+`data/interim/entities_to_review.csv` liste ce qui mérite un regard humain : les
+notices dont l'objet principal est douteux, et celles sans élément Wikidata.
+Chaque ligne donne les noms, la distance et les liens vers la notice (POP),
+Wikidata ou OpenStreetMap.
+
+Les décisions sont consignées dans `review/entity_decisions.csv`, versionné,
+et s'appliquent à l'exécution suivante. Colonnes : `merimee_id`, `source`
+(`wikidata` ou `osm`), `entity_id` (`Q…` ou `way/123`), `decision`, `note`.
+
+| Décision | Effet |
+|---|---|
+| `accept` | la paire est confirmée malgré les règles |
+| `reject` | la paire est écartée |
+| `primary` | la paire est confirmée et devient l'objet principal |
+
+Une décision qui ne correspond plus à aucune paire est signalée dans le journal.
+
+### Sorties
+
+- `entity_links.parquet` : une ligne par paire, avec `merimee_id`, `source`,
+  `entity_id`, `entity_name`, les trois mesures, `via_ref_mhs`,
+  `via_wikidata`, `is_footprint` et `area_m2` (OSM seulement), `status`
+  (`confirmed`, `doubtful` ou `rejected`), `reviewed` et `is_primary`.
+- `entities.parquet` : une ligne par notice, avec `wikidata_qid`,
+  `wikidata_status`, `wikidata_count`, `osm_footprint`, `osm_status`,
+  `osm_footprint_count` et `osm_object_count`. Les compteurs excluent les
+  paires rejetées.
+
+### Constats (7 octobre 2026)
+
+- 4 174 paires : 2 004 avec Wikidata, 2 170 avec OSM.
+- Avant revue : élément principal confirmé pour 1 849 notices, douteux pour 36,
+  absent pour 8 ; emprise principale confirmée pour 1 354 notices, douteuse
+  pour 22, absente pour 517.
+- Revue : 68 décisions (55 `accept`, 5 `reject`, 8 `primary`). Les écarts de
+  position viennent surtout de sites étendus (Louvre, Luxembourg), d'entourages
+  de métro et de points mal placés dans l'une des sources.
+- Après revue : 1 882 notices ont un élément Wikidata confirmé et 11 n'en ont
+  pas ; 1 374 ont une emprise confirmée, 1 une emprise douteuse et 518 aucune.
+- 217 paires secondaires restent douteuses ; elles ne sont pas utilisées.
+- Deux monuments ont été déplacés : l'usine élévatrice des eaux (`PA00086588`),
+  aujourd'hui au parc de la Villette, et l'entourage Guimard de l'ancienne
+  station Barbès-Rochechouart (`PA00086750`), aujourd'hui avenue Secrétan. Pour
+  le premier, le point Mérimée indique encore l'ancienne adresse.
+
 ## Écarts constatés avec le SPEC
 
 - §5.1 : le portail `data.culture.gouv.fr` redirige vers
@@ -236,3 +321,7 @@ notice. La relation est plusieurs-à-plusieurs.
 - §5.2, étape 3 : les « emprises des bâtiments autour » sont reportées à
   l'étape `geometry`, qui saura quelles notices restent sans emprise (décision
   du 7 octobre 2026).
+- §5.2, étape 4 : l'appariement par distance et similarité de nom sert à
+  contrôler les liens exacts plutôt qu'à en créer. La recherche d'un bâtiment
+  par proximité, pour les notices sans objet OSM, relève de l'étape
+  `geometry`.

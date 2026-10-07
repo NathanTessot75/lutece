@@ -7,3 +7,5 @@ DATA_DIR = PIPELINE_ROOT / "data"
 RAW_DIR = DATA_DIR / "raw"
 INTERIM_DIR = DATA_DIR / "interim"
 PROCESSED_DIR = DATA_DIR / "processed"
+# Hand-made review decisions, versioned with the code.
+REVIEW_DIR = PIPELINE_ROOT / "review"

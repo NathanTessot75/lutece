@@ -2,6 +2,7 @@
 
 from collections.abc import Mapping, Sequence
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 import pyarrow as pa
@@ -12,6 +13,11 @@ def from_rows(rows: Sequence[Mapping[str, object]], schema: pa.Schema) -> pd.Dat
     """Build an Arrow-backed frame from plain Python rows, enforcing the schema."""
     table = pa.Table.from_pylist(list(rows), schema=schema)
     return table.to_pandas(types_mapper=pd.ArrowDtype)
+
+
+def to_records(frame: pd.DataFrame) -> list[dict[str, Any]]:
+    """Return the rows as plain dicts, with None for every missing value."""
+    return frame.astype(object).where(frame.notna(), None).to_dict("records")
 
 
 def write_parquet(frame: pd.DataFrame, schema: pa.Schema, destination: Path) -> None:
