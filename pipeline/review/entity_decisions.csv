@@ -31,7 +31,7 @@ PA00086607,osm,way/79611339,accept,"Maison du Fontainier, 42-44 avenue de l'Obse
 PA00086607,wikidata,Q13518160,primary,"La protection porte sur le regard dit pavillon des Fontainiers, 42 avenue de l'Observatoire : c'est la maison du Fontainier."
 PA00086607,wikidata,Q2859246,accept,"Pont-aqueduc d'Arcueil et de Cachan : partie du même aqueduc, hors de Paris (secondaire)."
 PA00086617,wikidata,Q2945681,accept,Même hôpital.
-PA00086620,wikidata,Q15950844,reject,"Autre bâtiment : hôtel du 28 rue Geoffroy-l'Asnier (4e), à 2,4 km, qui correspond à la notice PA75040007."
+PA00086620,wikidata,Q15950844,reject,"La notice porte sur une rampe d'escalier provenant du 28 rue Geoffroy-l'Asnier (4e), transférée au 21 rue Boissonnade (14e) puis radiée des monuments historiques en 2008 (champ Observations de Mérimée). L'élément Wikidata décrit l'hôtel d'origine, à 2,4 km, pas l'objet de la notice."
 PA00086633,wikidata,Q3315941,accept,"La protection porte sur la mire de l'Observatoire, située dans le parc."
 PA00086637,wikidata,Q3527526,accept,Même théâtre.
 PA00086655,osm,way/80266021,accept,Bâtiment portant ref:mhs.
