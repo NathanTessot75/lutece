@@ -48,6 +48,8 @@ def run_main(
         geometry, "ENTITY_LINKS_PARQUET", folder / "entity_links.parquet"
     )
     monkeypatch.setattr(geometry, "OVERRIDES_CSV", overrides_csv)
+    # No nearby-buildings table here: the step under test must not read the real one.
+    monkeypatch.setattr(geometry, "NEARBY_PARQUET", out / "nearby_buildings.parquet")
     monkeypatch.setattr(geometry, "GEOMETRIES_PARQUET", out / "geometries.parquet")
     monkeypatch.setattr(geometry, "REVIEW_CSV", out / "geometries_to_review.csv")
     assert geometry.main([]) == 0
