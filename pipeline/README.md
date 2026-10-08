@@ -26,6 +26,7 @@ uv run ruff format .    # formatage
 | 5b. `geometry` | `uv run python -m lutece_pipeline.geometry` | les sorties des étapes 1 à 5a, `review/geometry_overrides.csv` | `data/interim/geometries.parquet`, `data/interim/geometries_to_review.csv` |
 | 6. `visibility` | `uv run python -m lutece_pipeline.visibility` | `merimee.parquet`, `review/visibility_overrides.csv`, `review/visibility_labels.csv` | `data/interim/visibility.parquet`, `data/interim/visibility_to_review.csv`, `data/interim/visibility_evaluation.csv` |
 | 7. `ingest_commons` | `uv run python -m lutece_pipeline.ingest_commons` | `merimee.parquet`, `entities.parquet`, `wikidata_items.parquet`, API Commons, `review/commons_labels.csv` | `data/interim/commons_files.parquet`, `data/interim/commons_categories.parquet`, `data/interim/commons_evaluation.csv` |
+| 12. `quality_report` | `uv run python -m lutece_pipeline.quality_report` | les sorties des étapes 1 à 7 | `data/processed/monuments_quality.parquet`, `data/processed/quality_problems.csv`, `docs/rapport/qualite-donnees.md` |
 
 Options :
 
@@ -839,6 +840,77 @@ contient. Il servira au score de rareté.
   cette piste remplace la description courante par celle d'une version
   archivée, ou tourne en rond. L'étape ne suit que la continuation des
   fichiers (`iicontinue`).
+
+## Rapport de qualité
+
+L'étape `quality_report` croise les tables des autres étapes : une ligne par
+monument protégé, avec ce que la base sait de lui et ce qui lui manque. Elle
+écrit aussi un rapport en français. Elle ne fait aucun appel réseau. Son numéro
+est celui du SPEC : les étapes 8 à 11 (fiches, rareté, embeddings, export)
+viendront dans les phases suivantes.
+
+### Sorties
+
+- `data/processed/monuments_quality.parquet` : la table par monument.
+- `data/processed/quality_problems.csv` : une ligne par monument et par
+  problème, avec le lien vers la notice.
+- `docs/rapport/qualite-donnees.md` : le rapport, versionné pour être lisible
+  hors de la machine qui l'a produit. Il est réécrit à chaque exécution : ne pas
+  le modifier à la main.
+
+### Niveaux de préparation
+
+| `readiness` | Condition | Monuments |
+|---|---|---|
+| `ready` | visible depuis la rue, avec un contour réel | 1 589 (85 %) |
+| `approximate` | visible, mais repéré par un cercle de 10 m | 108 (6 %) |
+| `not_ready` | non visible depuis la rue, ou visibilité à trancher | 181 (10 %) |
+
+### Colonnes de `monuments_quality.parquet`
+
+| Colonne | Type | Contenu |
+|---|---|---|
+| `merimee_id`, `name`, `arrondissement`, `protection` | | repris de la notice |
+| `category` | texte | première dénomination de la notice |
+| `has_own_name` | booléen | faux si le nom ne dit que le genre du bâtiment |
+| `has_wikidata`, `has_frwiki` | booléens | fiche Wikidata, article Wikipédia en français |
+| `has_century`, `has_history` | booléens | siècle de construction et historique dans la notice |
+| `has_architect` | booléen | architecte cité par la notice ou par Wikidata |
+| `footprint_source`, `point_doubtful` | | repris de `geometries.parquet` |
+| `visibility` | texte | repris de `visibility.parquet` |
+| `photos` | entier | nombre de photos sélectionnées par `ingest_commons` |
+| `readiness` | texte | voir ci-dessus |
+
+Un nom est générique quand il se réduit à une dénomination (« Immeuble »,
+« Hôtel (ancien) ») ou à un seul mot (« Boulangerie »), sauf nom propre à trait
+d'union (« Pont-Neuf »). C'est le cas de 775 monuments, que l'app devra nommer
+par leur adresse.
+
+### Problèmes relevés
+
+| `problem` | Sens | Monuments |
+|---|---|---|
+| `no_wikidata_item` | pas de fiche Wikidata, donc ni article ni photos | 10 |
+| `no_footprint` | repéré par un cercle, faute de contour | 129 |
+| `doubtful_point` | points Mérimée et Wikidata en désaccord, non tranché | 1 |
+| `visibility_unknown` | visibilité à trancher | 27 |
+| `no_photo` | visible depuis la rue mais sans photo | 55 |
+
+### Constats (8 octobre 2026)
+
+- **La géographie est prête, les fiches non.** 1 697 monuments peuvent être
+  proposés à la capture, dont 1 642 avec au moins une photo. Mais 741 seulement
+  ont un article Wikipédia en français, et 39 % des notices ont un historique :
+  la rédaction des fiches sera le point faible.
+- **Les monuments sont très inégalement répartis** : 248 dans le 1er et 255
+  dans le 4e, contre 19 dans le 20e. Les arrondissements périphériques en ont
+  peu, mais mieux documentés (95 % d'articles Wikipédia dans le 20e, 31 % dans
+  le 1er).
+- **Deux types sont mal lotis** : 40 des 68 stations de métro n'ont qu'un
+  cercle, leur entrée étant un simple point dans OpenStreetMap ; 20 des 21
+  tronçons d'enceinte attendent qu'on tranche leur visibilité.
+- **Les immeubles anonymes dominent** : 710 monuments sont des « immeubles »,
+  prêts à 92 % mais avec 2 photos en médiane et 10 % d'articles Wikipédia.
 
 ## Écarts constatés avec le SPEC
 

@@ -5,6 +5,8 @@ import geopandas as gpd
 import pandas as pd
 import pytest
 
+from lutece_pipeline import geometry, visibility
+from lutece_pipeline import ingest_commons as commons
 from lutece_pipeline import ingest_merimee as merimee
 from lutece_pipeline import ingest_osm as osm
 from lutece_pipeline import ingest_wikidata as wikidata
@@ -63,3 +65,35 @@ def resolved_tables(interim_tables: Path) -> Path:
         entities, resolve.ENTITIES_SCHEMA, interim_tables / "entities.parquet"
     )
     return interim_tables
+
+
+@pytest.fixture(scope="session")
+def pipeline_tables(resolved_tables: Path) -> Path:
+    """The same folder with the geometries, the visibility and the Commons photos."""
+    notices = to_records(pd.read_parquet(resolved_tables / "merimee.parquet"))
+    entities = to_records(pd.read_parquet(resolved_tables / "entities.parquet"))
+    links = to_records(pd.read_parquet(resolved_tables / "entity_links.parquet"))
+    items = to_records(pd.read_parquet(resolved_tables / "wikidata_items.parquet"))
+    objects = gpd.read_parquet(resolved_tables / "osm_objects.parquet")
+    geometries = geometry.build_geometries(notices, entities, links, items, objects, {})
+    geometries.to_parquet(resolved_tables / "geometries.parquet", index=False)
+    write_parquet(
+        visibility.build_visibility(notices, {}),
+        visibility.SCHEMA,
+        resolved_tables / "visibility.parquet",
+    )
+    snapshot = json.loads((FIXTURES / "commons_snapshot.json").read_text())
+    monuments = commons.read_monuments(notices, entities, items)
+    answers = commons.Answers(
+        snapshot["category_info"],
+        snapshot["category_files"],
+        snapshot["subcategories"],
+        snapshot["files"],
+        frozenset(m.category for m in monuments if m.category is not None),
+    )
+    write_parquet(
+        commons.build_files(monuments, answers),
+        commons.FILES_SCHEMA,
+        resolved_tables / "commons_files.parquet",
+    )
+    return resolved_tables
