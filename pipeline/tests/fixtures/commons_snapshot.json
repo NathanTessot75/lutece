@@ -1,0 +1,1263 @@
+{
+ "about": "Excerpt of the answers of Wikimedia Commons for the notices of merimee_sample.csv",
+ "category_info": {
+  "3 rue Étienne-Marcel, Paris": {
+   "files": 6,
+   "subcats": 0
+  },
+  "Hôtel Baudard de Saint-James": {
+   "files": 10,
+   "subcats": 0
+  },
+  "Monument à la République": {
+   "files": 85,
+   "subcats": 12
+  },
+  "Nation (Paris Metro)": {
+   "files": 80,
+   "subcats": 3
+  },
+  "Passage Sainte-Anne (Paris)": {
+   "files": 10,
+   "subcats": 1
+  },
+  "Temple protestant du Foyer de l'Âme": {
+   "files": 3,
+   "subcats": 1
+  },
+  "Église Notre-Dame-de-l'Assomption de Paris": {
+   "files": 37,
+   "subcats": 3
+  },
+  "Église Saint-Eustache de Paris": {
+   "files": 22,
+   "subcats": 13
+  }
+ },
+ "subcategories": {
+  "Monument à la République": [
+   "Coat of arms of Paris (Monument à la République)",
+   "Competition for the monumental statue of the Republic",
+   "General views of the Monument à la République",
+   "Historical images of Monument à la République",
+   "Mémorial improvisé sur le monument à la République",
+   "Pedestal of the Monument à la République",
+   "Reliefs of the Monument à la République",
+   "Statue of Equality (Monument to the Republic)",
+   "Statue of Fraternity (Monument to the Republic)",
+   "Statue of Liberty (Monument to the Republic)",
+   "Statue of lion (Monument à la République)",
+   "Statue of the Republic (Monument à la République)"
+  ],
+  "Nation (Paris Metro)": [
+   "Entrances to Nation metro station",
+   "Platforms at Nation metro station",
+   "Signs in Nation metro station"
+  ],
+  "Passage Sainte-Anne (Paris)": [
+   "Street signs of Passage Sainte-Anne (Paris)"
+  ],
+  "Temple protestant du Foyer de l'Âme": [
+   "Interior of Temple protestant du Foyer de l'Âme"
+  ],
+  "Église Notre-Dame-de-l'Assomption de Paris": [
+   "Couvent des Dames de l'Assomption (Paris)",
+   "Interior of Église Notre-Dame-de-l'Assomption (Paris)",
+   "Sheet 19 of the Turgot map of Paris"
+  ],
+  "Église Saint-Eustache de Paris": [
+   "Ambulatory of Église Saint-Eustache-de-Paris",
+   "Burials at Église Saint-Eustache de Paris",
+   "Cimetière Saint-Eustache (Paris)",
+   "Details of Église Saint-Eustache de Paris",
+   "Exterior of Église Saint-Eustache de Paris",
+   "Funeral of Michel Blanc",
+   "Graves at Église Saint-Eustache de Paris",
+   "Historical images of Église Saint-Eustache de Paris",
+   "Interior of Église Saint-Eustache de Paris",
+   "Paris St-Eustache (Palissy protection)",
+   "Plans of the Église Saint-Eustache de Paris",
+   "Quality images of Église Saint-Eustache de Paris",
+   "Remote views of Église Saint-Eustache de Paris"
+  ]
+ },
+ "category_files": {
+  "3 rue Étienne-Marcel, Paris": [
+   {
+    "title": "File:Paris 3 rue Étienne-Marcel 01.jpg",
+    "user": "Lionel Allorge",
+    "width": 3456,
+    "height": 5184,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Paris_3_rue_%C3%89tienne-Marcel_01.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/70/Paris_3_rue_%C3%89tienne-Marcel_01.jpg/960px-Paris_3_rue_%C3%89tienne-Marcel_01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Base Mérimée|GFDL|Taken with Canon EOS 600D|FAL|Monuments historiques inscrits|3 rue Étienne-Marcel, Paris|License migration redundant|Self-published work|Uploaded with Commonist|Mérimée with PA parameter|Images from Wiki Loves Monuments 2012|Cultural heritage monuments in France with known IDs|Images from Wiki Loves Monuments 2012 in France|France photographs taken on 2012-09-06|Images from Wiki Loves Monuments missing SDC location of creation|Cultural heritage monuments in France missing SDC location of creation|Files with coordinates missing SDC location of creation (48° N, 2° E)",
+     "Assessments": "",
+     "GPSLatitude": "48.863417",
+     "GPSLongitude": "2.350389",
+     "DateTimeOriginal": "2012-09-06 16:16:52",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:Lionel_Allorge\" title=\"User:Lionel Allorge\">Lionel Allorge</a>",
+     "LicenseShortName": "CC BY-SA 3.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+     "License": "cc-by-sa-3.0"
+    }
+   },
+   {
+    "title": "File:Paris 3 rue Étienne-Marcel 07.jpg",
+    "user": "Paris 16",
+    "width": 3456,
+    "height": 5184,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Paris_3_rue_%C3%89tienne-Marcel_07.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2b/Paris_3_rue_%C3%89tienne-Marcel_07.jpg/960px-Paris_3_rue_%C3%89tienne-Marcel_07.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Base Mérimée|GFDL|FAL|Monuments historiques inscrits|3 rue Étienne-Marcel, Paris|License migration redundant|Self-published work|Uploaded with Commonist|Mérimée with PA parameter|Images from Wiki Loves Monuments 2012|Cultural heritage monuments in France with known IDs|Images from Wiki Loves Monuments 2012 in France|Brown doors in Paris|France photographs taken on 2012-09-06|Doors in Paris 1er arrondissement|3 (house number) in Paris|Images from Wiki Loves Monuments missing SDC location of creation|Cultural heritage monuments in France missing SDC location of creation|Files with coordinates missing SDC location of creation (48° N, 2° E)",
+     "Assessments": "",
+     "GPSLatitude": "48.863417",
+     "GPSLongitude": "2.350389",
+     "DateTimeOriginal": "2012-09-06 16:17:20",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:Lionel_Allorge\" title=\"User:Lionel Allorge\">Lionel Allorge</a>",
+     "LicenseShortName": "CC BY-SA 3.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+     "License": "cc-by-sa-3.0"
+    }
+   },
+   {
+    "title": "File:Paris 3 rue Étienne-Marcel 13.jpg",
+    "user": "Lionel Allorge",
+    "width": 5184,
+    "height": 3456,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Paris_3_rue_%C3%89tienne-Marcel_13.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e3/Paris_3_rue_%C3%89tienne-Marcel_13.jpg/960px-Paris_3_rue_%C3%89tienne-Marcel_13.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Base Mérimée|GFDL|Taken with Canon EOS 600D|FAL|Monuments historiques inscrits|3 rue Étienne-Marcel, Paris|License migration redundant|Self-published work|Uploaded with Commonist|Mérimée with PA parameter|Images from Wiki Loves Monuments 2012|Cultural heritage monuments in France with known IDs|Images from Wiki Loves Monuments 2012 in France|France photographs taken on 2012-09-06|Images from Wiki Loves Monuments missing SDC location of creation|Cultural heritage monuments in France missing SDC location of creation|Files with coordinates missing SDC location of creation (48° N, 2° E)",
+     "Assessments": "",
+     "GPSLatitude": "48.863417",
+     "GPSLongitude": "2.350389",
+     "DateTimeOriginal": "2012-09-06 16:17:59",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:Lionel_Allorge\" title=\"User:Lionel Allorge\">Lionel Allorge</a>",
+     "LicenseShortName": "CC BY-SA 3.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+     "License": "cc-by-sa-3.0"
+    }
+   },
+   {
+    "title": "File:Paris 3 rue Étienne-Marcel 21.jpg",
+    "user": "Lionel Allorge",
+    "width": 5184,
+    "height": 3456,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Paris_3_rue_%C3%89tienne-Marcel_21.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c7/Paris_3_rue_%C3%89tienne-Marcel_21.jpg/960px-Paris_3_rue_%C3%89tienne-Marcel_21.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Base Mérimée|GFDL|Taken with Canon EOS 600D|FAL|Monuments historiques inscrits|3 rue Étienne-Marcel, Paris|License migration redundant|Self-published work|Uploaded with Commonist|Mérimée with PA parameter|Images from Wiki Loves Monuments 2012|Cultural heritage monuments in France with known IDs|Images from Wiki Loves Monuments 2012 in France|France photographs taken on 2012-09-06|Images from Wiki Loves Monuments missing SDC location of creation|Cultural heritage monuments in France missing SDC location of creation|Files with coordinates missing SDC location of creation (48° N, 2° E)",
+     "Assessments": "",
+     "GPSLatitude": "48.863417",
+     "GPSLongitude": "2.350389",
+     "DateTimeOriginal": "2012-09-06 16:18:56",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:Lionel_Allorge\" title=\"User:Lionel Allorge\">Lionel Allorge</a>",
+     "LicenseShortName": "CC BY-SA 3.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+     "License": "cc-by-sa-3.0"
+    }
+   },
+   {
+    "title": "File:Paris 3 rue Étienne-Marcel 23.jpg",
+    "user": "Lionel Allorge",
+    "width": 5184,
+    "height": 3456,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Paris_3_rue_%C3%89tienne-Marcel_23.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/05/Paris_3_rue_%C3%89tienne-Marcel_23.jpg/960px-Paris_3_rue_%C3%89tienne-Marcel_23.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Base Mérimée|GFDL|Taken with Canon EOS 600D|FAL|Monuments historiques inscrits|3 rue Étienne-Marcel, Paris|License migration redundant|Self-published work|Uploaded with Commonist|Mérimée with PA parameter|Images from Wiki Loves Monuments 2012|Cultural heritage monuments in France with known IDs|Images from Wiki Loves Monuments 2012 in France|France photographs taken on 2012-09-06|Images from Wiki Loves Monuments missing SDC location of creation|Cultural heritage monuments in France missing SDC location of creation|Files with coordinates missing SDC location of creation (48° N, 2° E)",
+     "Assessments": "",
+     "GPSLatitude": "48.863417",
+     "GPSLongitude": "2.350389",
+     "DateTimeOriginal": "2012-09-06 16:19:24",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:Lionel_Allorge\" title=\"User:Lionel Allorge\">Lionel Allorge</a>",
+     "LicenseShortName": "CC BY-SA 3.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+     "License": "cc-by-sa-3.0"
+    }
+   },
+   {
+    "title": "File:Paris 3 rue Étienne-Marcel.JPG",
+    "user": "Zoya",
+    "width": 2304,
+    "height": 3072,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Paris_3_rue_%C3%89tienne-Marcel.JPG",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/48/Paris_3_rue_%C3%89tienne-Marcel.JPG/960px-Paris_3_rue_%C3%89tienne-Marcel.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Base Mérimée|3 rue Étienne-Marcel, Paris|Self-published work|Mérimée with PA parameter|Images from Wiki Loves Monuments 2012|Cultural heritage monuments in France with known IDs|Images from Wiki Loves Monuments 2012 in France|Mérimée without type parameter|France photographs taken on 2012-09-08",
+     "Assessments": "",
+     "GPSLatitude": "48.863611",
+     "GPSLongitude": "2.350556",
+     "DateTimeOriginal": "2012-09-08 16:26:45",
+     "Artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Zoya&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Zoya (page does not exist)\">Zoya Bragina</a>",
+     "LicenseShortName": "CC BY-SA 3.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+     "License": "cc-by-sa-3.0"
+    }
+   }
+  ],
+  "Entrances to Nation metro station": [
+   {
+    "title": "File:Accès Gare Nation Place Nation - Paris XI (FR75) - 2025-02-03 - 1.jpg",
+    "user": "Chabe01",
+    "width": 5712,
+    "height": 4284,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Acc%C3%A8s_Gare_Nation_Place_Nation_-_Paris_XI_(FR75)_-_2025-02-03_-_1.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/ce/Acc%C3%A8s_Gare_Nation_Place_Nation_-_Paris_XI_%28FR75%29_-_2025-02-03_-_1.jpg/960px-Acc%C3%A8s_Gare_Nation_Place_Nation_-_Paris_XI_%28FR75%29_-_2025-02-03_-_1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Self-published work|Night in Paris|Images of Paris 11e arrondissement by Chabe01|Files with coordinates missing SDC location of creation (48° N, 2° E)|Paris photographs taken on 2025-02-03|Images by Chabe01 taken with iPhone 16 Pro|Images of Paris RER by Chabe01|Entrances to Nation metro station",
+     "Assessments": "",
+     "GPSLatitude": "48.848878",
+     "GPSLongitude": "2.394903",
+     "DateTimeOriginal": "2025-02-03 22:59:05",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:Chabe01\" title=\"User:Chabe01\">Chabe01</a>",
+     "LicenseShortName": "CC BY-SA 4.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+     "License": "cc-by-sa-4.0"
+    }
+   },
+   {
+    "title": "File:Accès Station Métro Nation Place Nation - Paris XI (FR75) - 2021-12-21 - 5.jpg",
+    "user": "Chabe01",
+    "width": 4032,
+    "height": 3024,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Acc%C3%A8s_Station_M%C3%A9tro_Nation_Place_Nation_-_Paris_XI_(FR75)_-_2021-12-21_-_5.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/66/Acc%C3%A8s_Station_M%C3%A9tro_Nation_Place_Nation_-_Paris_XI_%28FR75%29_-_2021-12-21_-_5.jpg/960px-Acc%C3%A8s_Station_M%C3%A9tro_Nation_Place_Nation_-_Paris_XI_%28FR75%29_-_2021-12-21_-_5.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Self-published work|Images of Paris 11e arrondissement by Chabe01|Paris photographs taken on 2021-12-21|Files with coordinates missing SDC location of creation (48° N, 2° E)|Entrances to Nation metro station|Images of Paris Metro by Chabe01|Images by Chabe01 taken with iPhone 13 Pro",
+     "Assessments": "",
+     "GPSLatitude": "48.848808",
+     "GPSLongitude": "2.397103",
+     "DateTimeOriginal": "2021-12-21 14:17:49",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:Chabe01\" title=\"User:Chabe01\">Chabe01</a>",
+     "LicenseShortName": "CC BY-SA 4.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+     "License": "cc-by-sa-4.0"
+    }
+   },
+   {
+    "title": "File:Accès Station Métro Nation Place Nation - Paris XII (FR75) - 2021-12-21 - 3.jpg",
+    "user": "Chabe01",
+    "width": 4032,
+    "height": 3024,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Acc%C3%A8s_Station_M%C3%A9tro_Nation_Place_Nation_-_Paris_XII_(FR75)_-_2021-12-21_-_3.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c3/Acc%C3%A8s_Station_M%C3%A9tro_Nation_Place_Nation_-_Paris_XII_%28FR75%29_-_2021-12-21_-_3.jpg/960px-Acc%C3%A8s_Station_M%C3%A9tro_Nation_Place_Nation_-_Paris_XII_%28FR75%29_-_2021-12-21_-_3.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Self-published work|Images of Paris 12e arrondissement by Chabe01|Paris photographs taken on 2021-12-21|Files with coordinates missing SDC location of creation (48° N, 2° E)|Entrances to Nation metro station|Images of Paris Metro by Chabe01|Images by Chabe01 taken with iPhone 13 Pro",
+     "Assessments": "",
+     "GPSLatitude": "48.847767",
+     "GPSLongitude": "2.396972",
+     "DateTimeOriginal": "2021-12-21 14:20:20",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:Chabe01\" title=\"User:Chabe01\">Chabe01</a>",
+     "LicenseShortName": "CC BY-SA 4.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+     "License": "cc-by-sa-4.0"
+    }
+   },
+   {
+    "title": "File:Accès Station Nation Métro Paris Place Nation - Paris XI (FR75) - 2025-10-17 - 6.jpg",
+    "user": "Chabe01",
+    "width": 5712,
+    "height": 4284,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Acc%C3%A8s_Station_Nation_M%C3%A9tro_Paris_Place_Nation_-_Paris_XI_(FR75)_-_2025-10-17_-_6.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/55/Acc%C3%A8s_Station_Nation_M%C3%A9tro_Paris_Place_Nation_-_Paris_XI_%28FR75%29_-_2025-10-17_-_6.jpg/960px-Acc%C3%A8s_Station_Nation_M%C3%A9tro_Paris_Place_Nation_-_Paris_XI_%28FR75%29_-_2025-10-17_-_6.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Self-published work|Images of Paris 11e arrondissement by Chabe01|Files with coordinates missing SDC location of creation (48° N, 2° E)|Paris Metro in 2025|Images by Chabe01 taken with iPhone 16 Pro|Paris Metro at night|Entrances to Nation metro station|Images of Paris Metro by Chabe01|Paris photographs taken on 2025-10-17",
+     "Assessments": "",
+     "GPSLatitude": "48.849025",
+     "GPSLongitude": "2.395572",
+     "DateTimeOriginal": "2025-10-17 19:32:42",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:Chabe01\" title=\"User:Chabe01\">Chabe01</a>",
+     "LicenseShortName": "CC BY-SA 4.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+     "License": "cc-by-sa-4.0"
+    }
+   },
+   {
+    "title": "File:Accès Station Nation Métro Paris Place Nation - Paris XII (FR75) - 2025-10-18 - 4.jpg",
+    "user": "Chabe01",
+    "width": 5712,
+    "height": 4284,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Acc%C3%A8s_Station_Nation_M%C3%A9tro_Paris_Place_Nation_-_Paris_XII_(FR75)_-_2025-10-18_-_4.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cf/Acc%C3%A8s_Station_Nation_M%C3%A9tro_Paris_Place_Nation_-_Paris_XII_%28FR75%29_-_2025-10-18_-_4.jpg/960px-Acc%C3%A8s_Station_Nation_M%C3%A9tro_Paris_Place_Nation_-_Paris_XII_%28FR75%29_-_2025-10-18_-_4.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Self-published work|Images of Paris 12e arrondissement by Chabe01|Files with coordinates missing SDC location of creation (48° N, 2° E)|Paris Metro in 2025|Images by Chabe01 taken with iPhone 16 Pro|Paris Metro at night|Entrances to Nation metro station|Images of Paris Metro by Chabe01|Paris photographs taken on 2025-10-18",
+     "Assessments": "",
+     "GPSLatitude": "48.847764",
+     "GPSLongitude": "2.396919",
+     "DateTimeOriginal": "2025-10-18 20:35:24",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:Chabe01\" title=\"User:Chabe01\">Chabe01</a>",
+     "LicenseShortName": "CC BY-SA 4.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+     "License": "cc-by-sa-4.0"
+    }
+   },
+   {
+    "title": "File:Ascenseur Accès Station Métro Nation Place Nation - Paris XII (FR75) - 2021-12-21 - 1.jpg",
+    "user": "Chabe01",
+    "width": 3024,
+    "height": 4032,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Ascenseur_Acc%C3%A8s_Station_M%C3%A9tro_Nation_Place_Nation_-_Paris_XII_(FR75)_-_2021-12-21_-_1.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f5/Ascenseur_Acc%C3%A8s_Station_M%C3%A9tro_Nation_Place_Nation_-_Paris_XII_%28FR75%29_-_2021-12-21_-_1.jpg/960px-Ascenseur_Acc%C3%A8s_Station_M%C3%A9tro_Nation_Place_Nation_-_Paris_XII_%28FR75%29_-_2021-12-21_-_1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Self-published work|Images of Paris 12e arrondissement by Chabe01|Paris photographs taken on 2021-12-21|Files with coordinates missing SDC location of creation (48° N, 2° E)|Elevators in Paris Metro|Entrances to Nation metro station|Images of Paris Metro by Chabe01|Images by Chabe01 taken with iPhone 13 Pro",
+     "Assessments": "",
+     "GPSLatitude": "48.847669",
+     "GPSLongitude": "2.396572",
+     "DateTimeOriginal": "2021-12-21 14:20:53",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:Chabe01\" title=\"User:Chabe01\">Chabe01</a>",
+     "LicenseShortName": "CC BY-SA 4.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+     "License": "cc-by-sa-4.0"
+    }
+   }
+  ],
+  "Exterior of Église Saint-Eustache de Paris": [
+   {
+    "title": "File:045 Paris (48826556868).jpg",
+    "user": "Paris 16",
+    "width": 841,
+    "height": 566,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:045_Paris_(48826556868).jpg",
+    "thumb_url": "https://upload.wikimedia.org/wikipedia/commons/8/86/045_Paris_%2848826556868%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+    "metadata": {
+     "Categories": "Exterior of Église Saint-Eustache de Paris|1988 photographs of Paris|Forum des Halles (1979-2010)|Flickr images reviewed by FlickreviewR 2|Flickr images missing SDC published in",
+     "Assessments": "",
+     "DateTimeOriginal": "2005-11-26 10:24",
+     "Artist": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.flickr.com/people/16707908@N07\">Jeff &amp; Brian</a> from Eastbourne",
+     "LicenseShortName": "CC BY-SA 2.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+     "License": "cc-by-sa-2.0"
+    }
+   },
+   {
+    "title": "File:Façade of the Église Saint-Eustache.jpg",
+    "user": "DiscoA340",
+    "width": 3000,
+    "height": 4000,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Fa%C3%A7ade_of_the_%C3%89glise_Saint-Eustache.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/68/Fa%C3%A7ade_of_the_%C3%89glise_Saint-Eustache.jpg/960px-Fa%C3%A7ade_of_the_%C3%89glise_Saint-Eustache.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Exterior of Église Saint-Eustache de Paris|Self-published work|Uploads by DiscoA340",
+     "Assessments": "",
+     "DateTimeOriginal": "2022-07-30 17:47:30",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:DiscoA340\" title=\"User:DiscoA340\">DiscoA340</a>",
+     "LicenseShortName": "CC BY-SA 4.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+     "License": "cc-by-sa-4.0"
+    }
+   },
+   {
+    "title": "File:Paris Eglise Saint Eustache 1.jpg",
+    "user": "Lucie2beaugency",
+    "width": 1800,
+    "height": 1123,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Paris_Eglise_Saint_Eustache_1.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9a/Paris_Eglise_Saint_Eustache_1.jpg/960px-Paris_Eglise_Saint_Eustache_1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Exterior of Église Saint-Eustache de Paris|Self-published work|Forum des Halles (1979-2010)",
+     "Assessments": "",
+     "DateTimeOriginal": "2008-09-24 14:36:54",
+     "Artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Lucie2beaugency&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Lucie2beaugency (page does not exist)\">Martpan</a>",
+     "LicenseShortName": "CC BY-SA 4.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+     "License": "cc-by-sa-4.0"
+    }
+   },
+   {
+    "title": "File:Paroisse Saint-Eustache Gargoyle 08.JPG",
+    "user": "Peter Cadogan",
+    "width": 4000,
+    "height": 6016,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Paroisse_Saint-Eustache_Gargoyle_08.JPG",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7b/Paroisse_Saint-Eustache_Gargoyle_08.JPG/960px-Paroisse_Saint-Eustache_Gargoyle_08.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "CC-Zero|Exterior of Église Saint-Eustache de Paris|Self-published work|Gargoyles in Paris|Details of Église Saint-Eustache de Paris",
+     "Assessments": "",
+     "DateTimeOriginal": "2016-03-26 00:16:00",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:Peter_Cadogan\" title=\"User:Peter Cadogan\">Peter Cadogan</a>",
+     "LicenseShortName": "CC0",
+     "LicenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+     "License": "cc0"
+    }
+   },
+   {
+    "title": "File:Travaux-forum-des-Halles-2013-74.jpg",
+    "user": "Celette",
+    "width": 3648,
+    "height": 2736,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Travaux-forum-des-Halles-2013-74.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/25/Travaux-forum-des-Halles-2013-74.jpg/960px-Travaux-forum-des-Halles-2013-74.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Exterior of Église Saint-Eustache de Paris|Self-published work|December 2013 in Paris|Restructuration of Forum des Halles in 2013",
+     "Assessments": "",
+     "DateTimeOriginal": "2013-12-26 15:26:08",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:Celette\" title=\"User:Celette\">Celette</a>",
+     "LicenseShortName": "CC BY-SA 4.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+     "License": "cc-by-sa-4.0"
+    }
+   },
+   {
+    "title": "File:Église Saint-Eustache 2.jpg",
+    "user": "Мандрівниця",
+    "width": 3732,
+    "height": 2099,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:%C3%89glise_Saint-Eustache_2.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d2/%C3%89glise_Saint-Eustache_2.jpg/960px-%C3%89glise_Saint-Eustache_2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Base Mérimée|Exterior of Église Saint-Eustache de Paris|Self-published work|Mérimée with PA parameter|Cultural heritage monuments in France with known IDs|Mérimée without type parameter|Uploaded via Campaign:wlm-fr|Images from Wiki Loves Monuments missing SDC participant in|Images from Wiki Loves Monuments missing SDC inception|Images from Wiki Loves Monuments missing SDC creator|Images from Wiki Loves Monuments missing SDC depicts|Images from Wiki Loves Monuments missing SDC location of creation|Cultural heritage monuments in France missing SDC location of creation|Cultural heritage monuments in France missing SDC depicts|Files with coordinates missing SDC location of creation (48° N, 2° E)|Images from Wiki Loves Monuments 2026|Images from Wiki Loves Monuments 2026 in France",
+     "Assessments": "",
+     "GPSLatitude": "48.863389",
+     "GPSLongitude": "2.345139",
+     "DateTimeOriginal": "2026-07-21 19:09:10",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:%D0%9C%D0%B0%D0%BD%D0%B4%D1%80%D1%96%D0%B2%D0%BD%D0%B8%D1%86%D1%8F\" title=\"User:Мандрівниця\">Мандрівниця</a>",
+     "LicenseShortName": "CC BY-SA 4.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+     "License": "cc-by-sa-4.0"
+    }
+   }
+  ],
+  "Hôtel Baudard de Saint-James": [
+   {
+    "title": "File:10 place de vendome.JPG",
+    "user": "Aloveswiki",
+    "width": 3264,
+    "height": 2448,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:10_place_de_vendome.JPG",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fc/10_place_de_vendome.JPG/960px-10_place_de_vendome.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Base Mérimée|Taken with iPhone 4S|Monuments historiques inscrits|Monuments historiques classés|Hôtel Baudard de Saint-James|Hôtel de La Fare|Hôtel de Latour-Maubourg (Paris)|Self-published work|Mérimée with PA parameter|Cultural heritage monuments in France with known IDs|Uploaded via Campaign:wlm-fr",
+     "Assessments": "",
+     "GPSLatitude": "48.866778",
+     "GPSLongitude": "2.329917",
+     "DateTimeOriginal": "2014-09-30 16:02:11",
+     "Artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Aloveswiki&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Aloveswiki (page does not exist)\">Aloveswiki</a>",
+     "LicenseShortName": "CC BY-SA 3.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+     "License": "cc-by-sa-3.0"
+    }
+   },
+   {
+    "title": "File:12 place Vendôme.png",
+    "user": "Naxos0203",
+    "width": 1080,
+    "height": 1097,
+    "mime": "image/png",
+    "page_url": "https://commons.wikimedia.org/wiki/File:12_place_Vend%C3%B4me.png",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/46/12_place_Vend%C3%B4me.png/960px-12_place_Vend%C3%B4me.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Hôtel Baudard de Saint-James|Self-published work",
+     "Assessments": "",
+     "DateTimeOriginal": "2019-08-28",
+     "Artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Naxos0203&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Naxos0203 (page does not exist)\">Naxos0203</a>",
+     "LicenseShortName": "CC BY-SA 4.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+     "License": "cc-by-sa-4.0"
+    }
+   },
+   {
+    "title": "File:Hôtel Baudard de Saint-James - Façade.jpg",
+    "user": "Moonik",
+    "width": 4288,
+    "height": 2848,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:H%C3%B4tel_Baudard_de_Saint-James_-_Fa%C3%A7ade.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/de/H%C3%B4tel_Baudard_de_Saint-James_-_Fa%C3%A7ade.jpg/960px-H%C3%B4tel_Baudard_de_Saint-James_-_Fa%C3%A7ade.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Base Mérimée|Monuments historiques inscrits|Monuments historiques classés|Hôtel Baudard de Saint-James|Self-published work|Images from Wiki Loves Monuments 2011|Images from Wiki Loves Monuments 2011 in France|Mérimée with PA parameter|Cultural heritage monuments in France with known IDs|Images by Moonik|France photographs taken on 2011-09-28|Chaumet in Paris",
+     "Assessments": "",
+     "GPSLatitude": "48.866949",
+     "GPSLongitude": "2.329900",
+     "DateTimeOriginal": "2011-09-28",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:Moonik\" title=\"User:Moonik\">Moonik</a>",
+     "LicenseShortName": "CC BY-SA 3.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+     "License": "cc-by-sa-3.0"
+    }
+   },
+   {
+    "title": "File:Hôtel Baudard de Saint-James - Plaque Chopin.jpg",
+    "user": "Moonik",
+    "width": 4288,
+    "height": 2848,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:H%C3%B4tel_Baudard_de_Saint-James_-_Plaque_Chopin.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ee/H%C3%B4tel_Baudard_de_Saint-James_-_Plaque_Chopin.jpg/960px-H%C3%B4tel_Baudard_de_Saint-James_-_Plaque_Chopin.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Base Mérimée|Monuments historiques inscrits|Monuments historiques classés|Hôtel Baudard de Saint-James|Self-published work|Images from Wiki Loves Monuments 2011|Images from Wiki Loves Monuments 2011 in France|Plaques in Paris 1er arrondissement|Mérimée with PA parameter|Keystones in Paris|Cultural heritage monuments in France with known IDs|Images by Moonik|Mascarons in Paris 1er arrondissement|Here-died plaques in Paris|France photographs taken on 2011-09-28|Plaques to Frédéric Chopin in Paris|Plaques referencing 1849 in Paris|Chaumet in Paris",
+     "Assessments": "",
+     "GPSLatitude": "48.866949",
+     "GPSLongitude": "2.329900",
+     "DateTimeOriginal": "2011-09-28",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:Moonik\" title=\"User:Moonik\">Moonik</a>",
+     "LicenseShortName": "CC BY-SA 3.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+     "License": "cc-by-sa-3.0"
+    }
+   },
+   {
+    "title": "File:Hôtel Baudard de Saint-James.jpg",
+    "user": "Moonik",
+    "width": 4288,
+    "height": 2848,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:H%C3%B4tel_Baudard_de_Saint-James.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e7/H%C3%B4tel_Baudard_de_Saint-James.jpg/960px-H%C3%B4tel_Baudard_de_Saint-James.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Base Mérimée|Monuments historiques inscrits|Monuments historiques classés|Hôtel Baudard de Saint-James|Self-published work|Images from Wiki Loves Monuments 2011|Images from Wiki Loves Monuments 2011 in France|Mérimée with PA parameter|Cultural heritage monuments in France with known IDs|Images by Moonik|France photographs taken on 2011-09-27|Chaumet in Paris",
+     "Assessments": "",
+     "GPSLatitude": "48.866949",
+     "GPSLongitude": "2.329900",
+     "DateTimeOriginal": "2011-09-27",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:Moonik\" title=\"User:Moonik\">Moonik</a>",
+     "LicenseShortName": "CC BY-SA 3.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+     "License": "cc-by-sa-3.0"
+    }
+   },
+   {
+    "title": "File:P1040415 Paris Ier place Vendôme immeubles n°12 14 et 16 rwk.JPG",
+    "user": "Mbzt",
+    "width": 1498,
+    "height": 960,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:P1040415_Paris_Ier_place_Vend%C3%B4me_immeubles_n%C2%B012_14_et_16_rwk.JPG",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b7/P1040415_Paris_Ier_place_Vend%C3%B4me_immeubles_n%C2%B012_14_et_16_rwk.JPG/960px-P1040415_Paris_Ier_place_Vend%C3%B4me_immeubles_n%C2%B012_14_et_16_rwk.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "GFDL|Taken with Panasonic Lumix DMC-LX5|Hôtel Baudard de Saint-James|Hôtel de La Fare|Hôtel Moufle|License migration redundant|Self-published work",
+     "Assessments": "",
+     "DateTimeOriginal": "2011-08",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:Mbzt\" title=\"User:Mbzt\">Mbzt</a>",
+     "LicenseShortName": "CC BY 3.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by/3.0",
+     "License": "cc-by-3.0"
+    }
+   }
+  ],
+  "Monument à la République": [
+   {
+    "title": "File:150 ans de la Commune de Paris. Place de la République. Paris. 29 mai 2021 (51211942209).jpg",
+    "user": "Victoire F.",
+    "width": 480,
+    "height": 720,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:150_ans_de_la_Commune_de_Paris._Place_de_la_R%C3%A9publique._Paris._29_mai_2021_(51211942209).jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/78/150_ans_de_la_Commune_de_Paris._Place_de_la_R%C3%A9publique._Paris._29_mai_2021_%2851211942209%29.jpg/330px-150_ans_de_la_Commune_de_Paris._Place_de_la_R%C3%A9publique._Paris._29_mai_2021_%2851211942209%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Monument à la République|Voltuan|Flickr images reviewed by FlickreviewR 2|Paris Commune commemoration, 2021-05-29 Paris",
+     "Assessments": "",
+     "DateTimeOriginal": "2021-05-29 12:15",
+     "Artist": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.flickr.com/people/186368025@N06\">Paola Breizh</a>",
+     "LicenseShortName": "CC BY 2.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by/2.0",
+     "License": "cc-by-2.0"
+    }
+   },
+   {
+    "title": "File:Manifestation lycéenne du 6 octobre 2026 à Paris 32.jpg",
+    "user": "FreCha",
+    "width": 6000,
+    "height": 4000,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Manifestation_lyc%C3%A9enne_du_6_octobre_2026_%C3%A0_Paris_32.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b2/Manifestation_lyc%C3%A9enne_du_6_octobre_2026_%C3%A0_Paris_32.jpg/960px-Manifestation_lyc%C3%A9enne_du_6_octobre_2026_%C3%A0_Paris_32.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Monument à la République|Creative Commons Attribution-Share Alike missing SDC copyright status|Self-published work|Creative Commons Attribution-Share Alike 4.0 missing SDC copyright license|Self-published work missing SDC copyright license|Manifestation lycéenne du 6 octobre 2026 à Paris",
+     "Assessments": "",
+     "DateTimeOriginal": "2026-10-06 15:15:28",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:FreCha\" title=\"User:FreCha\">FreCha</a>",
+     "LicenseShortName": "CC BY-SA 4.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+     "License": "cc-by-sa-4.0"
+    }
+   },
+   {
+    "title": "File:Monument a la République 02.jpg",
+    "user": "HJ Mitchell",
+    "width": 3000,
+    "height": 4000,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Monument_a_la_R%C3%A9publique_02.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9b/Monument_a_la_R%C3%A9publique_02.jpg/960px-Monument_a_la_R%C3%A9publique_02.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Monument à la République|Self-published work|Creative Commons Attribution 4.0 missing SDC copyright license|Creative Commons Attribution missing SDC copyright status|Self-published work missing SDC copyright license",
+     "Assessments": "",
+     "DateTimeOriginal": "2026-07-23 15:32:51",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:HJ_Mitchell\" title=\"User:HJ Mitchell\">HJ Mitchell</a>",
+     "LicenseShortName": "CC BY 4.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by/4.0",
+     "License": "cc-by-4.0"
+    }
+   },
+   {
+    "title": "File:Monument à la République vandalisé, 30 juin 2024 2.jpg",
+    "user": "Artvill",
+    "width": 3024,
+    "height": 4032,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Monument_%C3%A0_la_R%C3%A9publique_vandalis%C3%A9,_30_juin_2024_2.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2f/Monument_%C3%A0_la_R%C3%A9publique_vandalis%C3%A9%2C_30_juin_2024_2.jpg/960px-Monument_%C3%A0_la_R%C3%A9publique_vandalis%C3%A9%2C_30_juin_2024_2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Monument à la République|Self-published work|Files with coordinates missing SDC location of creation (48° N, 2° E)|French legislative elections (2024)",
+     "Assessments": "",
+     "GPSLatitude": "48.867533",
+     "GPSLongitude": "2.363843",
+     "DateTimeOriginal": "2024-06-30 18:35:58",
+     "Artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Artvill&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Artvill (page does not exist)\">Artvill</a>",
+     "LicenseShortName": "CC BY-SA 4.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+     "License": "cc-by-sa-4.0"
+    }
+   },
+   {
+    "title": "File:Paris Place de la République Monument à la République 659.jpg",
+    "user": "GFreihalter",
+    "width": 5066,
+    "height": 7598,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Paris_Place_de_la_R%C3%A9publique_Monument_%C3%A0_la_R%C3%A9publique_659.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/34/Paris_Place_de_la_R%C3%A9publique_Monument_%C3%A0_la_R%C3%A9publique_659.jpg/960px-Paris_Place_de_la_R%C3%A9publique_Monument_%C3%A0_la_R%C3%A9publique_659.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Monument à la République|Self-published work|Files by User:GFreihalter/Paris 10. Arrondissement|Files by User:GFreihalter/Paris 3. Arrondissement|Files by User:GFreihalter/Paris 11. Arrondissement|Files by User:GFreihalter/Paris 2024",
+     "Assessments": "",
+     "DateTimeOriginal": "2024-08-04",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:GFreihalter\" title=\"User:GFreihalter\">GFreihalter</a>",
+     "LicenseShortName": "CC BY-SA 4.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+     "License": "cc-by-sa-4.0"
+    }
+   },
+   {
+    "title": "File:Place de la République (Paris) Janvier 2016.jpg",
+    "user": "Mohatatou",
+    "width": 2448,
+    "height": 3264,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Place_de_la_R%C3%A9publique_(Paris)_Janvier_2016.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/55/Place_de_la_R%C3%A9publique_%28Paris%29_Janvier_2016.jpg/960px-Place_de_la_R%C3%A9publique_%28Paris%29_Janvier_2016.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Monument à la République|Self-published work|Pedestal of the Monument à la République|Photographs of flags of Tunisia in France|Photographs of flags of France in Paris 3e arrondissement|Photographs of the national flag of Italy in France|Files with coordinates missing SDC location of creation (48° N, 2° E)",
+     "Assessments": "",
+     "GPSLatitude": "48.867472",
+     "GPSLongitude": "2.363667",
+     "DateTimeOriginal": "2016-01-23 19:25:03",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:Mohatatou\" title=\"User:Mohatatou\">Mohatatou</a>",
+     "LicenseShortName": "CC BY-SA 4.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+     "License": "cc-by-sa-4.0"
+    }
+   }
+  ],
+  "Nation (Paris Metro)": [
+   {
+    "title": "File:Construction du chemin de fer métropolitain municipal de Paris déblaiement de la voûte station Nation, 12ème arrondiss, PH83367.jpg",
+    "user": "Mr.Nostalgic",
+    "width": 3000,
+    "height": 2400,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Construction_du_chemin_de_fer_m%C3%A9tropolitain_municipal_de_Paris_d%C3%A9blaiement_de_la_vo%C3%BBte_station_Nation,_12%C3%A8me_arrondiss,_PH83367.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0a/Construction_du_chemin_de_fer_m%C3%A9tropolitain_municipal_de_Paris_d%C3%A9blaiement_de_la_vo%C3%BBte_station_Nation%2C_12%C3%A8me_arrondiss%2C_PH83367.jpg/960px-Construction_du_chemin_de_fer_m%C3%A9tropolitain_municipal_de_Paris_d%C3%A9blaiement_de_la_vo%C3%BBte_station_Nation%2C_12%C3%A8me_arrondiss%2C_PH83367.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Nation (Paris Metro)|CC-Zero|Metro construction in Paris|Images from Paris Musées|Photographs of Metro construction of Paris in Musée Carnavalet",
+     "Assessments": "",
+     "DateTimeOriginal": "21–02–1899",
+     "Artist": "Union Photographique Française, photographe",
+     "LicenseShortName": "CC0",
+     "LicenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+     "License": "cc0"
+    }
+   },
+   {
+    "title": "File:Couloir Accès Station Nation Métro Paris - Paris XI (FR75) - 2025-10-17 - 18.jpg",
+    "user": "Chabe01",
+    "width": 4284,
+    "height": 5712,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Couloir_Acc%C3%A8s_Station_Nation_M%C3%A9tro_Paris_-_Paris_XI_(FR75)_-_2025-10-17_-_18.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5a/Couloir_Acc%C3%A8s_Station_Nation_M%C3%A9tro_Paris_-_Paris_XI_%28FR75%29_-_2025-10-17_-_18.jpg/960px-Couloir_Acc%C3%A8s_Station_Nation_M%C3%A9tro_Paris_-_Paris_XI_%28FR75%29_-_2025-10-17_-_18.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Nation (Paris Metro)|Self-published work|Images of Paris 11e arrondissement by Chabe01|Paris Metro in 2025|Images by Chabe01 taken with iPhone 16 Pro|Images of Paris Metro by Chabe01|Paris photographs taken on 2025-10-17",
+     "Assessments": "",
+     "DateTimeOriginal": "2025-10-17 19:30:38",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:Chabe01\" title=\"User:Chabe01\">Chabe01</a>",
+     "LicenseShortName": "CC BY-SA 4.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+     "License": "cc-by-sa-4.0"
+    }
+   },
+   {
+    "title": "File:Couloir Accès Station Nation Métro Paris - Paris XI (FR75) - 2025-10-17 - 3.jpg",
+    "user": "Chabe01",
+    "width": 4032,
+    "height": 3024,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Couloir_Acc%C3%A8s_Station_Nation_M%C3%A9tro_Paris_-_Paris_XI_(FR75)_-_2025-10-17_-_3.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c6/Couloir_Acc%C3%A8s_Station_Nation_M%C3%A9tro_Paris_-_Paris_XI_%28FR75%29_-_2025-10-17_-_3.jpg/960px-Couloir_Acc%C3%A8s_Station_Nation_M%C3%A9tro_Paris_-_Paris_XI_%28FR75%29_-_2025-10-17_-_3.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Nation (Paris Metro)|Self-published work|Images of Paris 11e arrondissement by Chabe01|Files with coordinates missing SDC location of creation (48° N, 2° E)|Paris Metro in 2025|Images by Chabe01 taken with iPhone 16 Pro|Images of Paris Metro by Chabe01|Paris photographs taken on 2025-10-17",
+     "Assessments": "",
+     "GPSLatitude": "48.848633",
+     "GPSLongitude": "2.395069",
+     "DateTimeOriginal": "2025-10-17 19:27:09",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:Chabe01\" title=\"User:Chabe01\">Chabe01</a>",
+     "LicenseShortName": "CC BY-SA 4.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+     "License": "cc-by-sa-4.0"
+    }
+   },
+   {
+    "title": "File:Couloir Accès Station Nation Métro Paris - Paris XI (FR75) - 2025-10-17 - 8.jpg",
+    "user": "Chabe01",
+    "width": 5712,
+    "height": 4284,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Couloir_Acc%C3%A8s_Station_Nation_M%C3%A9tro_Paris_-_Paris_XI_(FR75)_-_2025-10-17_-_8.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c0/Couloir_Acc%C3%A8s_Station_Nation_M%C3%A9tro_Paris_-_Paris_XI_%28FR75%29_-_2025-10-17_-_8.jpg/960px-Couloir_Acc%C3%A8s_Station_Nation_M%C3%A9tro_Paris_-_Paris_XI_%28FR75%29_-_2025-10-17_-_8.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Nation (Paris Metro)|Self-published work|Images of Paris 11e arrondissement by Chabe01|Files with coordinates missing SDC location of creation (48° N, 2° E)|Paris Metro in 2025|Images by Chabe01 taken with iPhone 16 Pro|Images of Paris Metro by Chabe01|Paris photographs taken on 2025-10-17",
+     "Assessments": "",
+     "GPSLatitude": "48.848661",
+     "GPSLongitude": "2.395161",
+     "DateTimeOriginal": "2025-10-17 19:27:46",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:Chabe01\" title=\"User:Chabe01\">Chabe01</a>",
+     "LicenseShortName": "CC BY-SA 4.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+     "License": "cc-by-sa-4.0"
+    }
+   },
+   {
+    "title": "File:Station Nation Métro Paris - Paris XI (FR75) - 2025-10-17 - 10.jpg",
+    "user": "Chabe01",
+    "width": 5712,
+    "height": 4284,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Station_Nation_M%C3%A9tro_Paris_-_Paris_XI_(FR75)_-_2025-10-17_-_10.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e0/Station_Nation_M%C3%A9tro_Paris_-_Paris_XI_%28FR75%29_-_2025-10-17_-_10.jpg/960px-Station_Nation_M%C3%A9tro_Paris_-_Paris_XI_%28FR75%29_-_2025-10-17_-_10.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Nation (Paris Metro)|Self-published work|Images of Paris 11e arrondissement by Chabe01|Ticket barriers of the Paris Metro|Paris Metro in 2025|Images by Chabe01 taken with iPhone 16 Pro|Images of Paris Metro by Chabe01|Paris photographs taken on 2025-10-17",
+     "Assessments": "",
+     "DateTimeOriginal": "2025-10-17 19:29:50",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:Chabe01\" title=\"User:Chabe01\">Chabe01</a>",
+     "LicenseShortName": "CC BY-SA 4.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+     "License": "cc-by-sa-4.0"
+    }
+   },
+   {
+    "title": "File:Station Nation Métro Paris - Paris XI (FR75) - 2025-10-17 - 7.jpg",
+    "user": "Chabe01",
+    "width": 5712,
+    "height": 4284,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Station_Nation_M%C3%A9tro_Paris_-_Paris_XI_(FR75)_-_2025-10-17_-_7.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/08/Station_Nation_M%C3%A9tro_Paris_-_Paris_XI_%28FR75%29_-_2025-10-17_-_7.jpg/960px-Station_Nation_M%C3%A9tro_Paris_-_Paris_XI_%28FR75%29_-_2025-10-17_-_7.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Nation (Paris Metro)|Self-published work|Images of Paris 11e arrondissement by Chabe01|Ticket barriers of the Paris Metro|Paris Metro in 2025|Images by Chabe01 taken with iPhone 16 Pro|Images of Paris Metro by Chabe01|Paris photographs taken on 2025-10-17",
+     "Assessments": "",
+     "DateTimeOriginal": "2025-10-17 19:29:39",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:Chabe01\" title=\"User:Chabe01\">Chabe01</a>",
+     "LicenseShortName": "CC BY-SA 4.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+     "License": "cc-by-sa-4.0"
+    }
+   }
+  ],
+  "Passage Sainte-Anne (Paris)": [
+   {
+    "title": "File:De Hauke & Co., French artists exhibition, New York.jpg",
+    "user": "Sebastien93430",
+    "width": 968,
+    "height": 1296,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:De_Hauke_%26_Co.,_French_artists_exhibition,_New_York.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/44/De_Hauke_%26_Co.%2C_French_artists_exhibition%2C_New_York.jpg/960px-De_Hauke_%26_Co.%2C_French_artists_exhibition%2C_New_York.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Passage Sainte-Anne (Paris)|Taken with iPhone 4|Self-published work|Files with coordinates missing SDC location of creation (48° N, 2° E)",
+     "Assessments": "",
+     "GPSLatitude": "48.868000",
+     "GPSLongitude": "2.336167",
+     "DateTimeOriginal": "2014-04-28 16:55:02",
+     "Artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Sebastien93430&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Sebastien93430 (page does not exist)\">Sebastien93430</a>",
+     "LicenseShortName": "CC BY-SA 3.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+     "License": "cc-by-sa-3.0"
+    }
+   },
+   {
+    "title": "File:P1170046 Paris II passage Sainte-Anne rwk.jpg",
+    "user": "Mbzt",
+    "width": 1470,
+    "height": 2100,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:P1170046_Paris_II_passage_Sainte-Anne_rwk.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6e/P1170046_Paris_II_passage_Sainte-Anne_rwk.jpg/960px-P1170046_Paris_II_passage_Sainte-Anne_rwk.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Base Mérimée|Passage Sainte-Anne (Paris)|GFDL|Taken with Panasonic Lumix DMC-LX5|Monuments historiques inscrits|License migration redundant|Self-published work|Mérimée with PA parameter|Cultural heritage monuments in France with known IDs",
+     "Assessments": "",
+     "DateTimeOriginal": "2013-03-05 15:25:58",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:Mbzt\" title=\"User:Mbzt\">Mbzt</a>",
+     "LicenseShortName": "CC BY 3.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by/3.0",
+     "License": "cc-by-3.0"
+    }
+   },
+   {
+    "title": "File:P1170048 Paris II passage Sainte-Anne rwk.jpg",
+    "user": "Mbzt",
+    "width": 1500,
+    "height": 2000,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:P1170048_Paris_II_passage_Sainte-Anne_rwk.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0c/P1170048_Paris_II_passage_Sainte-Anne_rwk.jpg/960px-P1170048_Paris_II_passage_Sainte-Anne_rwk.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Base Mérimée|Passage Sainte-Anne (Paris)|GFDL|Taken with Panasonic Lumix DMC-LX5|Monuments historiques inscrits|License migration redundant|Self-published work|Mérimée with PA parameter|Cultural heritage monuments in France with known IDs",
+     "Assessments": "",
+     "DateTimeOriginal": "2013-03-05 15:27:46",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:Mbzt\" title=\"User:Mbzt\">Mbzt</a>",
+     "LicenseShortName": "CC BY 3.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by/3.0",
+     "License": "cc-by-3.0"
+    }
+   },
+   {
+    "title": "File:P1170049 Paris II passage Sainte-Anne rwk.jpg",
+    "user": "Mbzt",
+    "width": 1500,
+    "height": 2000,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:P1170049_Paris_II_passage_Sainte-Anne_rwk.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/79/P1170049_Paris_II_passage_Sainte-Anne_rwk.jpg/960px-P1170049_Paris_II_passage_Sainte-Anne_rwk.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Base Mérimée|Passage Sainte-Anne (Paris)|GFDL|Taken with Panasonic Lumix DMC-LX5|Monuments historiques inscrits|License migration redundant|Self-published work|Mérimée with PA parameter|Cultural heritage monuments in France with known IDs",
+     "Assessments": "",
+     "DateTimeOriginal": "2013-03-05 15:28:21",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:Mbzt\" title=\"User:Mbzt\">Mbzt</a>",
+     "LicenseShortName": "CC BY 3.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by/3.0",
+     "License": "cc-by-3.0"
+    }
+   },
+   {
+    "title": "File:Passage Sainte Anne - Paris II (FR75) - 2021-06-14 - 1.jpg",
+    "user": "Chabe01",
+    "width": 4032,
+    "height": 3024,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Passage_Sainte_Anne_-_Paris_II_(FR75)_-_2021-06-14_-_1.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4e/Passage_Sainte_Anne_-_Paris_II_%28FR75%29_-_2021-06-14_-_1.jpg/960px-Passage_Sainte_Anne_-_Paris_II_%28FR75%29_-_2021-06-14_-_1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Passage Sainte-Anne (Paris)|Self-published work|Paris photographs taken on 2021-06-14|Images of Paris 2e arrondissement by Chabe01|Images by Chabe01 taken with iPhone XS|Files with coordinates missing SDC location of creation (48° N, 2° E)",
+     "Assessments": "",
+     "GPSLatitude": "48.867844",
+     "GPSLongitude": "2.336350",
+     "DateTimeOriginal": "2021-06-14 18:46:01",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:Chabe01\" title=\"User:Chabe01\">Chabe01</a>",
+     "LicenseShortName": "CC BY-SA 4.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+     "License": "cc-by-sa-4.0"
+    }
+   },
+   {
+    "title": "File:Passage Sainte Anne - Paris II (FR75) - 2021-06-14 - 2.jpg",
+    "user": "Chabe01",
+    "width": 3024,
+    "height": 4032,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Passage_Sainte_Anne_-_Paris_II_(FR75)_-_2021-06-14_-_2.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a9/Passage_Sainte_Anne_-_Paris_II_%28FR75%29_-_2021-06-14_-_2.jpg/960px-Passage_Sainte_Anne_-_Paris_II_%28FR75%29_-_2021-06-14_-_2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Passage Sainte-Anne (Paris)|Self-published work|Paris photographs taken on 2021-06-14|Images of Paris 2e arrondissement by Chabe01|Images by Chabe01 taken with iPhone XS|Files with coordinates missing SDC location of creation (48° N, 2° E)",
+     "Assessments": "",
+     "GPSLatitude": "48.867844",
+     "GPSLongitude": "2.336350",
+     "DateTimeOriginal": "2021-06-14 18:46:05",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:Chabe01\" title=\"User:Chabe01\">Chabe01</a>",
+     "LicenseShortName": "CC BY-SA 4.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+     "License": "cc-by-sa-4.0"
+    }
+   }
+  ],
+  "Temple protestant du Foyer de l'Âme": [
+   {
+    "title": "File:Clocher en bois du Temple protestant \"du Foyer de l’Âme\" (10499154033).jpg",
+    "user": "Paris 16",
+    "width": 4406,
+    "height": 3304,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Clocher_en_bois_du_Temple_protestant_%22du_Foyer_de_l%E2%80%99%C3%82me%22_(10499154033).jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7f/Clocher_en_bois_du_Temple_protestant_%22du_Foyer_de_l%E2%80%99%C3%82me%22_%2810499154033%29.jpg/960px-Clocher_en_bois_du_Temple_protestant_%22du_Foyer_de_l%E2%80%99%C3%82me%22_%2810499154033%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Promenade Claire-Lacombe (Paris)|Boulevard Richard-Lenoir (Paris)|Temple protestant du Foyer de l'Âme|Flickr images reviewed by FlickreviewR|Uploaded by Paris 16|Photographs by Jeanne Menjoulet|Files from Jeanne Menjoulet Flickr stream",
+     "Assessments": "",
+     "DateTimeOriginal": "2016-12-26 18:28",
+     "Artist": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.flickr.com/people/96925387@N00\">Jeanne Menjoulet</a> from Paris, France",
+     "LicenseShortName": "CC BY 2.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by/2.0",
+     "License": "cc-by-2.0"
+    }
+   },
+   {
+    "title": "File:P1150057 Paris XI rue du Pasteur-Wagner n°7bis rwk.jpg",
+    "user": "Mbzt",
+    "width": 1436,
+    "height": 2100,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:P1150057_Paris_XI_rue_du_Pasteur-Wagner_n%C2%B07bis_rwk.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/51/P1150057_Paris_XI_rue_du_Pasteur-Wagner_n%C2%B07bis_rwk.jpg/960px-P1150057_Paris_XI_rue_du_Pasteur-Wagner_n%C2%B07bis_rwk.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "GFDL|Taken with Panasonic Lumix DMC-LX5|Temple protestant du Foyer de l'Âme|Charles Wagner|License migration redundant|Self-published work|Church portals in Paris",
+     "Assessments": "",
+     "DateTimeOriginal": "2012-12-06 16:09:00",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:Mbzt\" title=\"User:Mbzt\">Mbzt</a>",
+     "LicenseShortName": "CC BY 3.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by/3.0",
+     "License": "cc-by-3.0"
+    }
+   },
+   {
+    "title": "File:École maternelle Richard-Lenoir, Paris 30 June 2012.jpg",
+    "user": "Paris 16",
+    "width": 4272,
+    "height": 2848,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:%C3%89cole_maternelle_Richard-Lenoir,_Paris_30_June_2012.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/09/%C3%89cole_maternelle_Richard-Lenoir%2C_Paris_30_June_2012.jpg/960px-%C3%89cole_maternelle_Richard-Lenoir%2C_Paris_30_June_2012.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Temple protestant du Foyer de l'Âme|Flickr images reviewed by FlickreviewR 2|Files with coordinates missing SDC location of creation (48° N, 2° E)|École maternelle Richard-Lenoir (Paris)",
+     "Assessments": "",
+     "GPSLatitude": "48.856000",
+     "GPSLongitude": "2.370333",
+     "DateTimeOriginal": "2012-06-30 17:58",
+     "Artist": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.flickr.com/people/7737054@N07\">Patrick Nouhailler</a>",
+     "LicenseShortName": "CC BY-SA 2.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+     "License": "cc-by-sa-2.0"
+    }
+   }
+  ],
+  "Église Notre-Dame-de-l'Assomption de Paris": [
+   {
+    "title": "File:Assomption intérieur du cloître. D.8021(891).jpg",
+    "user": "Mr.Nostalgic",
+    "width": 3000,
+    "height": 1949,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Assomption_int%C3%A9rieur_du_clo%C3%AEtre._D.8021(891).jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0e/Assomption_int%C3%A9rieur_du_clo%C3%AEtre._D.8021%28891%29.jpg/960px-Assomption_int%C3%A9rieur_du_clo%C3%AEtre._D.8021%28891%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "CC-Zero|Église Notre-Dame-de-l'Assomption de Paris|Images from Paris Musées|Drawings in Musée Carnavalet|Couvent des Dames de l'Assomption (Paris)|Série 10. Paris. Couvents. Communautés",
+     "Assessments": "",
+     "DateTimeOriginal": "En 1864",
+     "Artist": "Leymonnerye, Léon (1803 - 1879), dessinateur",
+     "LicenseShortName": "CC0",
+     "LicenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+     "License": "cc0"
+    }
+   },
+   {
+    "title": "File:Distribution de vin au peuple en 1779 recto. D.5353(3).jpg",
+    "user": "Mr.Nostalgic",
+    "width": 4393,
+    "height": 4397,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Distribution_de_vin_au_peuple_en_1779_recto._D.5353(3).jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/60/Distribution_de_vin_au_peuple_en_1779_recto._D.5353%283%29.jpg/960px-Distribution_de_vin_au_peuple_en_1779_recto._D.5353%283%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "CC-Zero|Église Notre-Dame-de-l'Assomption de Paris|Images from Paris Musées|Drawings in Musée Carnavalet",
+     "Assessments": "",
+     "DateTimeOriginal": "Vers 1779",
+     "Artist": "Saint-Aubin, Gabriel de (Paris, 14–04–1724 - Paris, 14–02–1780), dessinateur",
+     "LicenseShortName": "CC0",
+     "LicenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+     "License": "cc0"
+    }
+   },
+   {
+    "title": "File:Eglise Notre-Dame-de-l'Assomption, Rue Saint-Honoré, Paris 9 January 2016.jpg",
+    "user": "Jacek Halicki",
+    "width": 2796,
+    "height": 4218,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Eglise_Notre-Dame-de-l%27Assomption,_Rue_Saint-Honor%C3%A9,_Paris_9_January_2016.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a0/Eglise_Notre-Dame-de-l%27Assomption%2C_Rue_Saint-Honor%C3%A9%2C_Paris_9_January_2016.jpg/960px-Eglise_Notre-Dame-de-l%27Assomption%2C_Rue_Saint-Honor%C3%A9%2C_Paris_9_January_2016.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Église Notre-Dame-de-l'Assomption de Paris|Flickr images reviewed by FlickreviewR|Paris photographs taken on 2016-01-09|Corrected by Jacek Halicki",
+     "Assessments": "",
+     "DateTimeOriginal": "2016-01-09 14:09",
+     "Artist": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.flickr.com/people/22539273@N00\">Guilhem Vellut</a> from Paris, France",
+     "LicenseShortName": "CC BY 2.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by/2.0",
+     "License": "cc-by-2.0"
+    }
+   },
+   {
+    "title": "File:L'assomption. D.8021(1537).jpg",
+    "user": "Mr.Nostalgic",
+    "width": 3000,
+    "height": 1996,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:L%27assomption._D.8021(1537).jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0c/L%27assomption._D.8021%281537%29.jpg/960px-L%27assomption._D.8021%281537%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "CC-Zero|Église Notre-Dame-de-l'Assomption de Paris|Images from Paris Musées|Drawings in Musée Carnavalet|Colorful drawings of Paris by Léon Leymonnerye|Série 17. Les dômes",
+     "Assessments": "",
+     "DateTimeOriginal": "En 1857",
+     "Artist": "Leymonnerye, Léon (1803 - 1879), dessinateur",
+     "LicenseShortName": "CC0",
+     "LicenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+     "License": "cc0"
+    }
+   },
+   {
+    "title": "File:Plan de l'église de l'Assomption. D.14500-5.jpg",
+    "user": "Mr.Nostalgic",
+    "width": 3250,
+    "height": 4071,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Plan_de_l%27%C3%A9glise_de_l%27Assomption._D.14500-5.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c1/Plan_de_l%27%C3%A9glise_de_l%27Assomption._D.14500-5.jpg/960px-Plan_de_l%27%C3%A9glise_de_l%27Assomption._D.14500-5.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "CC-Zero|Église Notre-Dame-de-l'Assomption de Paris|Images from Paris Musées|Floor plans in Musée Carnavalet|Ensemble de plans d'églises et temples parisiens (Lèbe-Sigun)",
+     "Assessments": "",
+     "DateTimeOriginal": "En 1861",
+     "Artist": "Lèbe-Sigun, dessinateur",
+     "LicenseShortName": "CC0",
+     "LicenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+     "License": "cc0"
+    }
+   },
+   {
+    "title": "File:V. Antier, 'La place Louis-le-Grand, faubourg Saint-Honoré en 1705' – Musée Carnavalet – Action artistique de la ville de Paris 2002.jpg",
+    "user": "Robert.Allen",
+    "width": 7657,
+    "height": 4320,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:V._Antier,_%27La_place_Louis-le-Grand,_faubourg_Saint-Honor%C3%A9_en_1705%27_%E2%80%93_Mus%C3%A9e_Carnavalet_%E2%80%93_Action_artistique_de_la_ville_de_Paris_2002.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/53/V._Antier%2C_%27La_place_Louis-le-Grand%2C_faubourg_Saint-Honor%C3%A9_en_1705%27_%E2%80%93_Mus%C3%A9e_Carnavalet_%E2%80%93_Action_artistique_de_la_ville_de_Paris_2002.jpg/960px-V._Antier%2C_%27La_place_Louis-le-Grand%2C_faubourg_Saint-Honor%C3%A9_en_1705%27_%E2%80%93_Mus%C3%A9e_Carnavalet_%E2%80%93_Action_artistique_de_la_ville_de_Paris_2002.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Église Notre-Dame-de-l'Assomption de Paris|Author died more than 100 years ago public domain images|Artworks without Wikidata item|V. Antier|Artworks with known accession number|Cityscape paintings of Paris|CC-PD-Mark|Gouache paintings in France|Paintings in Musée Carnavalet|18th-century gouache paintings|Paintings of churches in Paris|Paintings of gardens in Paris|Paintings of buildings in Paris|Paintings of Place Vendôme",
+     "Assessments": "",
+     "Artist": "<bdi><a href=\"https://www.wikidata.org/wiki/Q94671210\" class=\"extiw\" title=\"d:Q94671210\"><span title=\"French 18th-century painter\">V. Antier</span></a></bdi>",
+     "DateTimeOriginal": "1705<div style=\"display: none;\">date QS:P571,+1705-00-00T00:00:00Z/9</div>",
+     "LicenseShortName": "Public domain",
+     "License": "pd"
+    }
+   }
+  ],
+  "Église Saint-Eustache de Paris": [
+   {
+    "title": "File:Abside de Saint-Eustache, les Halles. G.16614(1).jpg",
+    "user": "Mr.Nostalgic",
+    "width": 1635,
+    "height": 2069,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Abside_de_Saint-Eustache,_les_Halles._G.16614(1).jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/91/Abside_de_Saint-Eustache%2C_les_Halles._G.16614%281%29.jpg/960px-Abside_de_Saint-Eustache%2C_les_Halles._G.16614%281%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "CC-Zero|Église Saint-Eustache de Paris|Unknown date|Images from Paris Musées|Prints in Musée Carnavalet|Gaston Laplace",
+     "Assessments": "",
+     "DateTimeOriginal": "Unknown date",
+     "Artist": "Laplace, Gaston Ernest (Paris, 11–07–1885 - Saint-Jean-de-Maurienne, 11–1917), graveur",
+     "LicenseShortName": "CC0",
+     "LicenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+     "License": "cc0"
+    }
+   },
+   {
+    "title": "File:Central Park, 5 Rue du Jour, 75001 Paris, 2021.jpg",
+    "user": "Gerda Arendt",
+    "width": 3659,
+    "height": 2744,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Central_Park,_5_Rue_du_Jour,_75001_Paris,_2021.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fe/Central_Park%2C_5_Rue_du_Jour%2C_75001_Paris%2C_2021.jpg/960px-Central_Park%2C_5_Rue_du_Jour%2C_75001_Paris%2C_2021.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Rue du Jour (Paris)|Rue Rambuteau (Paris)|Église Saint-Eustache de Paris|Self-published work|Restaurants in Paris 1er arrondissement|Restaurant tables in Paris|Paris photographs taken on 2021-12-02|Open air restaurant and café areas in Paris|Menu signs in Paris",
+     "Assessments": "",
+     "DateTimeOriginal": "2021-12-02",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:Gerda_Arendt\" title=\"User:Gerda Arendt\">Gerda Arendt</a>",
+     "LicenseShortName": "CC BY-SA 4.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+     "License": "cc-by-sa-4.0"
+    }
+   },
+   {
+    "title": "File:Eglsie de Saint Eustache Plan du rez-de-chaussée PL. I, Paris Musées 20230618174510.jpg",
+    "user": "Mr.Nostalgic",
+    "width": 5432,
+    "height": 7240,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Eglsie_de_Saint_Eustache_Plan_du_rez-de-chauss%C3%A9e_PL._I,_Paris_Mus%C3%A9es_20230618174510.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b8/Eglsie_de_Saint_Eustache_Plan_du_rez-de-chauss%C3%A9e_PL._I%2C_Paris_Mus%C3%A9es_20230618174510.jpg/960px-Eglsie_de_Saint_Eustache_Plan_du_rez-de-chauss%C3%A9e_PL._I%2C_Paris_Mus%C3%A9es_20230618174510.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "CC-Zero|Église Saint-Eustache de Paris|Unknown date|Images from Paris Musées|Prints in Musée Carnavalet|Plans of churches in Paris|Statistique monumentale de Paris",
+     "Assessments": "",
+     "DateTimeOriginal": "Unknown date",
+     "Artist": "Ollivier, Emile Edmond (Versailles, 07–09–1800 - en 1864), graveur",
+     "LicenseShortName": "CC0",
+     "LicenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+     "License": "cc0"
+    }
+   },
+   {
+    "title": "File:Jean Guillou plaque hommage.jpg",
+    "user": "ManoSolo13241324",
+    "width": 3072,
+    "height": 4080,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Jean_Guillou_plaque_hommage.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c1/Jean_Guillou_plaque_hommage.jpg/960px-Jean_Guillou_plaque_hommage.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "CC-Zero|Jean Guillou|Église Saint-Eustache de Paris|Self-published work",
+     "Assessments": "",
+     "DateTimeOriginal": "2024-10-18 16:40:36",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:ManoSolo13241324\" title=\"User:ManoSolo13241324\">ManoSolo13241324</a>",
+     "LicenseShortName": "CC0",
+     "LicenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+     "License": "cc0"
+    }
+   },
+   {
+    "title": "File:Paris - église Saint-Eustache de Paris - 2026-09-16 18-40-15 003.jpg",
+    "user": "Matthias Süßen",
+    "width": 4640,
+    "height": 6960,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Paris_-_%C3%A9glise_Saint-Eustache_de_Paris_-_2026-09-16_18-40-15_003.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/02/Paris_-_%C3%A9glise_Saint-Eustache_de_Paris_-_2026-09-16_18-40-15_003.jpg/960px-Paris_-_%C3%A9glise_Saint-Eustache_de_Paris_-_2026-09-16_18-40-15_003.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Base Mérimée|Église Saint-Eustache de Paris|Creative Commons Attribution-Share Alike missing SDC copyright status|Self-published work|Uploads by User:Matthias Süßen|Creative Commons Attribution-Share Alike 4.0 missing SDC copyright license|Self-published work missing SDC copyright license|Mérimée with PA parameter|Cultural heritage monuments in France with known IDs|Mérimée without type parameter|Images from Wiki Loves Monuments missing SDC participant in|Images from Wiki Loves Monuments missing SDC inception|Images from Wiki Loves Monuments missing SDC copyright license|Images from Wiki Loves Monuments missing SDC copyright status|Images from Wiki Loves Monuments missing SDC creator|Images from Wiki Loves Monuments missing SDC location of creation|Images from Wiki Loves Monuments missing SDC source of file|Cultural heritage monuments in France missing SDC location of creation|Images from Wiki Loves Monuments 2026|Images from Wiki Loves Monuments 2026 in France|Files uploaded via webapp Wiki Loves Monuments France - desktop version in 2026",
+     "Assessments": "",
+     "DateTimeOriginal": "2026-07-28",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:Matthias_S%C3%BC%C3%9Fen\" title=\"User:Matthias Süßen\">Matthias_Süßen</a>",
+     "LicenseShortName": "CC BY-SA 4.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+     "License": "cc-by-sa-4.0"
+    }
+   },
+   {
+    "title": "File:Paris - église Saint-Eustache de Paris - 2026-09-16 18-40-15 006.jpg",
+    "user": "Matthias Süßen",
+    "width": 4444,
+    "height": 6666,
+    "mime": "image/jpeg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Paris_-_%C3%A9glise_Saint-Eustache_de_Paris_-_2026-09-16_18-40-15_006.jpg",
+    "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4b/Paris_-_%C3%A9glise_Saint-Eustache_de_Paris_-_2026-09-16_18-40-15_006.jpg/960px-Paris_-_%C3%A9glise_Saint-Eustache_de_Paris_-_2026-09-16_18-40-15_006.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "metadata": {
+     "Categories": "Base Mérimée|Église Saint-Eustache de Paris|Creative Commons Attribution-Share Alike missing SDC copyright status|Self-published work|Uploads by User:Matthias Süßen|Creative Commons Attribution-Share Alike 4.0 missing SDC copyright license|Self-published work missing SDC copyright license|Mérimée with PA parameter|Cultural heritage monuments in France with known IDs|Mérimée without type parameter|Images from Wiki Loves Monuments missing SDC participant in|Images from Wiki Loves Monuments missing SDC inception|Images from Wiki Loves Monuments missing SDC copyright license|Images from Wiki Loves Monuments missing SDC copyright status|Images from Wiki Loves Monuments missing SDC creator|Images from Wiki Loves Monuments missing SDC location of creation|Images from Wiki Loves Monuments missing SDC source of file|Cultural heritage monuments in France missing SDC location of creation|Images from Wiki Loves Monuments 2026|Images from Wiki Loves Monuments 2026 in France|Files uploaded via webapp Wiki Loves Monuments France - desktop version in 2026",
+     "Assessments": "",
+     "DateTimeOriginal": "2026-07-28",
+     "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:Matthias_S%C3%BC%C3%9Fen\" title=\"User:Matthias Süßen\">Matthias_Süßen</a>",
+     "LicenseShortName": "CC BY-SA 4.0",
+     "LicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+     "License": "cc-by-sa-4.0"
+    }
+   }
+  ]
+ },
+ "files": {
+  "A la Gloire de la République Française.jpg": {
+   "title": "File:A la Gloire de la République Française.jpg",
+   "user": "Jebulon",
+   "width": 2374,
+   "height": 3573,
+   "mime": "image/jpeg",
+   "page_url": "https://commons.wikimedia.org/wiki/File:A_la_Gloire_de_la_R%C3%A9publique_Fran%C3%A7aise.jpg",
+   "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/37/A_la_Gloire_de_la_R%C3%A9publique_Fran%C3%A7aise.jpg/960px-A_la_Gloire_de_la_R%C3%A9publique_Fran%C3%A7aise.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "metadata": {
+    "Categories": "GFDL|Taken with Sony DSLR-A550|CC-BY-SA-3.0,2.5,2.0,1.0|License migration redundant|Self-published work|General views of the Monument à la République|France photographs taken on 2011-04-02|Files with coordinates missing SDC location of creation (48° N, 2° E)",
+    "Assessments": "quality|valued",
+    "GPSLatitude": "48.867222",
+    "GPSLongitude": "2.363139",
+    "DateTimeOriginal": "2011-04-02",
+    "Artist": "<bdi><a href=\"https://en.wikipedia.org/wiki/en:L%C3%A9opold_Morice\" class=\"extiw\" title=\"w:en:Léopold Morice\"><span title=\"French sculptor (1843–1920)\">Léopold Morice</span></a></bdi>",
+    "LicenseShortName": "CC BY-SA 3.0",
+    "LicenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "License": "cc-by-sa-3.0"
+   }
+  },
+  "Accès Station Nation Métro Paris Place Nation - Paris XII (FR75) - 2022-07-06 - 3.jpg": {
+   "title": "File:Accès Station Nation Métro Paris Place Nation - Paris XII (FR75) - 2022-07-06 - 3.jpg",
+   "user": "Chabe01",
+   "width": 4032,
+   "height": 3024,
+   "mime": "image/jpeg",
+   "page_url": "https://commons.wikimedia.org/wiki/File:Acc%C3%A8s_Station_Nation_M%C3%A9tro_Paris_Place_Nation_-_Paris_XII_(FR75)_-_2022-07-06_-_3.jpg",
+   "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bb/Acc%C3%A8s_Station_Nation_M%C3%A9tro_Paris_Place_Nation_-_Paris_XII_%28FR75%29_-_2022-07-06_-_3.jpg/960px-Acc%C3%A8s_Station_Nation_M%C3%A9tro_Paris_Place_Nation_-_Paris_XII_%28FR75%29_-_2022-07-06_-_3.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "metadata": {
+    "Categories": "Self-published work|Paris photographs taken on 2022-07-06|Images of Paris 12e arrondissement by Chabe01|Files with coordinates missing SDC location of creation (48° N, 2° E)|Images of Paris Metro by Chabe01|Images by Chabe01 taken with iPhone 13 Pro|Guimard entrances to Nation metro station",
+    "Assessments": "",
+    "GPSLatitude": "48.847764",
+    "GPSLongitude": "2.395064",
+    "DateTimeOriginal": "2022-07-06 18:42:51",
+    "Artist": "<a href=\"//commons.wikimedia.org/wiki/User:Chabe01\" title=\"User:Chabe01\">Chabe01</a>",
+    "LicenseShortName": "CC BY-SA 4.0",
+    "LicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "License": "cc-by-sa-4.0"
+   }
+  },
+  "Façade du 8 rue de Levis à Paris.jpg": {
+   "title": "File:Façade du 8 rue de Levis à Paris.jpg",
+   "user": "Benoitdd",
+   "width": 3024,
+   "height": 4032,
+   "mime": "image/jpeg",
+   "page_url": "https://commons.wikimedia.org/wiki/File:Fa%C3%A7ade_du_8_rue_de_Levis_%C3%A0_Paris.jpg",
+   "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0a/Fa%C3%A7ade_du_8_rue_de_Levis_%C3%A0_Paris.jpg/960px-Fa%C3%A7ade_du_8_rue_de_Levis_%C3%A0_Paris.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "metadata": {
+    "Categories": "Rue de Lévis (Paris)|Buildings in Paris 17e arrondissement|Self-published work|Facades in Paris|Balconies in Paris|Taken with Google Pixel 4a|Files with coordinates missing SDC location of creation (48° N, 2° E)",
+    "Assessments": "",
+    "GPSLatitude": "48.881816",
+    "GPSLongitude": "2.316022",
+    "DateTimeOriginal": "2023-08-30 09:14:28",
+    "Artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Benoitdd&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Benoitdd (page does not exist)\">Benoitdd</a>",
+    "LicenseShortName": "CC BY-SA 4.0",
+    "LicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "License": "cc-by-sa-4.0"
+   }
+  },
+  "St.-Eustache.jpg": {
+   "title": "File:St.-Eustache.jpg",
+   "user": "Pavel Krok~commonswiki",
+   "width": 3036,
+   "height": 2211,
+   "mime": "image/jpeg",
+   "page_url": "https://commons.wikimedia.org/wiki/File:St.-Eustache.jpg",
+   "thumb_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/21/St.-Eustache.jpg/960px-St.-Eustache.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "metadata": {
+    "Categories": "Files with coordinates missing SDC location of creation (48° N, 2° E)|South facade of Église Saint-Eustache de Paris",
+    "Assessments": "",
+    "GPSLatitude": "48.861489",
+    "GPSLongitude": "2.345527",
+    "DateTimeOriginal": "2007-06",
+    "Artist": "Pavel Krok",
+    "LicenseShortName": "CC BY-SA 2.5",
+    "LicenseUrl": "https://creativecommons.org/licenses/by-sa/2.5",
+    "License": "cc-by-sa-2.5"
+   }
+  }
+ }
+}

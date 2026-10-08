@@ -25,6 +25,7 @@ uv run ruff format .    # formatage
 | 5a. `nearby_buildings` | `uv run python -m lutece_pipeline.nearby_buildings` | les sorties des étapes 1 à 4, API Overpass | `data/interim/nearby_buildings.parquet`, `data/interim/nearby_buildings_evaluation.csv` |
 | 5b. `geometry` | `uv run python -m lutece_pipeline.geometry` | les sorties des étapes 1 à 5a, `review/geometry_overrides.csv` | `data/interim/geometries.parquet`, `data/interim/geometries_to_review.csv` |
 | 6. `visibility` | `uv run python -m lutece_pipeline.visibility` | `merimee.parquet`, `review/visibility_overrides.csv`, `review/visibility_labels.csv` | `data/interim/visibility.parquet`, `data/interim/visibility_to_review.csv`, `data/interim/visibility_evaluation.csv` |
+| 7. `ingest_commons` | `uv run python -m lutece_pipeline.ingest_commons` | `merimee.parquet`, `entities.parquet`, `wikidata_items.parquet`, API Commons, `review/commons_labels.csv` | `data/interim/commons_files.parquet`, `data/interim/commons_categories.parquet`, `data/interim/commons_evaluation.csv` |
 
 Options :
 
@@ -37,6 +38,9 @@ Options :
   `data/raw/osm/nearby_buildings.json`. En ligne, chaque lot obtenu est
   sauvegardé : après un échec du serveur, relancer la commande reprend là où
   elle s'était arrêtée.
+- `ingest_commons` ne redemande à Commons que ce qui manque dans
+  `data/raw/commons/`. `--offline` n'utilise que ces réponses enregistrées ;
+  `--refresh` les oublie et redemande tout.
 
 Les fichiers Parquet se lisent avec `pd.read_parquet(chemin)`. Ajouter
 `dtype_backend="pyarrow"` conserve les entiers avec valeurs manquantes au lieu
@@ -56,7 +60,10 @@ Wikidata (CC0) pour ces mêmes notices, enregistrées le 7 octobre 2026.
 ces notices (© les contributeurs d'OpenStreetMap, licence ODbL), enregistrés le
 même jour. `tests/fixtures/osm_nearby_snapshot.json` contient, sous la même
 licence, les 37 bâtiments OpenStreetMap situés à moins de 30 m de cinq de ces
-notices.
+notices. `tests/fixtures/commons_snapshot.json` contient un extrait des
+réponses de Wikimedia Commons pour ces notices, enregistrées le 8 octobre
+2026 : 6 fichiers au plus par catégorie, décrits par leur auteur et leur
+licence ; aucune image n'y figure.
 
 ## Source Mérimée
 
@@ -616,6 +623,223 @@ la classe a été corrigée.
   visibilité. C'est la principale source d'erreur restante, et le texte ne
   permet pas de la lever.
 
+## Photos de référence (Wikimedia Commons)
+
+L'étape `ingest_commons` liste les photos que Wikimedia Commons possède pour
+chaque monument, lit leur auteur, leur licence, leur date et leurs dimensions,
+puis retient celles qui peuvent servir de photo de référence : une photographie
+récente de l'extérieur, assez grande, sous licence libre. Elle ne télécharge
+aucune image : elle ne lit que des descriptions.
+
+### Sources
+
+- **Service** : API de Commons, <https://commons.wikimedia.org/w/api.php>.
+  Chaque fichier a sa propre licence, conservée avec le nom de l'auteur.
+- **Point de départ** : la catégorie Commons (P373) et l'image principale (P18)
+  de l'élément Wikidata principal de chaque monument protégé.
+- **Fichiers lus**, dans cet ordre de préférence quand un fichier se trouve à
+  plusieurs endroits :
+
+| `source` | Origine |
+|---|---|
+| `main_image` | l'image principale de l'élément Wikidata |
+| `category` | les fichiers rangés directement dans la catégorie du monument |
+| `exterior_subcategory` | les fichiers des sous-catégories de vues extérieures (« Exterior of… », « Facade of… », « Entrances to… ») |
+| `subcategory` | pour un monument qui garderait moins de 5 photos sans elles : les sous-catégories d'images distinguées (« Quality images of… ») et celles des adresses qui composent le monument (« 12 place Dauphine, Paris ») |
+
+- **Sous-catégories** : un seul niveau. Celles dont le nom annonce un autre
+  sujet (« Interior of… », « Historical images of… », « Events at… ») ne sont
+  jamais lues, ni celles qui sont la catégorie d'un autre monument. Les autres
+  ne sont pas lues non plus : on y trouve des répliques, des événements, les
+  occupants de l'immeuble.
+- **Limite** : les 500 premiers fichiers d'une catégorie.
+
+### Requêtes
+
+- Le client s'identifie par un en-tête `User-Agent` avec contact et envoie
+  `maxlag=5` : un serveur occupé répond alors par une erreur « maxlag » et la
+  requête est renvoyée après l'attente indiquée.
+- Les requêtes se suivent une à une. Commons décrit 50 fichiers par réponse :
+  les suivants arrivent dans les réponses d'après.
+- Chaque réponse est ajoutée aussitôt à un fichier de `data/raw/commons/`, une
+  ligne JSON par catégorie ou par fichier. Une exécution interrompue reprend
+  donc où elle s'était arrêtée, et les suivantes ne redemandent que ce qui
+  manque.
+
+Options : `--offline` rejoue l'étape avec les seules réponses enregistrées ;
+`--refresh` les oublie et redemande tout.
+
+### Tri des fichiers
+
+Un fichier est écarté pour la première raison rencontrée dans cet ordre :
+
+| `reject_reason` | Règle |
+|---|---|
+| `format` | ce n'est pas un JPEG (PNG de plans et de logos, TIFF d'archives, vidéos, PDF) |
+| `licence` | la licence n'est ni le domaine public, ni CC0, ni CC BY, ni CC BY-SA, ni une licence équivalente |
+| `old` | l'image date d'avant 1950 : autre état du monument, gravure, photographie ancienne |
+| `inside` | un mot annonce un intérieur : « intérieur », « escalier », « nef », « salle »… |
+| `detail` | un mot annonce un détail : « détail », « plaque », « fenêtre », « balcon »… |
+| `sculpture` | un mot annonce un élément sculpté : « statue », « mascaron », « bas-relief »… |
+| `document` | un mot annonce un document : « plan », « gravure », « Musée Carnavalet », « Gallica »… |
+| `other` | un mot annonce un autre sujet : « events », « travaux », « aerial »… |
+| `small` | le petit côté de l'image fait moins de 640 px |
+
+Sur 40 295 fichiers trouvés (39 530 distincts, 640 servant à plusieurs
+monuments), 27 169 sont gardés. Les autres sont écartés pour : `old` 5 023,
+`inside` 2 602, `document` 1 523, `detail` 1 509, `other` 1 124, `small` 584,
+`format` 426, `sculpture` 305, `licence` 30.
+
+Les mots sont cherchés dans le nom du fichier et, pour la plupart, dans ses
+catégories, sans tenir compte des accents ni de la casse. Trois précautions :
+
+- **Le nom dit le sujet, la catégorie non.** Les mots de détail et de sculpture
+  ne comptent que dans le nom du fichier. En catégorie, ils décrivent souvent un
+  élément que la photo contient seulement : « Windows in Paris » se trouve sur
+  des photos de façades entières.
+- **Un mot du nom du monument ne compte pas contre lui** : « salle » ne dit rien
+  des photos de la salle Pleyel.
+- **Le sujet même du monument non plus** : les mots d'intérieur ne s'appliquent
+  pas à un passage couvert, ni les mots de sculpture à une fontaine, un
+  monument ou un tombeau.
+
+Les **stations de métro** suivent une règle à part. Leur catégorie Commons
+couvre toute la station (quais, couloirs, guichets) alors que seuls les
+entourages et édicules d'entrée sont protégés : une photo n'est gardée que si
+son nom ou ses catégories citent une entrée (« accès », « entrance »,
+« édicule », « Guimard »…).
+
+### Sélection
+
+Les photos gardées d'un monument sont classées (`rank`), et les 15 premières
+sont sélectionnées (`selected`) :
+
+1. l'image principale de l'élément Wikidata ;
+2. les photos distinguées par Commons (image de qualité, image remarquable) ;
+3. les autres, en alternant les séances — un auteur, une année — de la plus
+   récente à la plus ancienne : deux photos d'une même séance montrent plus
+   souvent le même angle sous la même lumière.
+
+Le classement sélectionne 11 983 photos : 8 860 viennent de la catégorie,
+1 686 sont des images principales, 1 180 viennent d'une sous-catégorie de vues
+extérieures et 257 d'une sous-catégorie de secours.
+
+### Évaluation
+
+Le tri ne lit que des mots : pour savoir ce qu'il vaut, il faut regarder les
+images. 445 vignettes ont été regardées par planches de 20, sans connaître la
+décision du tri, et étiquetées `ok` (vue de l'extérieur du monument, à l'échelle
+du bâtiment), `inside`, `detail`, `document` ou `other`. Quand l'image seule ne
+suffisait pas (cette fontaine est-elle le monument ?), le nom du fichier et la
+notice ont été consultés. Les étiquettes sont dans `review/commons_labels.csv`,
+versionné : `merimee_id`, `title`, `sample`, `label`, `note`. Toutes les
+photos viennent de monuments classés `visible`.
+
+| `sample` | Photos | Rôle | Résultat |
+|---|---|---|---|
+| `dev` | 285 | deux lots qui ont servi à ajuster les règles : 100 photos sélectionnées et 60 écartées, puis 25 photos sélectionnées par source | 182 bonnes vues sur les 220 photos encore gardées, soit 83 % : chiffre optimiste |
+| `test` | 160 | tiré une fois les règles figées, parmi les photos jamais regardées : 100 sélectionnées et 60 écartées pour leur sujet | **75 photos sélectionnées sur 100 sont de bonnes vues** (entre 66 % et 83 % à 95 %) ; 55 des 60 mises à l'écart sont justifiées (entre 82 % et 96 %) |
+
+Les deux lots `dev` ont conduit à trois ajustements : les mots de détail et de
+sculpture ne comptent plus que dans le nom du fichier (ils écartaient à tort 11
+bonnes photos sur 26), la règle des stations de métro, et la restriction des
+sous-catégories de secours.
+
+La mesure a été faite avec un seuil de taille à 1 000 px, abaissé ensuite à
+640 px (voir les constats). La décision ne change pour aucune des 160 photos
+de `test` ; les photos de 640 à 999 px n'en faisaient pas partie. Dans `dev`,
+5 des 6 photos de cette taille sont de bonnes vues.
+
+Détail de l'échantillon `test` :
+
+- Les 25 photos sélectionnées à tort montrent un détail (11), un intérieur (6),
+  un autre sujet (6) ou un document (2). Aucun mot de leur nom ni de leurs
+  catégories ne le dit.
+- Par source : les 15 images principales sont toutes bonnes, contre 53 des 75
+  photos de catégorie et 6 des 8 photos de sous-catégories extérieures. Sur
+  l'ensemble des photos étiquetées, 56 images principales sur 57 sont bonnes.
+- Par rang : 16 bonnes vues sur 17 au rang 1, 29 sur 35 aux rangs 2 à 5, 28 sur
+  46 aux rangs 6 à 15. Les premières photos sont les plus sûres.
+
+Limites :
+
+- Un quart des photos sélectionnées ne conviennent pas, et les mots ne
+  permettent pas de faire mieux. Le tri fin demande de regarder l'image : il
+  pourra se faire à l'étape des embeddings, quand les images seront
+  téléchargées et qu'un modèle de vision sera disponible.
+- `ok` dit que la photo montre l'extérieur d'un bâtiment, pas que c'est le bon :
+  une catégorie peut contenir la photo d'un immeuble voisin.
+- Les étiquettes ont été posées par Claude, qui a aussi écrit les règles, sur
+  des vignettes de 500 px. Les cas limites sont notés (une porte cochère cadrée
+  serré compte pour une bonne vue).
+- Les intervalles sont larges : 100 photos sélectionnées, 60 écartées.
+
+Le détail par photo est dans `data/interim/commons_evaluation.csv`. Les 23
+planches regardées et leur index (`index.csv`, avec le lien de chaque photo)
+sont conservés hors git dans `data/raw/commons/evaluation/`.
+
+### Colonnes de `commons_files.parquet`
+
+Une ligne par monument et par fichier trouvé pour lui, gardé ou non :
+
+| Colonne | Type | Contenu |
+|---|---|---|
+| `merimee_id` | texte | notice du monument |
+| `title` | texte | titre du fichier sur Commons (`File:…`) |
+| `source` | texte | où le fichier a été trouvé, voir plus haut |
+| `category` | texte | la catégorie ou sous-catégorie qui le contient, vide pour une image principale |
+| `page_url` | texte | page du fichier, à citer comme source |
+| `thumb_url` | texte | vignette de 960 px de large |
+| `width`, `height` | entiers | dimensions de l'original |
+| `mime` | texte | type du fichier |
+| `author` | texte | auteur déclaré, en texte brut |
+| `uploader` | texte | compte qui a versé le fichier |
+| `licence`, `licence_url` | texte | nom court de la licence et lien vers son texte |
+| `year` | entier | année de la prise de vue, lue dans la date déclarée |
+| `camera_lat`, `camera_lon` | réels | position de l'appareil, quand elle est déclarée |
+| `reject_reason` | texte | raison de l'écarter, vide si le fichier est gardé |
+| `rank` | entier | rang parmi les fichiers gardés du monument |
+| `selected` | booléen | vrai pour les 15 premiers rangs |
+
+`commons_categories.parquet` donne, pour chaque catégorie de monument, le
+nombre de fichiers (`files`) et de sous-catégories (`subcats`) qu'elle
+contient. Il servira au score de rareté.
+
+### Constats (réponses du 8 octobre 2026)
+
+- **Couverture** : 1 796 monuments sur 1 878 ont au moins une photo
+  sélectionnée. Parmi les 1 697 monuments visibles depuis la rue :
+
+| Photos sélectionnées | Monuments visibles |
+|---|---|
+| 0 | 55 (3 %) |
+| 1 à 4 | 804 (47 %) |
+| 5 à 14 | 428 (25 %) |
+| 15 | 410 (24 %) |
+
+- **L'objectif du SPEC n'est pas atteignable** : moins d'un monument visible
+  sur deux (49 %) a 5 photos, la médiane est de 4. Commons a beaucoup de photos
+  des monuments connus et une ou deux de la plupart des immeubles protégés.
+- **Métro** : 44 des 68 stations protégées ont des photos de leurs entrées, 35
+  en ont au moins 5 ; 24 n'en ont aucune.
+- **Licences de la sélection** : CC BY-SA 78 %, CC BY 17 %, domaine public ou
+  CC0 5 %. Presque toutes demandent de citer l'auteur : la sélection en compte
+  1 468.
+- **Taille** : le seuil était d'abord de 1 000 px. Il écartait 1 492 fichiers,
+  souvent de bonnes photos (6 sur 7 dans le premier lot regardé). À 640 px,
+  assez pour un modèle qui lit des images de 224 px, 908 fichiers de plus sont
+  gardés et 10 monuments visibles gagnent leur première photo (décision du
+  8 octobre 2026).
+- **Position de l'appareil** : déclarée pour la moitié des photos
+  sélectionnées, mais sans usage pour le tri. Comparée à l'emprise du monument,
+  elle ne distingue pas les bonnes vues : beaucoup de contributeurs indiquent
+  la position du bâtiment, pas la leur.
+- **Piège de l'API** : pour un fichier téléversé plusieurs fois, Commons
+  propose de « continuer » vers ses anciennes versions (`iistart`). Suivre
+  cette piste remplace la description courante par celle d'une version
+  archivée, ou tourne en rond. L'étape ne suit que la continuation des
+  fichiers (`iicontinue`).
+
 ## Écarts constatés avec le SPEC
 
 - §5.1 : le portail `data.culture.gouv.fr` redirige vers
@@ -645,3 +869,12 @@ la classe a été corrigée.
   Un hôtel protégé en entier est classé `visible` même s'il se trouve derrière
   un porche. L'étape juge le texte ; la visibilité réelle reste à confirmer par
   les photos ou sur place.
+- §5.2, étape 7 : l'objectif de « 5 à 15 photos par monument » n'est atteint
+  que pour 49 % des monuments visibles ; 55 n'en ont aucune.
+- §5.2, étape 7 : le filtre « extérieur, pas de gros plan de détail » ne peut
+  pas être tenu avec les seules descriptions des fichiers. Mesuré sur 100
+  photos, il laisse passer un quart de photos qui ne conviennent pas. Un tri
+  sur l'image elle-même est à prévoir avec les embeddings.
+- §5.2, étape 7 : les « fichiers portant le modèle Mérimée » ne sont pas
+  cherchés. Sur 60 monuments, cette recherche n'apportait 5 photos qu'à 2 des
+  29 monuments qui en manquaient.
