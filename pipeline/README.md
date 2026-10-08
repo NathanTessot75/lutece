@@ -26,6 +26,7 @@ uv run ruff format .    # formatage
 | 5b. `geometry` | `uv run python -m lutece_pipeline.geometry` | les sorties des étapes 1 à 5a, `review/geometry_overrides.csv` | `data/interim/geometries.parquet`, `data/interim/geometries_to_review.csv` |
 | 6. `visibility` | `uv run python -m lutece_pipeline.visibility` | `merimee.parquet`, `review/visibility_overrides.csv`, `review/visibility_labels.csv` | `data/interim/visibility.parquet`, `data/interim/visibility_to_review.csv`, `data/interim/visibility_evaluation.csv` |
 | 7. `ingest_commons` | `uv run python -m lutece_pipeline.ingest_commons` | `merimee.parquet`, `entities.parquet`, `wikidata_items.parquet`, API Commons, `review/commons_labels.csv` | `data/interim/commons_files.parquet`, `data/interim/commons_categories.parquet`, `data/interim/commons_evaluation.csv` |
+| 11. `load_postgres` | `uv run python -m lutece_pipeline.load_postgres` | les sorties des étapes 1 à 7, une base Postgres | tables `monuments` et `reference_images` |
 | 12. `quality_report` | `uv run python -m lutece_pipeline.quality_report` | les sorties des étapes 1 à 7 | `data/processed/monuments_quality.parquet`, `data/processed/quality_problems.csv`, `docs/rapport/qualite-donnees.md` |
 
 Options :
@@ -42,6 +43,9 @@ Options :
 - `ingest_commons` ne redemande à Commons que ce qui manque dans
   `data/raw/commons/`. `--offline` n'utilise que ces réponses enregistrées ;
   `--refresh` les oublie et redemande tout.
+- `load_postgres` charge la base locale de Supabase, sauf si la variable
+  d'environnement `LUTECE_DATABASE_URL` désigne une autre base.
+  `--data-version N` fixe le numéro de version enregistré avec chaque monument.
 
 Les fichiers Parquet se lisent avec `pd.read_parquet(chemin)`. Ajouter
 `dtype_backend="pyarrow"` conserve les entiers avec valeurs manquantes au lieu
@@ -446,7 +450,7 @@ GeoParquet en WGS84 (EPSG:4326), une ligne par notice : `merimee_id`,
 ### Constats (7 octobre 2026)
 
 - 32 emprises sont en plusieurs morceaux. Le schéma du SPEC §5.3 prévoit un
-  `polygon` : il faudra un `multipolygon` au chargement.
+  `polygon` : la table `monuments` utilise un `multipolygon`.
 - La simplification ramène les emprises OSM liées de 51 222 à 21 101 sommets
   pour 1 % d'écart de surface ; l'ensemble des emprises pèse 35 566 sommets.
   Une emprise trouvée par `nearby_buildings` garde son tracé complet quand la
@@ -841,6 +845,81 @@ contient. Il servira au score de rareté.
   archivée, ou tourne en rond. L'étape ne suit que la continuation des
   fichiers (`iicontinue`).
 
+## Chargement dans Postgres
+
+L'étape `load_postgres` remplit les tables `monuments` et `reference_images`,
+créées par les migrations de `supabase/migrations/`. C'est la moitié « base de
+données » de l'étape 11 du SPEC ; le bundle SQLite de l'app viendra avec elle.
+
+### Mode d'emploi
+
+```bash
+supabase start                 # depuis la racine du dépôt : démarre la base locale
+supabase migration up          # applique les migrations qui manquent
+cd pipeline
+uv run python -m lutece_pipeline.load_postgres
+```
+
+Pour charger une autre base, donner son adresse dans la variable
+d'environnement `LUTECE_DATABASE_URL`. Elle contient un mot de passe : ne pas
+l'écrire dans un fichier versionné. Le journal l'affiche sans le mot de passe.
+
+### Ce que fait un chargement
+
+- **Une transaction** : tout est écrit, ou rien.
+- **Rejouable** : l'identifiant d'un monument est calculé à partir de sa
+  référence Mérimée, celui d'une photo à partir du monument et du nom du
+  fichier. Un second chargement met donc à jour les mêmes lignes, et les
+  captures des joueurs pourront pointer vers un monument sans risque.
+- **Ce qui est conservé** : les colonnes que les étapes suivantes rempliront
+  (rareté, fiches, empreinte d'image) et les photos apportées par les joueurs.
+- **Ce qui est retiré** : les photos que le pipeline ne sélectionne plus.
+- **Un monument sorti du pipeline** est compté dans le journal mais pas
+  supprimé.
+
+### Contenu des tables
+
+| Colonne de `monuments` | Origine |
+|---|---|
+| `id` | calculé à partir de `merimee_id` |
+| `merimee_id`, `name`, `address`, `arrondissement`, `protection`, `protection_desc` | notice Mérimée |
+| `category` | première dénomination de la notice |
+| `period_start` | siècle de construction : 17 pour le XVIIe siècle |
+| `architects` | ceux de la notice, à défaut ceux de Wikidata |
+| `wikidata_qid` | élément principal retenu par `resolve_entities` |
+| `osm_id` | premier objet OpenStreetMap de l'emprise (`way/123`) |
+| `location`, `footprint`, `footprint_source` | `geometries.parquet` ; un cercle de 10 m quand `footprint_source` vaut `buffer` |
+| `visibility` | `visibility.parquet` |
+| `sources` | les bases d'où vient le monument, avec lien et licence |
+| `data_version` | numéro du chargement |
+| `rarity_score`, `rarity_tier`, `summary_fr`, `story_fr` | vides : étapes à venir |
+
+`reference_images` contient les photos sélectionnées par `ingest_commons` :
+`source_url` (la page du fichier, à créditer), `thumb_url`, `author`,
+`licence`, `licence_url`, `rank`. `embedding` reste vide jusqu'à l'étape des
+embeddings.
+
+Les deux tables sont en lecture publique et protégées en écriture par la
+sécurité au niveau des lignes : seul le pipeline, connecté comme
+administrateur, les modifie.
+
+### Résultat (base locale, 8 octobre 2026)
+
+- 1 878 monuments et 11 983 photos chargés en 3 secondes ; un second
+  chargement ne change rien.
+- Tous les monuments ont un point et une emprise valide ; 1 829 ont une
+  adresse, 813 un architecte.
+- Autour d'un point du parvis de Notre-Dame, la recherche à 150 m que fera
+  l'app renvoie la cathédrale (19 m), l'Hôtel-Dieu (35 m), le presbytère
+  (59 m) et un ancien débit de boisson (134 m), en passant par l'index
+  spatial.
+
+### Tests
+
+Un test charge deux monuments fictifs dans la base locale, à l'intérieur d'une
+transaction qu'il annule : la base n'est pas modifiée. Il est ignoré quand la
+base locale ne tourne pas.
+
 ## Rapport de qualité
 
 L'étape `quality_report` croise les tables des autres étapes : une ligne par
@@ -947,6 +1026,14 @@ par leur adresse.
   pas être tenu avec les seules descriptions des fichiers. Mesuré sur 100
   photos, il laisse passer un quart de photos qui ne conviennent pas. Un tri
   sur l'image elle-même est à prévoir avec les embeddings.
+- §5.3 : la table `monuments` s'écarte du schéma sur trois points, décidés
+  le 8 octobre 2026 : `footprint` est un `multipolygon` (32 monuments en
+  plusieurs morceaux) ; une colonne `address` permet de nommer les 775
+  monuments sans nom propre ; une colonne `footprint_source` distingue un
+  contour réel d'un cercle. `reference_images` reçoit `thumb_url`,
+  `licence_url` et `rank`.
+- §5.3 : seules `monuments` et `reference_images` sont créées. Les tables des
+  joueurs (profils, captures, séries) viendront avec l'app.
 - §5.2, étape 7 : les « fichiers portant le modèle Mérimée » ne sont pas
   cherchés. Sur 60 monuments, cette recherche n'apportait 5 photos qu'à 2 des
   29 monuments qui en manquaient.

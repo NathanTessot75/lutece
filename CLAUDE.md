@@ -24,6 +24,8 @@ Référence complète : `SPEC.md` (fait foi en cas de contradiction).
 | `apps/mobile` | `npx tsc --noEmit` · `npm run lint` | types · lint |
 | `pipeline` | `uv sync` | installer l'environnement |
 | `pipeline` | `uv run ruff check .` · `uv run ruff format .` · `uv run pytest` | lint · format · tests |
+| `pipeline` | `uv run python -m lutece_pipeline.load_postgres` | charger les monuments dans la base locale |
 | racine | `supabase start` · `supabase stop` | pile locale (runtime de conteneurs requis) |
-| racine | `supabase db reset` | rejouer migrations et seed |
+| racine | `supabase migration up` | appliquer les nouvelles migrations sans vider la base |
+| racine | `supabase db reset` | rejouer migrations et seed (vide la base) |
 | racine | `supabase migration new <name>` | nouvelle migration |

@@ -11,6 +11,7 @@ dependencies = [
     "geopandas>=1.2.0",
     "httpx>=0.28.1",
     "pandas>=3.0.6",
+    "psycopg[binary]>=3.3.6",
     "pyarrow>=25.0.1",
     "rapidfuzz>=3.14.6",
     "shapely>=2.2.0",
