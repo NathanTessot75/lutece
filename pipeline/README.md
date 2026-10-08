@@ -27,6 +27,7 @@ uv run ruff format .    # formatage
 | 6. `visibility` | `uv run python -m lutece_pipeline.visibility` | `merimee.parquet`, `review/visibility_overrides.csv`, `review/visibility_labels.csv` | `data/interim/visibility.parquet`, `data/interim/visibility_to_review.csv`, `data/interim/visibility_evaluation.csv` |
 | 7. `ingest_commons` | `uv run python -m lutece_pipeline.ingest_commons` | `merimee.parquet`, `entities.parquet`, `wikidata_items.parquet`, API Commons, `review/commons_labels.csv` | `data/interim/commons_files.parquet`, `data/interim/commons_categories.parquet`, `data/interim/commons_evaluation.csv` |
 | 11. `load_postgres` | `uv run python -m lutece_pipeline.load_postgres` | les sorties des étapes 1 à 7, une base Postgres | tables `monuments` et `reference_images` |
+| 11. `export_bundle` | `uv run python -m lutece_pipeline.export_bundle` | les sorties des étapes 1 à 7 | `apps/mobile/assets/data/lutece.db`, `apps/mobile/assets/data/bundle.json` |
 | 12. `quality_report` | `uv run python -m lutece_pipeline.quality_report` | les sorties des étapes 1 à 7 | `data/processed/monuments_quality.parquet`, `data/processed/quality_problems.csv`, `docs/rapport/qualite-donnees.md` |
 
 Options :
@@ -919,6 +920,48 @@ administrateur, les modifie.
 Un test charge deux monuments fictifs dans la base locale, à l'intérieur d'une
 transaction qu'il annule : la base n'est pas modifiée. Il est ignoré quand la
 base locale ne tourne pas.
+
+## Fichier embarqué dans l'app
+
+L'app fonctionne hors ligne : tout ce qu'elle affiche des monuments vient d'un
+fichier SQLite que l'étape `export_bundle` écrit dans ses ressources,
+`apps/mobile/assets/data/lutece.db`. C'est la moitié « app » de l'étape 11 du
+SPEC. Le fichier pèse 3,8 Mo et il est versionné : l'app se compile sans
+relancer le pipeline.
+
+### Contenu
+
+| Table | Lignes | Contenu |
+|---|---|---|
+| `monuments` | 1 878 | une ligne par monument protégé |
+| `photos` | 4 307 | les 3 premières photos sélectionnées de chaque monument, avec auteur et licence |
+| `meta` | 3 | version du contenu et effectifs |
+
+Colonnes de `monuments` : `id` (le même identifiant que dans Postgres),
+`merimee_id`, `title`, `name`, `address`, `arrondissement`, `lat`, `lon`,
+`footprint` (multipolygone GeoJSON en WGS84, 6 décimales), `footprint_source`,
+`category`, `century`, `architects` (tableau JSON), `wikidata_qid`,
+`protection`, `visibility`, `readiness` et `photo_count`.
+
+- **`title`** est ce que l'app affiche : le nom du monument, ou son genre suivi
+  de sa première adresse quand il n'a pas de nom propre (« Immeuble, 12 rue
+  Volta »). Les monuments qui portent le même titre reçoivent aussi leur
+  adresse : trente immeubles s'appellent « Immeuble en bordure du
+  Palais-Royal ».
+- **`readiness`** reprend les niveaux du rapport de qualité : `ready`,
+  `approximate`, `not_ready`.
+
+### Version
+
+`bundle.json` donne à l'app la version du fichier avant qu'elle l'ouvre. Cette
+version est une empreinte du contenu : elle change dès qu'une valeur change,
+sans numéro à incrémenter. L'app nomme sa copie d'après elle
+(`monuments-<version>.db`), si bien qu'un nouveau fichier remplace l'ancien à
+la mise à jour. La collection du joueur vivra dans une autre base, qu'aucune
+mise à jour ne remplace.
+
+Deux exécutions sur les mêmes données donnent le même fichier, octet pour
+octet.
 
 ## Rapport de qualité
 
