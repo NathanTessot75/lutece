@@ -24,6 +24,7 @@ uv run ruff format .    # formatage
 | 4. `resolve_entities` | `uv run python -m lutece_pipeline.resolve_entities` | les sorties des étapes 1 à 3, `review/entity_decisions.csv` | `data/interim/entities.parquet`, `data/interim/entity_links.parquet`, `data/interim/entities_to_review.csv` |
 | 5a. `nearby_buildings` | `uv run python -m lutece_pipeline.nearby_buildings` | les sorties des étapes 1 à 4, API Overpass | `data/interim/nearby_buildings.parquet`, `data/interim/nearby_buildings_evaluation.csv` |
 | 5b. `geometry` | `uv run python -m lutece_pipeline.geometry` | les sorties des étapes 1 à 5a, `review/geometry_overrides.csv` | `data/interim/geometries.parquet`, `data/interim/geometries_to_review.csv` |
+| 6. `visibility` | `uv run python -m lutece_pipeline.visibility` | `merimee.parquet`, `review/visibility_overrides.csv`, `review/visibility_labels.csv` | `data/interim/visibility.parquet`, `data/interim/visibility_to_review.csv`, `data/interim/visibility_evaluation.csv` |
 
 Options :
 
@@ -449,6 +450,172 @@ GeoParquet en WGS84 (EPSG:4326), une ligne par notice : `merimee_id`,
 - L'usine élévatrice des eaux (`PA00086588`) a été déplacée au parc de la
   Villette : son point Mérimée indique encore l'ancienne adresse.
 
+## Visibilité depuis l'espace public
+
+Un monument dont seul l'intérieur ou une façade sur cour est protégé ne peut pas
+être photographié depuis la rue. L'étape `visibility` classe chaque monument
+protégé en `visible`, `non_visible` ou `inconnu` à partir du texte qui décrit
+la protection (`protection_desc`). Elle ne fait aucun appel réseau.
+
+### Lecture du texte
+
+Le texte est découpé en éléments protégés, aux points-virgules, aux points et
+aux tirets qui séparent deux arrêtés. Les références cadastrales entre
+parenthèses et la mention de l'arrêté sont retirées. Dans chaque élément,
+l'étape repère :
+
+- les **parties extérieures** : façade, toiture, élévation, couverture,
+  devanture, enseigne, portail, entourage, balcon, clôture, porche, marquise,
+  porte cochère, monumentale ou d'entrée, « porte sur… » ;
+- les **parties intérieures** : escalier, rampe, cage, salon, salle, plafond,
+  cheminée, boiserie, lambris, vestibule, cave, sous-sol, chambre, appartement,
+  pièce, cabinet, décor, hall, foyer, bibliothèque, crypte, peinture, vitraux,
+  mobilier, orgue, fresque…
+
+Chaque partie extérieure reçoit le côté indiqué après elle :
+
+| Indice (`evidence`) | Formulation | Exemple |
+|---|---|---|
+| `street` | sur rue, place, quai, boulevard, avenue, passage ; côté rue ; extérieure, principale, antérieure | « Façade sur rue » |
+| `courtyard` | sur cour, jardin ou parc ; côté cour ; postérieure, au fond, entourant la cour | « Façades sur cour et sur jardin » |
+| `open` | aucun côté indiqué | « Les façades » |
+| `roof` | toiture sans côté indiqué : elle couvre aussi les ailes sur cour, elle ne dit rien | « Toitures » |
+| `inside` | partie intérieure | « Escalier avec sa rampe » |
+| `whole` | l'élément ne cite aucune partie, il nomme le monument | « Eglise », « La fontaine » |
+| `unplaced` | vestige, reste, mascaron, bas-relief ou fragment dont le texte ne dit pas où il est | « Vestiges de l'enceinte » |
+
+Précisions :
+
+- Une façade « sur rue et sur cour » compte pour la rue : 115 monuments ne
+  sont visibles que par cette règle.
+- Deux parties reliées par « et » partagent le même côté (« façades et toitures
+  sur cour »), et une « toiture correspondante » prend celui de la partie qui
+  précède.
+- Devantures, enseignes, portails, entourages de métro et portes cochères
+  donnent sur la rue par nature, sauf mention contraire.
+- Un nom suivi de deux-points n'est qu'un titre (« Les parties suivantes de
+  l'hôtel … : les trois salons »). Un monument suivi d'ajouts compte en entier
+  (« La cathédrale, y compris la crypte »).
+- Un monument entier situé dans une cour (« Fontaine sise dans la cour ») ou le
+  sol d'une cour ou d'un jardin vaut `courtyard`.
+
+### Classes
+
+La première condition remplie l'emporte. Les effectifs sont ceux des règles,
+avant correction manuelle.
+
+| Condition | `visibility` | `reason` | Notices |
+|---|---|---|---|
+| dénomination « carrière » | `non_visible` | `underground` | 2 |
+| dénomination cimetière, jardin, parc, place ou square : un espace ouvert au public | `visible` | `public_grounds` | 21 |
+| au moins une partie extérieure côté rue | `visible` | `outside_part_on_street` | 990 |
+| au moins une partie extérieure sans côté indiqué | `visible` | `outside_part` | 326 |
+| le monument est nommé en entier | `visible` | `whole_monument` | 356 |
+| seulement des parties intérieures | `non_visible` | `inside_only` | 108 |
+| seulement des éléments sur cour ou sur jardin | `non_visible` | `courtyard_only` | 28 |
+| des parties intérieures et des éléments sur cour | `non_visible` | `inside_and_courtyard` | 21 |
+| seulement un vestige non situé | `inconnu` | `unplaced_item` | 26 |
+| seulement des toitures, ou pas de texte | `inconnu` | `roofs_only`, `no_text` | 0 |
+
+Soit 1 693 `visible`, 159 `non_visible` et 26 `inconnu` pour les 1 878
+monuments protégés. Les 15 notices sans protection ne sont pas classées.
+
+### Évaluation
+
+Deux échantillons de monuments, tirés au hasard avec une graine fixe, ont été
+étiquetés à la main à partir du texte, du nom et de la dénomination, sans voir
+la classe calculée. Ils sont dans `review/visibility_labels.csv`, versionné :
+`merimee_id`, `sample`, `label`, `note`.
+
+| `sample` | Notices | Rôle | Accord avec les règles |
+|---|---|---|---|
+| `dev` | 150 | a servi à ajuster les règles | 143, soit 95 %, à la première mesure ; 149 après ajustement |
+| `test` | 100 | étiqueté une fois les règles figées ; ne doit jamais servir à les modifier | 98, soit 98 % (entre 93 % et 99 % à 95 %, intervalle de Wilson) |
+
+La première mesure sur `dev` a conduit à trois ajustements : une toiture sans
+côté ne compte plus, un vestige non situé donne `inconnu`, et des ailes
+« entourant la cour » comptent pour la cour. Le chiffre de 149 est donc
+optimiste ; seul celui de `test` mesure les règles.
+
+Détail de l'échantillon `test` :
+
+| Étiquette | Classé `visible` | Classé `non_visible` | Classé `inconnu` |
+|---|---|---|---|
+| `visible` (86) | 85 | 1 | 0 |
+| `non_visible` (11) | 1 | 10 | 0 |
+| `inconnu` (3) | 0 | 0 | 3 |
+
+Les deux désaccords : l'hôpital Cochin (`PA00086616`), dont la dénomination
+« carrière » masque une porte sur le boulevard, et des « pavillons intérieurs »
+(`PA00088655`) lus comme de simples façades.
+
+L'accord est mesuré sur la sortie des règles, avant toute correction manuelle.
+Le détail par notice est dans `visibility_evaluation.csv`.
+
+Limites :
+
+- Les étiquettes jugent le texte, pas le lieu. Un hôtel protégé en entier est
+  étiqueté et classé `visible` même s'il se trouve derrière un porche fermé.
+  L'accord dit que les règles lisent le texte comme un lecteur attentif, pas
+  que le monument se voit réellement depuis la rue.
+- Les étiquettes ont été posées par Claude, qui a aussi écrit les règles.
+  L'accord est sans doute un peu optimiste tant qu'une seconde personne ne les
+  a pas relues.
+- L'échantillon `test` ne contient que 11 `non_visible` et 3 `inconnu` : les
+  taux par classe sont imprécis.
+
+### Relecture de la classe non visible
+
+Classer à tort un monument `non_visible` le retire du jeu. Les 159 notices que
+les règles classent ainsi ont donc toutes été relues : 9 étaient visibles, soit
+6 %. Presque toujours, un mot de la liste des parties intérieures désignait
+autre chose : la bibliothèque Sainte-Geneviève (l'édifice), les ateliers de
+décors de l'Opéra (leur nom), la cheminée d'une usine, des réclames pour une
+peinture. L'Opéra Garnier était lu comme un décor intérieur à cause d'une
+parenthèse jamais refermée dans la notice.
+
+La classe `visible` est trop grande pour être relue en entier. Deux recherches
+ciblées (les textes qui citent à la fois une rue et une cour ; les éléments
+rares comptés comme un monument entier) y ont trouvé 3 notices en réalité
+masquées et 2 indécidables. D'après l'échantillon `test`, 1 des 86 notices
+classées `visible` l'était à tort.
+
+Enfin, 2 des 26 `inconnu` se tranchaient à la lecture.
+
+### Revue manuelle
+
+`data/interim/visibility_to_review.csv` liste les monuments classés `inconnu`,
+avec leur texte et le lien vers la notice. Il en reste 27, dont 20 tronçons de
+l'enceinte de Philippe-Auguste : le texte ne dit pas s'ils sont dans une cour,
+une cave ou sur la rue.
+
+Les corrections sont consignées dans `review/visibility_overrides.csv`,
+versionné. Colonnes : `merimee_id`, `visibility`, `note`. La classe indiquée
+remplace celle des règles, `reason` vaut alors `reviewed`. Une correction qui
+ne correspond à aucun monument protégé est signalée dans le journal.
+
+Le fichier compte 18 corrections : 9 viennent de la relecture de la classe non
+visible, 5 des recherches ciblées, 2 des désaccords relevés à l'étiquetage et 2
+des `inconnu` tranchés. Elles font passer 11 monuments en `visible`, 4 en
+`non_visible` et 3 en `inconnu`.
+
+### Colonnes de `visibility.parquet`
+
+Une ligne par monument protégé : `merimee_id`, `visibility`, `reason`,
+`evidence` (les indices lus, dans l'ordre du texte : `facade: street;
+escalier: inside`) et `reviewed`. `evidence` reste celui des règles même quand
+la classe a été corrigée.
+
+### Constats (8 octobre 2026)
+
+- Après correction : 1 697 monuments `visible` (90 %), 154 `non_visible` (8 %)
+  et 27 `inconnu` (1 %).
+- Les 154 `non_visible` sont surtout des intérieurs : escaliers, décors de
+  cafés et de boulangeries, salles de spectacle, caves.
+- La protection d'un hôtel particulier « en totalité » ne dit rien de sa
+  visibilité. C'est la principale source d'erreur restante, et le texte ne
+  permet pas de la lever.
+
 ## Écarts constatés avec le SPEC
 
 - §5.1 : le portail `data.culture.gouv.fr` redirige vers
@@ -473,3 +640,8 @@ GeoParquet en WGS84 (EPSG:4326), une ligne par notice : `merimee_id`,
   contrôler les liens exacts plutôt qu'à en créer. La recherche d'un bâtiment
   par proximité, pour les notices sans objet OSM, relève de l'étape
   `nearby_buildings`.
+- §2 et §5.2, étape 6 : le texte de protection permet de reconnaître une
+  protection d'intérieur ou de façade sur cour, pas une « cour privée fermée ».
+  Un hôtel protégé en entier est classé `visible` même s'il se trouve derrière
+  un porche. L'étape juge le texte ; la visibilité réelle reste à confirmer par
+  les photos ou sur place.
