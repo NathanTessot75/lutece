@@ -70,8 +70,11 @@ export function MonumentMap() {
   const region = useRef(PARIS);
   const latestLoad = useRef(0);
   const position = useRef<LatLng | null>(null);
-  // The map only moves to the player by itself before they have touched it.
+  // The map moves to the player by itself once, as soon as it is ready and
+  // knows where they are, unless they have touched it before.
+  const ready = useRef(false);
   const touched = useRef(false);
+  const centred = useRef(false);
   const [marks, setMarks] = useState<Mark[]>([]);
   const [selection, setSelection] = useState<Selection | null>(null);
   const [located, setLocated] = useState(false);
@@ -117,15 +120,23 @@ export function MonumentMap() {
     );
   };
 
-  const locate = (found: LatLng) => {
-    const first = position.current === null;
-    position.current = found;
-    if (first) {
-      setLocated(true);
-      if (!touched.current && isInParis(found.latitude, found.longitude)) {
-        map.current?.animateToRegion(around(found), MOVE_DURATION_MS);
-      }
+  const centreOnce = () => {
+    const found = position.current;
+    if (!ready.current || found === null || centred.current) {
+      return;
     }
+    centred.current = true;
+    if (!touched.current && isInParis(found.latitude, found.longitude)) {
+      map.current?.animateToRegion(around(found), MOVE_DURATION_MS);
+    }
+  };
+
+  const locate = (found: LatLng) => {
+    if (position.current === null) {
+      setLocated(true);
+    }
+    position.current = found;
+    centreOnce();
   };
 
   const showPosition = () => {
@@ -146,6 +157,10 @@ export function MonumentMap() {
         pitchEnabled={false}
         // The credits of the map stay readable above the card of a monument.
         mapPadding={{ top: 0, right: 0, bottom: selection ? cardHeight + CARD_GAP : 0, left: 0 }}
+        onMapReady={() => {
+          ready.current = true;
+          centreOnce();
+        }}
         onTouchStart={() => {
           touched.current = true;
         }}
