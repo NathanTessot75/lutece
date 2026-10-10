@@ -32,3 +32,8 @@ export function formatArrondissement(arrondissement: number): string {
 export function formatCount(count: number): string {
   return count.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
 }
+
+/** « hôtel » → « Hôtel ». */
+export function capitalize(text: string): string {
+  return text.charAt(0).toLocaleUpperCase('fr') + text.slice(1);
+}

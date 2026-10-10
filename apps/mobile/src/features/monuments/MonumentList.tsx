@@ -1,4 +1,4 @@
-import { SectionList, StyleSheet, Text, View } from 'react-native';
+import { Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
 
 import type { MonumentSummary } from '@/db/monuments';
 import { formatArrondissement, formatCount } from '@/lib/format';
@@ -6,16 +6,27 @@ import { type Theme, useTheme } from '@/lib/theme';
 
 import { describeMonument } from './describe';
 import type { MonumentSection } from './sections';
+import { useOpenMonument } from './useOpenMonument';
 
-function Row({ monument, theme }: { monument: MonumentSummary; theme: Theme }) {
+type RowProps = {
+  monument: MonumentSummary;
+  theme: Theme;
+  onOpen: (id: string) => void;
+};
+
+function Row({ monument, theme, onOpen }: RowProps) {
   const dimmed = monument.readiness === 'not_ready';
   return (
-    <View style={[styles.row, { backgroundColor: theme.surface, borderColor: theme.separator }]}>
+    <Pressable
+      style={[styles.row, { backgroundColor: theme.surface, borderColor: theme.separator }]}
+      onPress={() => onOpen(monument.id)}
+      accessibilityRole="button"
+    >
       <Text style={[styles.title, { color: dimmed ? theme.secondaryText : theme.text }]}>
         {monument.title}
       </Text>
       <Text style={[styles.details, { color: theme.secondaryText }]}>{describeMonument(monument)}</Text>
-    </View>
+    </Pressable>
   );
 }
 
@@ -42,6 +53,7 @@ type Props = {
 
 export function MonumentList({ sections, caption }: Props) {
   const theme = useTheme();
+  const open = useOpenMonument();
   return (
     <SectionList
       sections={sections}
@@ -49,7 +61,7 @@ export function MonumentList({ sections, caption }: Props) {
         <Text style={[styles.caption, { color: theme.secondaryText }]}>{caption}</Text>
       }
       keyExtractor={(monument) => monument.id}
-      renderItem={({ item }) => <Row monument={item} theme={theme} />}
+      renderItem={({ item }) => <Row monument={item} theme={theme} onOpen={open} />}
       renderSectionHeader={({ section }) => <Header section={section} theme={theme} />}
       contentInsetAdjustmentBehavior="automatic"
       // A pinned header would slide under the translucent navigation bar.

@@ -13,6 +13,27 @@ export type MonumentSummary = {
   readiness: Readiness;
 };
 
+export type Visibility = 'visible' | 'non_visible' | 'inconnu';
+
+/** Everything the page of a monument says about it. */
+export type MonumentDetails = MonumentSummary & {
+  merimeeId: string;
+  address: string | null;
+  architects: string[];
+  wikidataQid: string | null;
+  protection: string;
+  visibility: Visibility;
+};
+
+/** A photo of a monument on Wikimedia Commons, with what its licence asks to show. */
+export type MonumentPhoto = {
+  rank: number;
+  thumbUrl: string;
+  pageUrl: string;
+  author: string | null;
+  licence: string | null;
+};
+
 /** A monument and the point where the map marks it. */
 export type MonumentPlace = MonumentSummary & {
   lat: number;
@@ -84,6 +105,29 @@ const CELLS = `
 
 const FOOTPRINT = 'select footprint from monuments where id = $id';
 
+const DETAILS = `
+  select
+    id, title, arrondissement, category, century, readiness,
+    merimee_id as merimeeId,
+    address,
+    architects,
+    wikidata_qid as wikidataQid,
+    protection,
+    visibility
+  from monuments
+  where id = $id
+`;
+
+const PHOTOS = `
+  select rank, thumb_url as thumbUrl, page_url as pageUrl, author, licence
+  from photos
+  where monument_id = $id
+  order by rank
+`;
+
+// The bundle writes the architects as a JSON array.
+type DetailsRow = Omit<MonumentDetails, 'architects'> & { architects: string };
+
 type CellRow = MonumentPlace & {
   cell_row: number;
   cell_column: number;
@@ -132,4 +176,14 @@ export async function listCells(
 export async function getFootprint(db: SQLiteDatabase, id: string): Promise<string | null> {
   const row = await db.getFirstAsync<{ footprint: string }>(FOOTPRINT, { $id: id });
   return row?.footprint ?? null;
+}
+
+export async function getMonument(db: SQLiteDatabase, id: string): Promise<MonumentDetails | null> {
+  const row = await db.getFirstAsync<DetailsRow>(DETAILS, { $id: id });
+  return row && { ...row, architects: JSON.parse(row.architects) as string[] };
+}
+
+/** The photos of a monument, the best one first. */
+export async function listPhotos(db: SQLiteDatabase, id: string): Promise<MonumentPhoto[]> {
+  return db.getAllAsync<MonumentPhoto>(PHOTOS, { $id: id });
 }
