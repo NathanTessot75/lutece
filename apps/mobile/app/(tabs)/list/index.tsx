@@ -8,7 +8,7 @@ import { MonumentList } from '@/features/monuments/MonumentList';
 import { type MonumentSection, groupByArrondissement } from '@/features/monuments/sections';
 import { formatCount } from '@/lib/format';
 
-export default function HomeScreen() {
+export default function ListScreen() {
   const db = useSQLiteContext();
   const [sections, setSections] = useState<MonumentSection[]>([]);
 

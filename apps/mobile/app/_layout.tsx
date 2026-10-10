@@ -26,7 +26,9 @@ export default function RootLayout() {
           assetSource={{ assetId: BUNDLE_ASSET }}
           useSuspense
         >
-          <Stack />
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          </Stack>
         </SQLiteProvider>
       </Suspense>
     </ThemeProvider>
