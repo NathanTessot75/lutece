@@ -1,18 +1,11 @@
 import { SectionList, StyleSheet, Text, View } from 'react-native';
 
 import type { MonumentSummary } from '@/db/monuments';
-import { formatArrondissement, formatCentury, formatCount } from '@/lib/format';
+import { formatArrondissement, formatCount } from '@/lib/format';
 import { type Theme, useTheme } from '@/lib/theme';
 
+import { describeMonument } from './describe';
 import type { MonumentSection } from './sections';
-
-function describe(monument: MonumentSummary): string {
-  const parts = [monument.category, monument.century && formatCentury(monument.century)];
-  if (monument.readiness === 'not_ready') {
-    parts.push('consultation seule');
-  }
-  return parts.filter(Boolean).join(' · ');
-}
 
 function Row({ monument, theme }: { monument: MonumentSummary; theme: Theme }) {
   const dimmed = monument.readiness === 'not_ready';
@@ -21,7 +14,7 @@ function Row({ monument, theme }: { monument: MonumentSummary; theme: Theme }) {
       <Text style={[styles.title, { color: dimmed ? theme.secondaryText : theme.text }]}>
         {monument.title}
       </Text>
-      <Text style={[styles.details, { color: theme.secondaryText }]}>{describe(monument)}</Text>
+      <Text style={[styles.details, { color: theme.secondaryText }]}>{describeMonument(monument)}</Text>
     </View>
   );
 }
