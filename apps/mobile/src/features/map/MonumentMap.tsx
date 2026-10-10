@@ -16,6 +16,7 @@ import { SelectedMonumentCard } from './SelectedMonumentCard';
 // How much closer the map gets when a group is touched.
 const GROUP_ZOOM = 3;
 const MOVE_DURATION_MS = 350;
+const POSITION_COLOR = '#007AFF';
 // The space left under and above the card of the selected monument.
 const CARD_GAP = 12;
 // The fill of an outline lets the map show through.
@@ -154,6 +155,8 @@ export function MonumentMap() {
         style={styles.screen}
         initialRegion={PARIS}
         showsUserLocation={location.granted}
+        // The dot of the player keeps the blue of iOS, whatever tints the app.
+        tintColor={POSITION_COLOR}
         pitchEnabled={false}
         // The credits of the map stay readable above the card of a monument.
         mapPadding={{ top: 0, right: 0, bottom: selection ? cardHeight + CARD_GAP : 0, left: 0 }}
