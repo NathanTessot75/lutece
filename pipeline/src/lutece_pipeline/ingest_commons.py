@@ -74,6 +74,21 @@ YEAR = re.compile(r"(?<!\d)(1\d{3}|20\d{2})(?!\d)")
 # The date that Commons templates add for machines: "date QS:P571,+1650-00-00T00:00:00Z/7".
 MACHINE_DATE = "date QS:"
 MACHINE_YEAR = re.compile(r"\+(\d{4})-")
+# Some photographers fill the author field with a notice about how to credit
+# them; their name is the part of it that these patterns read.
+CREDIT_LINE = re.compile(r"\bCredit\s*:\s*(?P<name>.+?)\s+-\s+CC\b")
+MADE_BY = re.compile(
+    r"\bThis (?:illustration|photograph|photo|image) was (?:made|taken) by "
+    r"(?P<name>.+?)(?=\s+\.(?:\s|$)|\s+and released\b|\s+You must\b|$)",
+    re.IGNORECASE,
+)
+ASSUMED_AUTHOR = re.compile(
+    r"^No machine-readable author provided\. (?P<name>.+?) assumed \("
+)
+# Files moved from a Wikipedia: the author is named before, or is the uploader.
+ORIGINAL_UPLOADER = re.compile(
+    r"^(?P<before>.*?)\s*(?:The o|O)riginal uploader was (?P<name>.+?) at\b"
+)
 # Licences whose terms the app can meet with a credit line: a name, a link.
 FREE_LICENCE = re.compile(r"cc0|cc-zero|pd|cc-by(?:-sa)?-\d")
 # Free licences that Commons names without giving them a code.
@@ -608,6 +623,27 @@ def clean_text(value: str | None) -> str | None:
     return " ".join(html.unescape(without_tags).split()) or None
 
 
+def credit_name(author: str | None) -> str | None:
+    """Read the name to credit from an author field that holds a whole notice.
+
+    "Thank you to indicate this credit line next to the image in case of
+    reuse: Credit: Polymagou - CC BY-SA (...)" is to be credited to Polymagou.
+    A field that is not one of the known notices is kept as it is.
+    """
+    if author is None:
+        return None
+    for notice in (CREDIT_LINE, MADE_BY, ASSUMED_AUTHOR):
+        found = notice.search(author)
+        if found:
+            return found.group("name").strip()
+    moved = ORIGINAL_UPLOADER.search(author)
+    if moved:
+        before, name = moved.group("before").strip(), moved.group("name").strip()
+        # "fr:Utilisateur:Jgremillot The original uploader was Jgremillot (...)"
+        return before if before and name not in before else name
+    return author
+
+
 def photo_year(value: str | None) -> int | None:
     """Read the year a picture was made from its date as written on Commons.
 
@@ -846,7 +882,7 @@ def monument_rows(monument: Monument, answers: Answers) -> list[dict[str, Any]]:
                 "width": photo.width,
                 "height": photo.height,
                 "mime": photo.mime,
-                "author": photo.author,
+                "author": credit_name(photo.author),
                 "uploader": photo.uploader,
                 "licence": photo.licence,
                 "licence_url": photo.licence_url,

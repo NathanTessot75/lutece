@@ -798,7 +798,7 @@ Une ligne par monument et par fichier trouvé pour lui, gardé ou non :
 | `thumb_url` | texte | vignette de 960 px de large |
 | `width`, `height` | entiers | dimensions de l'original |
 | `mime` | texte | type du fichier |
-| `author` | texte | auteur déclaré, en texte brut |
+| `author` | texte | auteur à créditer : le nom déclaré, en texte brut, lu dans la notice quand le champ en contient une |
 | `uploader` | texte | compte qui a versé le fichier |
 | `licence`, `licence_url` | texte | nom court de la licence et lien vers son texte |
 | `year` | entier | année de la prise de vue, lue dans la date déclarée |
@@ -830,7 +830,19 @@ contient. Il servira au score de rareté.
   en ont au moins 5 ; 24 n'en ont aucune.
 - **Licences de la sélection** : CC BY-SA 78 %, CC BY 17 %, domaine public ou
   CC0 5 %. Presque toutes demandent de citer l'auteur : la sélection en compte
-  1 468.
+  1 459.
+- **Nom à créditer** : quelques photographes remplissent le champ « auteur »
+  avec toute une notice (« Thank you to indicate this credit line next to the
+  image in case of reuse: Credit: Polymagou - CC BY-SA… », jusqu'à 1 041
+  caractères). Trois familles de notices sont reconnues — la ligne de crédit
+  demandée, « This photograph was taken by… », « No machine-readable author
+  provided. … assumed » — ainsi que les fichiers venus d'une Wikipédia (« The
+  original uploader was… ») ; le nom en est extrait. 345 fichiers sont
+  concernés, dont 141 de la sélection, pour 39 notices différentes, toutes
+  relues. Le classement des photos continue de se faire sur le champ tel qu'il
+  est déclaré : la sélection ne change pas. Les autres auteurs sont gardés
+  tels quels, même longs (« Jules, Louis et Henri Séeberger © Reproduction
+  Philippe Berthé / CMN »).
 - **Taille** : le seuil était d'abord de 1 000 px. Il écartait 1 492 fichiers,
   souvent de bonnes photos (6 sur 7 dans le premier lot regardé). À 640 px,
   assez pour un modèle qui lit des images de 224 px, 908 fichiers de plus sont

@@ -452,6 +452,111 @@ def test_html_fields_become_plain_text(value: str | None, expected: str | None) 
 
 
 @pytest.mark.parametrize(
+    ("author", "expected"),
+    [
+        # Notices that real photographers wrote in the author field.
+        (
+            (
+                "Thank you to indicate this credit line next to the image in case of "
+                "reuse: Credit: Polymagou - CC BY-SA I'd appreciate if you could send a "
+                "message on my user talk page if you use this picture out of the "
+                "Wikimedia project scope ."
+            ),
+            "Polymagou",
+        ),
+        (
+            (
+                "This illustration was made by Peter Potrowl . Please credit this with : "
+                "© Peter Potrowl in the immediate vicinity of the image."
+            ),
+            "Peter Potrowl",
+        ),
+        (
+            (
+                "This illustration was made by Citron You must credit this : "
+                "Citron / CC-BY-SA-3.0"
+            ),
+            "Citron",
+        ),
+        (
+            (
+                "Another one of my pictures: This photograph was taken by Medium69 "
+                "(William Crochot) and released under the license stated below."
+            ),
+            "Medium69 (William Crochot)",
+        ),
+        (
+            (
+                "This Photo was taken by Wolfgang Moroder . Feel free to use my photos, "
+                "but please mention me as the author and send me a message ."
+            ),
+            "Wolfgang Moroder",
+        ),
+        (
+            (
+                "No machine-readable author provided. Clio20 assumed (based on "
+                "copyright claims)."
+            ),
+            "Clio20",
+        ),
+        # Files moved from a Wikipedia.
+        ("The original uploader was MOSSOT at French Wikipedia .", "MOSSOT"),
+        ("Original uploader was Khardan at fr.wikipedia", "Khardan"),
+        (
+            "Patrick Giraud The original uploader was Calips at French Wikipedia .",
+            "Patrick Giraud",
+        ),
+        (
+            (
+                "fr:Utilisateur:Jgremillot The original uploader was Jgremillot at "
+                "French Wikipedia ."
+            ),
+            "Jgremillot",
+        ),
+        # Names, however long, are kept as they are.
+        ("Chabe01", "Chabe01"),
+        (
+            "couscouschocolat from Issy-Les-Moulineaux, France",
+            "couscouschocolat from Issy-Les-Moulineaux, France",
+        ),
+        (
+            "Jules, Louis et Henri Séeberger © Reproduction Philippe Berthé / CMN",
+            "Jules, Louis et Henri Séeberger © Reproduction Philippe Berthé / CMN",
+        ),
+        (
+            "pcs34560 from jawp This photo was taken with Canon PowerShot G9",
+            "pcs34560 from jawp This photo was taken with Canon PowerShot G9",
+        ),
+        (None, None),
+    ],
+)
+def test_the_name_to_credit_is_read_from_a_notice(
+    author: str | None, expected: str | None
+) -> None:
+    assert commons.credit_name(author) == expected
+
+
+def test_a_notice_is_credited_by_name_without_changing_the_ranking() -> None:
+    notice = "This illustration was made by Aaron . Please credit this with : © Aaron"
+    listing = [
+        record("File:First view.jpg", Artist="Chabe01", DateTimeOriginal="2020"),
+        record("File:Second view.jpg", Artist=notice, DateTimeOriginal="2020"),
+        record("File:Third view.jpg", Artist="Abel", DateTimeOriginal="2020"),
+    ]
+    files = commons.build_files([monument()], answers({"Pont Neuf": listing}))
+
+    by_rank = files.sort_values("rank")
+    assert list(by_rank["author"]) == ["Abel", "Chabe01", "Aaron"]
+    # Sessions are ordered by the author as declared: "This..." comes last,
+    # where "Aaron" would have come first.
+    assert list(by_rank["title"]) == [
+        "File:Third view.jpg",
+        "File:First view.jpg",
+        "File:Second view.jpg",
+    ]
+
+
+@pytest.mark.parametrize(
     ("value", "expected"),
     [
         ("2014-06-21 15:02:11", 2014),
