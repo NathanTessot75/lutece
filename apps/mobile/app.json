@@ -30,7 +30,16 @@
           "imageWidth": 76
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Lutèce utilise votre position pour afficher les monuments autour de vous et vérifier que vous êtes devant un monument au moment de sa capture.",
+          "locationAlwaysAndWhenInUsePermission": false,
+          "locationAlwaysPermission": false,
+          "motionUsagePermission": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
