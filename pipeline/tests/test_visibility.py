@@ -577,3 +577,23 @@ def test_correction_that_matches_no_monument_is_reported(
         "2 corrections match no monument: ['PA00086620', 'PA99999999']" in caplog.text
     )
     assert not pd.read_parquet(tmp_path / "visibility.parquet")["reviewed"].any()
+
+
+@pytest.mark.parametrize(
+    ("visible", "reason", "expected"),
+    [
+        ("visible", "whole_monument", True),
+        ("non_visible", "inside_only", True),
+        ("non_visible", "courtyard_only", True),
+        ("non_visible", "inside_and_courtyard", True),
+        ("non_visible", "reviewed", True),
+        ("non_visible", "underground", False),
+        ("inconnu", "unplaced_item", False),
+        ("inconnu", "reviewed", False),
+        ("inconnu", None, False),
+    ],
+)
+def test_player_can_stand_in_front_of_what_has_a_place_above_ground(
+    visible: str, reason: str | None, expected: bool
+) -> None:
+    assert visibility.can_be_approached(visible, reason) is expected

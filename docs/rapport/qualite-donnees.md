@@ -6,15 +6,15 @@ Rapport produit par `uv run python -m lutece_pipeline.quality_report`,
 ## En bref
 
 - La base compte **1 878 monuments** protégés à Paris.
-- **1 589 (85 %) sont prêts pour l'app** : visibles depuis la rue,
-  avec le contour de leur bâtiment.
-- 108 (6 %) sont prêts avec réserve : visibles, mais repérés
-  par un simple cercle de 10 m.
-- 181 (10 %) ne sont pas prêts : non visibles
-  depuis la rue, ou visibilité à trancher.
-- Parmi les 1 697 monuments prêts, avec ou sans réserve,
-  1 642 ont au moins une photo de référence et
-  741 ont aussi un article Wikipédia.
+- **1 741 (93 %) sont prêts pour l'app** : on peut se tenir devant,
+  et le contour de leur bâtiment est connu.
+- 109 (6 %) sont prêts avec réserve : repérés par un simple
+  cercle de 10 m.
+- 28 (1 %) ne sont pas prêts : souterrains, ou
+  vestiges que rien ne situe.
+- Parmi les 1 850 monuments prêts, avec ou sans réserve,
+  1 775 ont au moins une photo de référence et
+  797 ont aussi un article Wikipédia.
 
 ## Ce que la base sait de chaque monument
 
@@ -35,26 +35,26 @@ Rapport produit par `uv run python -m lutece_pipeline.quality_report`,
 
 | Arrondissement | Monuments | Prêts | Avec réserve | Pas prêts | Photos (médiane) | Article Wikipédia |
 |---|---|---|---|---|---|---|
-| 1 | 248 | 227 (92 %) | 7 | 14 | 3 | 76 (31 %) |
-| 2 | 114 | 96 (84 %) | 9 | 9 | 5 | 46 (40 %) |
-| 3 | 143 | 124 (87 %) | 5 | 14 | 4 | 50 (35 %) |
-| 4 | 255 | 231 (91 %) | 6 | 18 | 2 | 82 (32 %) |
-| 5 | 108 | 84 (78 %) | 8 | 16 | 3,5 | 51 (47 %) |
-| 6 | 196 | 162 (83 %) | 5 | 29 | 3 | 55 (28 %) |
-| 7 | 144 | 121 (84 %) | 1 | 22 | 5 | 77 (53 %) |
-| 8 | 116 | 90 (78 %) | 6 | 20 | 6 | 65 (56 %) |
-| 9 | 129 | 112 (87 %) | 6 | 11 | 3 | 45 (35 %) |
-| 10 | 55 | 49 (89 %) | 2 | 4 | 8 | 41 (75 %) |
-| 11 | 46 | 40 (87 %) | 4 | 2 | 9 | 30 (65 %) |
+| 1 | 248 | 237 (96 %) | 7 | 4 | 3 | 76 (31 %) |
+| 2 | 114 | 103 (90 %) | 9 | 2 | 5 | 46 (40 %) |
+| 3 | 143 | 134 (94 %) | 5 | 4 | 4 | 50 (35 %) |
+| 4 | 255 | 242 (95 %) | 6 | 7 | 2 | 82 (32 %) |
+| 5 | 108 | 95 (88 %) | 8 | 5 | 3,5 | 51 (47 %) |
+| 6 | 196 | 186 (95 %) | 5 | 5 | 3 | 55 (28 %) |
+| 7 | 144 | 143 (99 %) | 1 | 0 | 5 | 77 (53 %) |
+| 8 | 116 | 110 (95 %) | 6 | 0 | 6 | 65 (56 %) |
+| 9 | 129 | 123 (95 %) | 6 | 0 | 3 | 45 (35 %) |
+| 10 | 55 | 53 (96 %) | 2 | 0 | 8 | 41 (75 %) |
+| 11 | 46 | 42 (91 %) | 4 | 0 | 9 | 30 (65 %) |
 | 12 | 32 | 25 (78 %) | 7 | 0 | 9,5 | 23 (72 %) |
-| 13 | 24 | 19 (79 %) | 4 | 1 | 12 | 17 (71 %) |
-| 14 | 63 | 48 (76 %) | 10 | 5 | 5 | 36 (57 %) |
-| 15 | 28 | 24 (86 %) | 1 | 3 | 2 | 12 (43 %) |
-| 16 | 75 | 61 (81 %) | 9 | 5 | 7 | 44 (59 %) |
-| 17 | 24 | 18 (75 %) | 4 | 2 | 8 | 18 (75 %) |
-| 18 | 34 | 25 (74 %) | 5 | 4 | 7,5 | 25 (74 %) |
-| 19 | 25 | 20 (80 %) | 4 | 1 | 9 | 19 (76 %) |
-| 20 | 19 | 13 (68 %) | 5 | 1 | 7 | 18 (95 %) |
+| 13 | 24 | 20 (83 %) | 4 | 0 | 12 | 17 (71 %) |
+| 14 | 63 | 52 (83 %) | 10 | 1 | 5 | 36 (57 %) |
+| 15 | 28 | 27 (96 %) | 1 | 0 | 2 | 12 (43 %) |
+| 16 | 75 | 65 (87 %) | 10 | 0 | 7 | 44 (59 %) |
+| 17 | 24 | 20 (83 %) | 4 | 0 | 8 | 18 (75 %) |
+| 18 | 34 | 29 (85 %) | 5 | 0 | 7,5 | 25 (74 %) |
+| 19 | 25 | 21 (84 %) | 4 | 0 | 9 | 19 (76 %) |
+| 20 | 19 | 14 (74 %) | 5 | 0 | 7 | 18 (95 %) |
 
 ## Par type de monument
 
@@ -62,19 +62,19 @@ Les 12 types les plus fréquents, puis tous les autres.
 
 | Type | Monuments | Prêts | Avec réserve | Pas prêts | Photos (médiane) | Article Wikipédia |
 |---|---|---|---|---|---|---|
-| immeuble | 710 | 655 (92 %) | 1 | 54 | 2 | 71 (10 %) |
-| hôtel | 353 | 312 (88 %) | 1 | 40 | 6 | 241 (68 %) |
-| maison | 100 | 85 (85 %) | 2 | 13 | 3 | 25 (25 %) |
-| magasin de commerce | 90 | 81 (90 %) | 1 | 8 | 2 | 5 (6 %) |
+| immeuble | 710 | 706 (99 %) | 1 | 3 | 2 | 71 (10 %) |
+| hôtel | 353 | 351 (99 %) | 1 | 1 | 6 | 241 (68 %) |
+| maison | 100 | 98 (98 %) | 2 | 0 | 3 | 25 (25 %) |
+| magasin de commerce | 90 | 89 (99 %) | 1 | 0 | 2 | 5 (6 %) |
 | station de métro | 68 | 28 (41 %) | 40 | 0 | 5 | 64 (94 %) |
 | église | 58 | 57 (98 %) | 0 | 1 | 15 | 55 (95 %) |
-| théâtre | 38 | 31 (82 %) | 0 | 7 | 13,5 | 37 (97 %) |
+| théâtre | 38 | 38 (100 %) | 0 | 0 | 13,5 | 37 (97 %) |
 | fontaine | 26 | 12 (46 %) | 14 | 0 | 14 | 25 (96 %) |
 | fortification d'agglomération | 21 | 1 (5 %) | 0 | 20 | 2 | 2 (10 %) |
-| restaurant | 19 | 12 (63 %) | 0 | 7 | 6 | 12 (63 %) |
+| restaurant | 19 | 19 (100 %) | 0 | 0 | 6 | 12 (63 %) |
 | passage couvert | 16 | 4 (25 %) | 12 | 0 | 15 | 16 (100 %) |
-| café | 15 | 9 (60 %) | 0 | 6 | 2 | 5 (33 %) |
-| autres | 364 | 302 (83 %) | 37 | 25 | 13 | 272 (75 %) |
+| café | 15 | 15 (100 %) | 0 | 0 | 2 | 5 (33 %) |
+| autres | 364 | 323 (89 %) | 38 | 3 | 13 | 272 (75 %) |
 
 ## Fiabilité des étapes
 

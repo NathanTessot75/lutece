@@ -73,19 +73,27 @@ def test_name_that_only_repeats_the_kind_of_building_is_not_a_name(
 
 
 @pytest.mark.parametrize(
-    ("visible", "footprint_source", "expected"),
+    ("visible", "reason", "footprint_source", "expected"),
     [
-        ("visible", "osm_footprint", READY),
-        ("visible", "osm_nearby", READY),
-        ("visible", "osm_line", READY),
-        ("visible", "buffer", APPROXIMATE),
-        ("visible", None, APPROXIMATE),
-        ("non_visible", "osm_footprint", NOT_READY),
-        ("inconnu", "osm_footprint", NOT_READY),
+        ("visible", "whole_monument", "osm_footprint", READY),
+        ("visible", "outside_part", "osm_nearby", READY),
+        ("visible", "outside_part", "osm_line", READY),
+        ("visible", "whole_monument", "buffer", APPROXIMATE),
+        ("visible", "whole_monument", None, APPROXIMATE),
+        # Only its courtyard fronts are protected: the school is on its street.
+        ("non_visible", "courtyard_only", "osm_footprint", READY),
+        ("non_visible", "inside_only", "buffer", APPROXIMATE),
+        ("non_visible", "reviewed", "osm_footprint", READY),
+        # Under the ground, or placed by nothing: there is no standing in front.
+        ("non_visible", "underground", "osm_footprint", NOT_READY),
+        ("inconnu", "unplaced_item", "osm_footprint", NOT_READY),
+        ("inconnu", None, "osm_footprint", NOT_READY),
     ],
 )
-def test_readiness(visible: str, footprint_source: str | None, expected: str) -> None:
-    assert report.readiness(visible, footprint_source) == expected
+def test_readiness(
+    visible: str, reason: str | None, footprint_source: str | None, expected: str
+) -> None:
+    assert report.readiness(visible, reason, footprint_source) == expected
 
 
 def test_quality_crosses_what_each_step_knows_of_a_monument() -> None:
@@ -119,7 +127,7 @@ def test_quality_crosses_what_each_step_knows_of_a_monument() -> None:
     visibilities = [
         {"merimee_id": "PA1", "visibility": "visible"},
         {"merimee_id": "PA3", "visibility": "visible"},
-        {"merimee_id": "PA4", "visibility": "non_visible"},
+        {"merimee_id": "PA4", "visibility": "non_visible", "reason": "underground"},
     ]
     table = report.build_quality(
         notices, entities, items, geometries, visibilities, {"PA1": 15, "PA4": 2}
@@ -399,8 +407,10 @@ def test_real_notices_are_reported(
     assert church["has_frwiki"]
     assert church["readiness"] == READY
     assert church["photos"] >= 5
-    # Only the inside of the café is protected.
-    assert rows.loc["PA00085786", "readiness"] == NOT_READY
+    # Only the inside of the café is protected: it is on its street all the
+    # same, marked by a circle for want of a footprint.
+    assert rows.loc["PA00085786", "visibility"] == "non_visible"
+    assert rows.loc["PA00085786", "readiness"] == APPROXIMATE
     # A metro entrance is a point in OpenStreetMap: a circle stands for it.
     assert rows.loc["PA00086579", "footprint_source"] == "buffer"
     assert rows.loc["PA00086579", "readiness"] == APPROXIMATE

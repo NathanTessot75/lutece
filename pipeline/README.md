@@ -1023,9 +1023,20 @@ viendront dans les phases suivantes.
 
 | `readiness` | Condition | Monuments |
 |---|---|---|
-| `ready` | visible depuis la rue, avec un contour réel | 1 589 (85 %) |
-| `approximate` | visible, mais repéré par un cercle de 10 m | 108 (6 %) |
-| `not_ready` | non visible depuis la rue, ou visibilité à trancher | 181 (10 %) |
+| `ready` | on peut se tenir devant, et son contour est réel | 1 741 (93 %) |
+| `approximate` | on peut se tenir devant, mais il est repéré par un cercle de 10 m | 109 (6 %) |
+| `not_ready` | souterrain, ou vestige que rien ne situe | 28 (1 %) |
+
+Jusqu'au 11 octobre 2026, un monument n'était prêt que s'il était `visible`
+au sens de l'étape 6, c'est-à-dire si **ce que la notice protège** se voyait de
+la rue. Le lycée Louis-le-Grand, dont seules les « façades sur cour » sont
+protégées, n'était donc pas capturable, alors qu'on passe devant rue
+Saint-Jacques. La question posée est désormais celle du lieu : peut-on se
+tenir devant ? Seuls restent à l'écart la carrière souterraine (1) et les
+monuments à la visibilité `inconnu` (27), pour l'essentiel des vestiges de
+l'enceinte de Philippe-Auguste dont le texte ne dit pas où ils sont. La
+visibilité de l'étape 6 est conservée telle quelle : elle dit toujours si
+l'élément protégé se voit, ce que l'app signale sur la fiche.
 
 ### Colonnes de `monuments_quality.parquet`
 
@@ -1133,3 +1144,7 @@ par leur adresse.
   boussole), et deux colonnes s'ajoutent : `chosen_by_player`, vrai quand le
   joueur a désigné le monument parmi plusieurs candidats, et `photo_file`
   (décision du 11 octobre 2026).
+- §5.2, étape 6 : la visibilité ne décide plus de ce qui se capture. Un
+  monument est capturable dès qu'on peut se tenir devant, même si seul son
+  intérieur ou sa cour est protégé (décision du 11 octobre 2026, voir
+  « Niveaux de préparation »).

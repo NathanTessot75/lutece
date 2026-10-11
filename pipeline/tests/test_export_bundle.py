@@ -296,11 +296,17 @@ def test_real_notices_are_bundled(
     assert church["capture_reach_m"] == pytest.approx(217, abs=3)
     assert church["min_lat"] < church["lat"] < church["max_lat"]
     assert church["min_lon"] < church["lon"] < church["max_lon"]
-    # The café has no name of its own, and only its inside is protected.
+    # The café has no name of its own. Only its inside is protected, which
+    # does not keep a player from standing in front of it.
     cafe = database.execute(
-        "select title, readiness from monuments where merimee_id = 'PA00085786'"
+        "select title, visibility, readiness from monuments"
+        " where merimee_id = 'PA00085786'"
     ).fetchone()
-    assert tuple(cafe) == ("Café-Bar, 3 rue Etienne-Marcel", "not_ready")
+    assert tuple(cafe) == (
+        "Café-Bar, 3 rue Etienne-Marcel",
+        "non_visible",
+        "approximate",
+    )
     ranks = database.execute(
         "select m.merimee_id, group_concat(p.rank) from photos p"
         " join monuments m on m.id = p.monument_id group by 1 order by 1"

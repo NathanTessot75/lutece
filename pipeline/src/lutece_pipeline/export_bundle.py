@@ -243,7 +243,7 @@ def build_monuments(
     item_of = {entity["merimee_id"]: entity["wikidata_qid"] for entity in entities}
     items_by_id = {item["qid"]: item for item in items}
     places = {row["merimee_id"]: row for row in geometries}
-    seen = {row["merimee_id"]: row["visibility"] for row in visibilities}
+    seen = {row["merimee_id"]: row for row in visibilities}
     rows = []
     for notice in sorted(notices, key=lambda notice: notice["merimee_id"]):
         merimee_id = notice["merimee_id"]
@@ -255,7 +255,8 @@ def build_monuments(
         architects = load_postgres.names(notice["architects"]) or load_postgres.names(
             items_by_id.get(qid, {}).get("architects")
         )
-        visible = seen.get(merimee_id, visibility.UNKNOWN)
+        view = seen.get(merimee_id, {})
+        visible = view.get("visibility", visibility.UNKNOWN)
         west, south, east, north = shapely.bounds(place["geometry"]).tolist()
         rows.append(
             {
@@ -281,7 +282,7 @@ def build_monuments(
                 "protection": notice["protection"],
                 "visibility": visible,
                 "readiness": quality_report.readiness(
-                    visible, place["footprint_source"]
+                    visible, view.get("reason"), place["footprint_source"]
                 ),
                 "capture_reach_m": reaches[merimee_id],
                 "photo_count": photo_counts.get(merimee_id, 0),

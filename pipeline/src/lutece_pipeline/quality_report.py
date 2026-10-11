@@ -114,9 +114,13 @@ def has_own_name(name: str, denominations: Sequence[str] | None) -> bool:
     return bool(SECOND_CAPITAL.search(bare)) and lowered not in COMMON_COMPOUNDS
 
 
-def readiness(visible: str, footprint_source: str | None) -> str:
-    """Tell whether the app can offer a monument to capture."""
-    if visible != visibility.VISIBLE:
+def readiness(visible: str, reason: str | None, footprint_source: str | None) -> str:
+    """Tell whether the app can offer a monument to capture.
+
+    It can as soon as a player can stand in front of it, whether or not what
+    the notice protects shows from the street (decision of 11 October 2026).
+    """
+    if not visibility.can_be_approached(visible, reason):
         return NOT_READY
     return APPROXIMATE if footprint_source in (None, "buffer") else READY
 
@@ -133,7 +137,7 @@ def build_quality(
     item_of = {entity["merimee_id"]: entity["wikidata_qid"] for entity in entities}
     items_by_id = {item["qid"]: item for item in items}
     places = {row["merimee_id"]: row for row in geometries}
-    seen = {row["merimee_id"]: row["visibility"] for row in visibilities}
+    seen = {row["merimee_id"]: row for row in visibilities}
     rows = []
     for notice in notices:
         if notice["protection"] is None:
@@ -145,7 +149,8 @@ def build_quality(
         denominations = notice["denominations"]
         kinds = list(denominations) if denominations is not None else []
         architects = [notice["architects"], item.get("architects")]
-        visible = seen.get(merimee_id, visibility.UNKNOWN)
+        view = seen.get(merimee_id, {})
+        visible = view.get("visibility", visibility.UNKNOWN)
         rows.append(
             {
                 "merimee_id": merimee_id,
@@ -165,7 +170,9 @@ def build_quality(
                 "point_doubtful": bool(place.get("point_doubtful", False)),
                 "visibility": visible,
                 "photos": photos.get(merimee_id, 0),
-                "readiness": readiness(visible, place.get("footprint_source")),
+                "readiness": readiness(
+                    visible, view.get("reason"), place.get("footprint_source")
+                ),
             }
         )
     return from_rows(rows, SCHEMA)
@@ -324,12 +331,12 @@ def render_report(
         "## En bref",
         "",
         f"- La base compte **{count(total)} monuments** protégés à Paris.",
-        f"- **{share(ready, total)} sont prêts pour l'app** : visibles depuis la rue,",
-        "  avec le contour de leur bâtiment.",
-        f"- {share(approximate, total)} sont prêts avec réserve : visibles, mais repérés",
-        "  par un simple cercle de 10 m.",
-        f"- {share(levels.get(NOT_READY, 0), total)} ne sont pas prêts : non visibles",
-        "  depuis la rue, ou visibilité à trancher.",
+        f"- **{share(ready, total)} sont prêts pour l'app** : on peut se tenir devant,",
+        "  et le contour de leur bâtiment est connu.",
+        f"- {share(approximate, total)} sont prêts avec réserve : repérés par un simple",
+        "  cercle de 10 m.",
+        f"- {share(levels.get(NOT_READY, 0), total)} ne sont pas prêts : souterrains, ou",
+        "  vestiges que rien ne situe.",
         f"- Parmi les {count(len(usable))} monuments prêts, avec ou sans réserve,",
         f"  {count(len(with_photo))} ont au moins une photo de référence et",
         f"  {count(with_photo['has_frwiki'].sum())} ont aussi un article Wikipédia.",

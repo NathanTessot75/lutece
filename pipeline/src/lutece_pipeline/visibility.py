@@ -32,6 +32,8 @@ from lutece_pipeline.tables import from_rows, to_records, write_parquet
 logger = logging.getLogger(__name__)
 
 VISIBLE, NOT_VISIBLE, UNKNOWN = "visible", "non_visible", "inconnu"
+# The reason given to what lies under the ground.
+BELOW_GROUND = "underground"
 CLASSES = frozenset({VISIBLE, NOT_VISIBLE, UNKNOWN})
 # The rules were adjusted on the "dev" notices. The "test" ones were labelled
 # afterwards and only measure the rules: they must not be used to change them.
@@ -259,7 +261,7 @@ def classify(
     kinds = {clue.kind for clue in clues}
     names = set(denominations) if denominations is not None else set()
     if names & UNDERGROUND:
-        return NOT_VISIBLE, "underground", evidence
+        return NOT_VISIBLE, BELOW_GROUND, evidence
     if names & PUBLIC_GROUNDS:
         return VISIBLE, "public_grounds", evidence
     for kind, reason in (
@@ -279,6 +281,17 @@ def classify(
     if "unplaced" in kinds:
         return UNKNOWN, "unplaced_item", evidence
     return UNKNOWN, "roofs_only" if kinds else "no_text", evidence
+
+
+def can_be_approached(visible: str, reason: str | None) -> bool:
+    """Tell whether a player can stand in front of a monument.
+
+    The visibility is the one of what the notice protects, which may be a
+    staircase or a courtyard front: the building stands on its street all the
+    same, and a passer-by wonders about it. Only what lies under the ground,
+    and what nothing places, cannot be walked up to.
+    """
+    return visible != UNKNOWN and reason != BELOW_GROUND
 
 
 def read_rows(path: Path, column: str) -> dict[str, dict[str, str]]:
