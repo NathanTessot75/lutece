@@ -21,7 +21,7 @@ Référence complète : `SPEC.md` (fait foi en cas de contradiction).
 |---|---|---|
 | `apps/mobile` | `npx expo start` | serveur de dev (dev build) |
 | `apps/mobile` | `npx expo run:ios --device` | compiler et installer sur l'iPhone |
-| `apps/mobile` | `npx tsc --noEmit` · `npm run lint` | types · lint |
+| `apps/mobile` | `npx tsc --noEmit` · `npm run lint` · `npm test` | types · lint · tests |
 | `pipeline` | `uv sync` | installer l'environnement |
 | `pipeline` | `uv run ruff check .` · `uv run ruff format .` · `uv run pytest` | lint · format · tests |
 | `pipeline` | `uv run python -m lutece_pipeline.load_postgres` | charger les monuments dans la base locale |
