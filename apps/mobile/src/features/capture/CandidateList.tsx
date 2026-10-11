@@ -55,7 +55,7 @@ type Props = {
   position: Position | null;
   compass: CompassReading | null;
   candidates: Candidate<AimTarget>[];
-  captured: ReadonlySet<string>;
+  captured: { has: (id: string) => boolean };
 };
 
 /** What the phone measures, and the monuments within reach: aimed at, then around. */

@@ -40,6 +40,20 @@ const INSERT = `
   )
 `;
 
+/** A capture as the collection shows it. */
+export type Capture = {
+  monumentId: string;
+  /** When it was made, as an ISO 8601 date in UTC. */
+  capturedAt: string;
+  photoFile: string | null;
+};
+
+const CAPTURES = `
+  select monument_id as monumentId, captured_at as capturedAt, photo_file as photoFile
+  from captures
+  order by captured_at desc
+`;
+
 export async function saveCapture(db: SQLiteDatabase, capture: NewCapture): Promise<void> {
   await db.runAsync(INSERT, {
     $monumentId: capture.monumentId,
@@ -54,8 +68,7 @@ export async function saveCapture(db: SQLiteDatabase, capture: NewCapture): Prom
   });
 }
 
-/** The monuments that the player has already captured. */
-export async function listCapturedIds(db: SQLiteDatabase): Promise<Set<string>> {
-  const rows = await db.getAllAsync<{ monument_id: string }>('select monument_id from captures');
-  return new Set(rows.map((row) => row.monument_id));
+/** What the player has captured, the latest first. */
+export async function listCaptures(db: SQLiteDatabase): Promise<Capture[]> {
+  return db.getAllAsync<Capture>(CAPTURES);
 }

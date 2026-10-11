@@ -1,11 +1,10 @@
 import { useIsFocused } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { listCapturedIds, saveCapture } from '@/db/captures';
 import type { CapturableMonument } from '@/db/monuments';
-import { usePlayerDatabase } from '@/db/PlayerDatabase';
+import { useCaptures } from '@/features/collection/CapturesProvider';
 import { type CompassReading, type Position, useLocationAccess } from '@/lib/location';
 import { useTheme } from '@/lib/theme';
 
@@ -41,27 +40,14 @@ const REFUSALS: Record<Refusal, string> = {
 /** Aim at a monument, shoot, and add it to the collection. */
 export function Capture() {
   const theme = useTheme();
-  const playerDb = usePlayerDatabase();
+  const { byMonument: captured, record: recordCapture } = useCaptures();
   const location = useLocationAccess();
   const focused = useIsFocused();
   const { position, compass, candidates } = useAim(location.granted);
   const viewfinder = useRef<ViewfinderHandle>(null);
-  const [captured, setCaptured] = useState<ReadonlySet<string>>(new Set());
   const [stage, setStage] = useState<Stage>({ step: 'aiming' });
   const [refusal, setRefusal] = useState<Refusal | null>(null);
   const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    let current = true;
-    void listCapturedIds(playerDb).then((ids) => {
-      if (current) {
-        setCaptured(ids);
-      }
-    });
-    return () => {
-      current = false;
-    };
-  }, [playerDb]);
 
   if (!location.granted) {
     return (
@@ -83,7 +69,7 @@ export function Capture() {
   const record = async (candidate: Candidate<AimTarget>, shot: Shot, chosenByPlayer: boolean) => {
     const { monument } = candidate.target;
     const photoFile = shot.photoUri === null ? null : await keepPhoto(shot.photoUri, monument.id);
-    await saveCapture(playerDb, {
+    await recordCapture({
       monumentId: monument.id,
       latitude: shot.position.latitude,
       longitude: shot.position.longitude,
@@ -94,7 +80,6 @@ export function Capture() {
       chosenByPlayer,
       photoFile,
     });
-    setCaptured((known) => new Set(known).add(monument.id));
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setStage({ step: 'captured', monument, photoFile });
   };

@@ -20,7 +20,7 @@ const MAX_CHOICES = 3;
  */
 export function decide<T extends Target>(
   candidates: readonly Candidate<T>[],
-  captured: ReadonlySet<string>,
+  captured: { has: (id: string) => boolean },
   compassWorks: boolean,
 ): Decision<T> {
   const inSight = candidates.filter((candidate) => candidate.inSight);
