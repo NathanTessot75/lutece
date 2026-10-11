@@ -1127,3 +1127,9 @@ par leur adresse.
   iOS, mais un niveau de 0 à 3 (3 : moins de 20°, 2 : moins de 35°, 1 : moins
   de 50°). Le cône « cap ± (30° + précision du cap) » utilise la borne du
   niveau, et la visée est refusée au niveau 0 (décision du 10 octobre 2026).
+- §5.3 : en attendant les comptes, les captures sont enregistrées sur le
+  téléphone, dans une table `captures` qui reprend celle du SPEC sans
+  `user_id`. `heading_accuracy_deg` y devient `heading_level` (le niveau de la
+  boussole), et deux colonnes s'ajoutent : `chosen_by_player`, vrai quand le
+  joueur a désigné le monument parmi plusieurs candidats, et `photo_file`
+  (décision du 11 octobre 2026).

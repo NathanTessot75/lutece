@@ -4,6 +4,7 @@ import { Suspense, useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, useColorScheme, View } from 'react-native';
 
 import { BUNDLE_ASSET, BUNDLE_DATABASE_NAME, removeStaleBundles } from '@/db/bundle';
+import { PlayerDatabaseProvider } from '@/db/PlayerDatabase';
 import { useTheme } from '@/lib/theme';
 
 function Loading() {
@@ -33,9 +34,11 @@ export default function RootLayout() {
           assetSource={{ assetId: BUNDLE_ASSET }}
           useSuspense
         >
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          </Stack>
+          <PlayerDatabaseProvider>
+            <Stack>
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            </Stack>
+          </PlayerDatabaseProvider>
         </SQLiteProvider>
       </Suspense>
     </ThemeProvider>
