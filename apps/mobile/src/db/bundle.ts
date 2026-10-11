@@ -1,3 +1,5 @@
+import { Directory, File, Paths } from 'expo-file-system';
+
 import bundle from '../../assets/data/bundle.json';
 
 /**
@@ -14,3 +16,25 @@ export const BUNDLE_ASSET: number = require('../../assets/data/lutece.db');
 export const BUNDLE_DATABASE_NAME = `monuments-${bundle.version}.db`;
 
 export const BUNDLE_MONUMENT_COUNT: number = bundle.monuments;
+
+// Where expo-sqlite keeps its databases, under the documents of the app.
+const SQLITE_FOLDER = 'SQLite';
+// A copy of a bundle, with the files that SQLite may write next to it.
+const BUNDLE_COPY = /^monuments-[0-9a-f]{12}\.db(-wal|-shm|-journal)?$/;
+
+/**
+ * Remove the copies of earlier bundles: every update of the monuments leaves
+ * its predecessor behind, a few megabytes each time.
+ */
+export function removeStaleBundles(): void {
+  const folder = new Directory(Paths.document, SQLITE_FOLDER);
+  if (!folder.exists) {
+    return;
+  }
+  for (const entry of folder.list()) {
+    const stale = BUNDLE_COPY.test(entry.name) && !entry.name.startsWith(BUNDLE_DATABASE_NAME);
+    if (entry instanceof File && stale) {
+      entry.delete();
+    }
+  }
+}
