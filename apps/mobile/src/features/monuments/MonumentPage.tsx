@@ -79,11 +79,19 @@ function describeStatus(monument: MonumentDetails, capture: Capture | null, them
   return {
     text:
       monument.visibility === 'non_visible'
-        ? 'Consultation seule : ne se voit pas depuis la rue'
-        : 'Consultation seule : visibilité à vérifier',
+        ? 'Consultation seule : sous terre'
+        : 'Consultation seule : emplacement à préciser',
     background: theme.muted,
     color: theme.onAccent,
   };
+}
+
+/** What a player should know before aiming at a monument, if anything. */
+function describeCaveat(monument: MonumentDetails): string | null {
+  if (monument.readiness !== 'not_ready' && monument.visibility === 'non_visible') {
+    return 'Ce qui est protégé ici est à l’intérieur ou sur cour : de la rue, on voit le bâtiment qui l’abrite.';
+  }
+  return null;
 }
 
 function Section({ title, theme }: { title: string; theme: Theme }) {
@@ -100,6 +108,7 @@ type Props = {
 export function MonumentPage({ monument, photos, capture }: Props) {
   const theme = useTheme();
   const status = describeStatus(monument, capture, theme);
+  const caveat = describeCaveat(monument);
   const own = capture?.photoFile
     ? { uri: photoUri(capture.photoFile), caption: `Ta photo du ${formatDate(capture.capturedAt)}` }
     : null;
@@ -120,6 +129,9 @@ export function MonumentPage({ monument, photos, capture }: Props) {
         <View style={[styles.status, { backgroundColor: status.background }]}>
           <Text style={[styles.statusText, { color: status.color }]}>{status.text}</Text>
         </View>
+        {caveat !== null && (
+          <Text style={[styles.caveat, { color: theme.secondaryText }]}>{caveat}</Text>
+        )}
       </View>
 
       <Section title="En bref" theme={theme} />
@@ -190,6 +202,11 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 13,
     fontWeight: '600',
+  },
+  caveat: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 10,
   },
   section: {
     fontSize: 13,
