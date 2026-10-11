@@ -1123,3 +1123,7 @@ par leur adresse.
   trop courte pour les grands monuments. Elle est complétée par une distance
   propre à chaque monument (décision du 10 octobre 2026, voir « Distance de
   capture »).
+- §4 et §6.1 : `expo-location` ne donne pas la précision du cap en degrés sur
+  iOS, mais un niveau de 0 à 3 (3 : moins de 20°, 2 : moins de 35°, 1 : moins
+  de 50°). Le cône « cap ± (30° + précision du cap) » utilise la borne du
+  niveau, et la visée est refusée au niveau 0 (décision du 10 octobre 2026).
