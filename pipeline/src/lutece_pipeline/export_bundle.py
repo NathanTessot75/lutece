@@ -2,7 +2,7 @@
 
 The app works offline: everything it shows about the monuments comes from one
 file, built here and shipped among its assets. The file holds the monuments
-with their reference point, their footprint, whether they can be captured and
+that the selection step keeps, with their reference point, their footprint, whether they can be captured and
 from how far, and a few photos with their credits. It is small enough to be
 versioned, so the app builds without running the pipeline.
 
@@ -16,7 +16,7 @@ import json
 import logging
 import math
 import sqlite3
-from collections.abc import Mapping, Sequence
+from collections.abc import Collection, Mapping, Sequence
 from itertools import pairwise
 from pathlib import Path
 from typing import Any
@@ -33,6 +33,7 @@ from lutece_pipeline import (
     load_postgres,
     quality_report,
     resolve_entities,
+    selection,
     visibility,
 )
 from lutece_pipeline.geo import LAMBERT_93, WGS84
@@ -59,6 +60,7 @@ WIKIDATA_ITEMS_PARQUET = ingest_wikidata.ITEMS_PARQUET
 GEOMETRIES_PARQUET = geometry.GEOMETRIES_PARQUET
 VISIBILITY_PARQUET = visibility.VISIBILITY_PARQUET
 COMMONS_FILES_PARQUET = ingest_commons.FILES_PARQUET
+SELECTION_PARQUET = selection.SELECTION_PARQUET
 ASSETS_FOLDER = PIPELINE_ROOT.parent / "apps" / "mobile" / "assets" / "data"
 BUNDLE_DB = ASSETS_FOLDER / "lutece.db"
 # What the app must know before it opens the file: which version it carries.
@@ -238,8 +240,9 @@ def build_monuments(
     visibilities: Sequence[Record],
     photo_counts: Mapping[str, int],
     reaches: Mapping[str, int],
+    shown: Collection[str],
 ) -> list[dict[str, Any]]:
-    """One row of the bundle per protected notice that has a location."""
+    """One row of the bundle per monument that the app shows and can locate."""
     item_of = {entity["merimee_id"]: entity["wikidata_qid"] for entity in entities}
     items_by_id = {item["qid"]: item for item in items}
     places = {row["merimee_id"]: row for row in geometries}
@@ -248,7 +251,7 @@ def build_monuments(
     for notice in sorted(notices, key=lambda notice: notice["merimee_id"]):
         merimee_id = notice["merimee_id"]
         place = places.get(merimee_id)
-        if notice["protection"] is None or place is None:
+        if merimee_id not in shown or notice["protection"] is None or place is None:
             continue
         qid = item_of.get(merimee_id)
         kinds = load_postgres.names(notice["denominations"])
@@ -369,6 +372,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         if file["selected"]:
             counts[file["merimee_id"]] = counts.get(file["merimee_id"], 0) + 1
     geometries = to_records(pd.DataFrame(gpd.read_parquet(GEOMETRIES_PARQUET)))
+    chosen = pd.read_parquet(SELECTION_PARQUET)
+    shown = set(chosen.loc[chosen["shown"], "merimee_id"])
     by_hand = read_reaches(REACHES_CSV)
     stale = sorted(set(by_hand) - {row["merimee_id"] for row in geometries})
     if stale:
@@ -381,6 +386,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         to_records(pd.read_parquet(VISIBILITY_PARQUET)),
         counts,
         capture_reaches(geometries, by_hand),
+        shown,
     )
     photos = build_photos(files, monuments)
     version = content_version(monuments, photos)

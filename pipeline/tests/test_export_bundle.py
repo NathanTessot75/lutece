@@ -2,6 +2,7 @@ import json
 import sqlite3
 from pathlib import Path
 
+import pandas as pd
 import pytest
 from shapely.geometry import MultiPolygon, box
 
@@ -98,6 +99,7 @@ def test_monument_row_is_what_the_app_shows() -> None:
         [{"merimee_id": "PA1", "visibility": "visible"}],
         {"PA1": 15},
         {"PA1": 222, "PA2": 40},
+        {"PA1", "PA2"},
     )
     # Sorted by reference, so that the file is the same at every run.
     assert [row["merimee_id"] for row in rows] == ["PA1", "PA2"]
@@ -144,7 +146,7 @@ def test_monuments_with_the_same_name_are_told_apart_by_their_address() -> None:
     ]
     places = [place(f"PA{number}") for number in range(1, 5)]
     reaches = dict.fromkeys(["PA1", "PA2", "PA3", "PA4"], 50)
-    rows = bundle.build_monuments(notices, [], [], places, [], {}, reaches)
+    rows = bundle.build_monuments(notices, [], [], places, [], {}, reaches, reaches)
     assert [row["title"] for row in rows] == [
         "Immeuble en bordure du Palais-Royal, 12 rue de Montpensier",
         "Immeuble en bordure du Palais-Royal, 14 rue de Montpensier",
@@ -156,8 +158,21 @@ def test_monuments_with_the_same_name_are_told_apart_by_their_address() -> None:
 def test_notices_without_protection_or_location_are_left_out() -> None:
     notices = [notice("PA1"), notice("PA2", protection=None), notice("PA3")]
     places = [place("PA1"), place("PA2")]
-    rows = bundle.build_monuments(notices, [], [], places, [], {}, {"PA1": 50})
+    everything = {"PA1", "PA2", "PA3"}
+    rows = bundle.build_monuments(
+        notices, [], [], places, [], {}, {"PA1": 50}, everything
+    )
     assert [row["merimee_id"] for row in rows] == ["PA1"]
+
+
+def test_monuments_that_the_selection_hides_are_left_out() -> None:
+    notices = [notice("PA1"), notice("PA2"), notice("PA3")]
+    places = [place("PA1"), place("PA2"), place("PA3")]
+    reaches = dict.fromkeys(["PA1", "PA2", "PA3"], 50)
+    rows = bundle.build_monuments(
+        notices, [], [], places, [], {}, reaches, {"PA1", "PA3", "PA9"}
+    )
+    assert [row["merimee_id"] for row in rows] == ["PA1", "PA3"]
 
 
 def test_a_monument_can_be_captured_from_twice_its_length() -> None:
@@ -245,6 +260,9 @@ def test_version_changes_with_the_content() -> None:
 
 
 def run_main(folder: Path, out: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    # Every notice of the sample is shown: the selection has its own tests.
+    notices = pd.read_parquet(folder / "merimee.parquet", columns=["merimee_id"])
+    notices.assign(shown=True).to_parquet(out / "selection.parquet", index=False)
     paths = {
         "MERIMEE_PARQUET": folder / "merimee.parquet",
         "ENTITIES_PARQUET": folder / "entities.parquet",
@@ -255,6 +273,7 @@ def run_main(folder: Path, out: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         "BUNDLE_DB": out / "assets" / "lutece.db",
         "BUNDLE_JSON": out / "assets" / "bundle.json",
         "REACHES_CSV": folder / "capture_reach.csv",
+        "SELECTION_PARQUET": out / "selection.parquet",
     }
     for name, path in paths.items():
         monkeypatch.setattr(bundle, name, path)

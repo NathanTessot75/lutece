@@ -26,8 +26,9 @@ uv run ruff format .    # formatage
 | 5b. `geometry` | `uv run python -m lutece_pipeline.geometry` | les sorties des étapes 1 à 5a, `review/geometry_overrides.csv` | `data/interim/geometries.parquet`, `data/interim/geometries_to_review.csv` |
 | 6. `visibility` | `uv run python -m lutece_pipeline.visibility` | `merimee.parquet`, `review/visibility_overrides.csv`, `review/visibility_labels.csv` | `data/interim/visibility.parquet`, `data/interim/visibility_to_review.csv`, `data/interim/visibility_evaluation.csv` |
 | 7. `ingest_commons` | `uv run python -m lutece_pipeline.ingest_commons` | `merimee.parquet`, `entities.parquet`, `wikidata_items.parquet`, API Commons, `review/commons_labels.csv` | `data/interim/commons_files.parquet`, `data/interim/commons_categories.parquet`, `data/interim/commons_evaluation.csv` |
+| — `selection` | `uv run python -m lutece_pipeline.selection` | `merimee.parquet`, `entities.parquet`, `wikidata_items.parquet`, `visibility.parquet`, Wikidata, statistiques de Wikipédia, `review/selection_overrides.csv` | `data/interim/selection.parquet`, `data/interim/selection_ranking.csv` |
 | 11. `load_postgres` | `uv run python -m lutece_pipeline.load_postgres` | les sorties des étapes 1 à 7, une base Postgres | tables `monuments` et `reference_images` |
-| 11. `export_bundle` | `uv run python -m lutece_pipeline.export_bundle` | les sorties des étapes 1 à 7, `review/capture_reach.csv` | `apps/mobile/assets/data/lutece.db`, `apps/mobile/assets/data/bundle.json` |
+| 11. `export_bundle` | `uv run python -m lutece_pipeline.export_bundle` | les sorties des étapes 1 à 7, `selection.parquet`, `review/capture_reach.csv` | `apps/mobile/assets/data/lutece.db`, `apps/mobile/assets/data/bundle.json` |
 | 12. `quality_report` | `uv run python -m lutece_pipeline.quality_report` | les sorties des étapes 1 à 7 | `data/processed/monuments_quality.parquet`, `data/processed/quality_problems.csv`, `docs/rapport/qualite-donnees.md` |
 
 Options :
@@ -858,6 +859,110 @@ contient. Il servira au score de rareté.
   archivée, ou tourne en rond. L'étape ne suit que la continuation des
   fichiers (`iicontinue`).
 
+## Sélection des monuments montrés
+
+La base recense tous les immeubles protégés : 1 878 à Paris, dont une
+majorité d'immeubles d'habitation sans nom (« Immeuble, 45 rue Saint-Merri »)
+devant lesquels un promeneur ne s'arrête pas. L'étape `selection` choisit ceux
+que l'app montre, en se demandant : en passant devant, aurait-on envie d'en
+savoir plus ? (décisions du 11 octobre 2026)
+
+### 1. Les candidats : un article dans Wikipédia
+
+Un monument est candidat quand quelqu'un a jugé qu'il méritait un article dans
+Wikipédia en français :
+
+1. l'objet Wikidata de sa notice a un article ;
+2. ou il a un nom propre et l'article porte sur ce qui l'occupe ou le
+   contient. L'article d'un lycée ou d'un musée est rattaché à
+   l'établissement, pas au bâtiment que la notice protège : Wikidata dit que le
+   bâtiment est « occupé par » lui (P466) ou en « fait partie » (P361), ou que
+   l'établissement y a son « siège » (P159), son « lieu » (P276), ou le
+   « comprend » (P527). Quand plusieurs articles se présentent, celui dont le
+   sujet a le plus de liens entre sites est retenu. C'est ainsi que sont
+   retrouvés le lycée Louis-le-Grand, le musée d'Orsay, l'Institut Pasteur,
+   l'hôtel Carnavalet ou l'église Saint-Germain-des-Prés.
+
+Le nom propre est exigé dans le second cas parce qu'un immeuble anonyme ne
+devient pas intéressant du fait de son locataire (« Zara », « Marriott »).
+
+Les **stations de métro** sont écartées quel que soit leur article
+(`EXCLUDED_KINDS`) : les 68 notices protègent leurs entrées, toutes semblables.
+
+Il reste 833 candidats : 766 par leur article, 67 par celui d'un voisin.
+
+### 2. Le classement : lectures et langues
+
+Les candidats sont classés par deux mesures de la curiosité qu'ils suscitent :
+
+- **les lectures de l'article sur un an**, d'octobre 2025 à septembre 2026,
+  par des personnes et non des robots (API des statistiques de Wikimedia) :
+  de 497 390 pour la tour Eiffel à moins de 100, médiane 3 418 ;
+- **le nombre de sites qui ont un article sur le sujet** (`wikibase:sitelinks`),
+  proche du nombre de langues : 191 pour la tour Eiffel, 1 ou 2 pour un
+  article qui n'existe qu'en français.
+
+Le score est la moyenne des deux places du monument parmi les candidats,
+chacune de 0 (le dernier) à 1 (le premier). Les ex æquo sont départagés par
+l'identifiant, pour que l'ordre ne change pas d'une exécution à l'autre.
+
+Le nombre de photos sur Commons a été écarté comme mesure : un lieu connu peut
+n'avoir aucune photo dans sa catégorie.
+
+### 3. La coupe
+
+L'app montre les candidats jusqu'à la 350e place (`LAST_RANK_SHOWN`), à deux
+conditions :
+
+- **on peut se tenir devant** (voir « Niveaux de préparation ») : les vestiges
+  que rien ne situe et la carrière souterraine n'ont pas leur place sur une
+  carte faite pour se promener ;
+- **aucune décision à la main ne les cache.**
+  `review/selection_overrides.csv` (`merimee_id`, `name`, `decision`, `note`)
+  montre (`show`) ou cache (`hide`) un monument quelle que soit sa place.
+
+La coupe a été choisie sur pièces : à la 200e place, on perdait l'église
+Saint-Louis-en-l'Île, l'hôtel de Cluny, la Cigale ; à la 500e, il restait 100
+hôtels particuliers, pour beaucoup inconnus. La 350e place correspond à
+environ 2 000 lectures par an.
+
+### Résultat
+
+| | Monuments |
+|---|---|
+| **montrés** | **323** |
+| trop peu connus (au-delà de la 350e place) | 479 |
+| sans article | 977 |
+| d'un genre écarté (stations de métro) | 68 |
+| on ne peut pas se tenir devant | 24 |
+| cachés à la main | 7 |
+| total | 1 878 |
+
+Parmi les 323 : 53 églises, 42 hôtels particuliers, 30 théâtres, 10
+immeubles, pour 77 genres différents. Tous sont capturables.
+
+### Limites
+
+- **Un monument hérite de la notoriété de son occupant.** C'est juste pour un
+  lycée ou un musée, faux pour un bâtiment parmi d'autres d'une grande
+  institution : le presbytère de Notre-Dame se classait 3e grâce à l'article
+  de la cathédrale, deux bâtiments 5e et 6e grâce à celui de Sciences Po. Les
+  sept cas repérés dans les 350 premiers sont cachés à la main.
+- **Des monuments connus restent sans article** quand Wikidata ne fait aucun
+  lien : l'ancienne École polytechnique, les hôtels de Rohan et Soubise
+  (Archives nationales), le pavillon de la Reine, l'Institut national des
+  jeunes aveugles. Ils se rattrapent par une décision `show`.
+- **Les lectures suivent l'actualité** : le Bataclan est 19e.
+- **Rien n'est supprimé** : `selection.parquet` garde une ligne par monument
+  (`shown`, `reason`, `left_out`, `article`, `views`, `languages`, `score`,
+  `rank`) ; les autres tables et la base Postgres conservent les 1 878
+  monuments. Seul le fichier de l'app est filtré.
+
+`data/interim/selection_ranking.csv` donne le classement des 833 candidats
+avec leur nom, pour le relire. Les réponses des services sont conservées dans
+`data/raw/wikidata/neighbours.json` et `data/raw/wikipedia/pageviews.json` ;
+`--offline` les rejoue.
+
 ## Chargement dans Postgres
 
 L'étape `load_postgres` remplit les tables `monuments` et `reference_images`,
@@ -938,15 +1043,15 @@ base locale ne tourne pas.
 L'app fonctionne hors ligne : tout ce qu'elle affiche des monuments vient d'un
 fichier SQLite que l'étape `export_bundle` écrit dans ses ressources,
 `apps/mobile/assets/data/lutece.db`. C'est la moitié « app » de l'étape 11 du
-SPEC. Le fichier pèse 3,9 Mo et il est versionné : l'app se compile sans
+SPEC. Le fichier pèse 0,9 Mo et il est versionné : l'app se compile sans
 relancer le pipeline.
 
 ### Contenu
 
 | Table | Lignes | Contenu |
 |---|---|---|
-| `monuments` | 1 878 | une ligne par monument protégé |
-| `photos` | 4 307 | les 3 premières photos sélectionnées de chaque monument, avec auteur et licence |
+| `monuments` | 323 | une ligne par monument que la sélection garde |
+| `photos` | 933 | les 3 premières photos sélectionnées de chaque monument, avec auteur et licence |
 | `meta` | 3 | version du contenu et effectifs |
 
 Colonnes de `monuments` : `id` (le même identifiant que dans Postgres),
@@ -1144,6 +1249,12 @@ par leur adresse.
   boussole), et deux colonnes s'ajoutent : `chosen_by_player`, vrai quand le
   joueur a désigné le monument parmi plusieurs candidats, et `photo_file`
   (décision du 11 octobre 2026).
+- §5.2 : une étape `selection`, absente du SPEC, choisit les monuments que
+  l'app montre : les 350 plus connus de ceux qui ont un article dans Wikipédia
+  en français, hors stations de métro, soit 323 monuments sur 1 878 (décision
+  du 11 octobre 2026, voir « Sélection des monuments montrés »). Les lectures
+  des articles, que le §5.5 destinait au score de rareté, servent ici à
+  choisir ce qu'on montre.
 - §5.2, étape 6 : la visibilité ne décide plus de ce qui se capture. Un
   monument est capturable dès qu'on peut se tenir devant, même si seul son
   intérieur ou sa cour est protégé (décision du 11 octobre 2026, voir
