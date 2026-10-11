@@ -51,3 +51,25 @@ export function formatHeading(degrees: number): string {
   const rounded = Math.round(degrees) % 360;
   return `${rounded}° ${DIRECTIONS[Math.round(rounded / 45) % DIRECTIONS.length]}`;
 }
+
+const MONTHS = [
+  'janvier',
+  'février',
+  'mars',
+  'avril',
+  'mai',
+  'juin',
+  'juillet',
+  'août',
+  'septembre',
+  'octobre',
+  'novembre',
+  'décembre',
+];
+
+/** An ISO date → « 11 octobre 2026 », « 1er mai 2027 », on the clock of the phone. */
+export function formatDate(iso: string): string {
+  const date = new Date(iso);
+  const day = date.getDate();
+  return `${day}${day === 1 ? 'er' : ''} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
+}
