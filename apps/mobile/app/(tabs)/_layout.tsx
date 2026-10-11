@@ -14,6 +14,10 @@ export default function TabsLayout() {
         <NativeTabs.Trigger.Icon sf="list.bullet" />
         <NativeTabs.Trigger.Label>Liste</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="collection">
+        <NativeTabs.Trigger.Icon sf={{ default: 'star', selected: 'star.fill' }} />
+        <NativeTabs.Trigger.Label>Collection</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
     </NativeTabs>
   );
 }

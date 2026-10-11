@@ -232,3 +232,23 @@ export async function listCapturableAround(
     $metresPerLon: METRES_PER_DEGREE * Math.cos((place.latitude * Math.PI) / 180),
   });
 }
+
+/** The monuments with these identifiers, in no particular order. */
+export async function listMonumentsByIds(
+  db: SQLiteDatabase,
+  ids: readonly string[],
+): Promise<MonumentSummary[]> {
+  if (ids.length === 0) {
+    return [];
+  }
+  const marks = ids.map(() => '?').join(', ');
+  return db.getAllAsync<MonumentSummary>(`${SUMMARIES} where id in (${marks})`, [...ids]);
+}
+
+/** How many monuments the bundle offers to capture. */
+export async function countCapturable(db: SQLiteDatabase): Promise<number> {
+  const row = await db.getFirstAsync<{ count: number }>(
+    "select count(*) as count from monuments where readiness <> 'not_ready'",
+  );
+  return row?.count ?? 0;
+}
