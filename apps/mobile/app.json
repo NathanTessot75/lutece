@@ -39,6 +39,14 @@
           "locationAlwaysPermission": false,
           "motionUsagePermission": false
         }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Lutèce utilise l'appareil photo pour photographier les monuments que vous capturez.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
       ]
     ],
     "experiments": {
