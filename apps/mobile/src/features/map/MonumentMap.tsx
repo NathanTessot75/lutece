@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -64,6 +65,7 @@ function Group({ count, theme }: { count: number; theme: Theme }) {
 
 export function MonumentMap() {
   const db = useSQLiteContext();
+  const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const location = useLocationAccess();
@@ -207,17 +209,26 @@ export function MonumentMap() {
         )}
       </MapView>
       <View style={[styles.overlay, { bottom: insets.bottom + CARD_GAP }]} pointerEvents="box-none">
-        {(located || !location.granted) && (
+        <View style={styles.buttons}>
+          {(located || !location.granted) && (
+            <Pressable
+              style={[styles.button, { backgroundColor: theme.surface }]}
+              onPress={showPosition}
+              accessibilityRole="button"
+            >
+              <Text style={[styles.buttonLabel, { color: theme.accent }]}>
+                {location.granted ? 'Ma position' : 'Activer ma position'}
+              </Text>
+            </Pressable>
+          )}
           <Pressable
-            style={[styles.button, { backgroundColor: theme.surface }]}
-            onPress={showPosition}
+            style={[styles.button, { backgroundColor: theme.accent }]}
+            onPress={() => router.push('/aim')}
             accessibilityRole="button"
           >
-            <Text style={[styles.buttonLabel, { color: theme.accent }]}>
-              {location.granted ? 'Ma position' : 'Activer ma position'}
-            </Text>
+            <Text style={[styles.buttonLabel, { color: theme.onAccent }]}>Viser</Text>
           </Pressable>
-        )}
+        </View>
         {selection && (
           <View onLayout={({ nativeEvent }) => setCardHeight(nativeEvent.layout.height)}>
             <SelectedMonumentCard monument={selection.monument} />
@@ -247,8 +258,12 @@ const styles = StyleSheet.create({
     right: 16,
     gap: 10,
   },
+  buttons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+  },
   button: {
-    alignSelf: 'flex-end',
     borderRadius: 20,
     paddingHorizontal: 14,
     paddingVertical: 9,

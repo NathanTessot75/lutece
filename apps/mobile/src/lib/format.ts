@@ -37,3 +37,17 @@ export function formatCount(count: number): string {
 export function capitalize(text: string): string {
   return text.charAt(0).toLocaleUpperCase('fr') + text.slice(1);
 }
+
+/** 42.3 → « 42 m », 268 → « 270 m ». */
+export function formatDistance(metres: number): string {
+  const rounded = metres < 100 ? Math.round(metres) : Math.round(metres / 10) * 10;
+  return `${formatCount(rounded)}\u00a0m`;
+}
+
+const DIRECTIONS = ['nord', 'nord-est', 'est', 'sud-est', 'sud', 'sud-ouest', 'ouest', 'nord-ouest'];
+
+/** 135 → « 135° sud-est ». */
+export function formatHeading(degrees: number): string {
+  const rounded = Math.round(degrees) % 360;
+  return `${rounded}° ${DIRECTIONS[Math.round(rounded / 45) % DIRECTIONS.length]}`;
+}

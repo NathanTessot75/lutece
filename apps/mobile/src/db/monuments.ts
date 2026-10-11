@@ -64,6 +64,14 @@ export type MonumentCell = {
   monument: MonumentPlace | null;
 };
 
+/** A monument that can be captured, with what tells whether it is aimed at. */
+export type CapturableMonument = MonumentSummary & {
+  /** How far it may be captured from, in metres, whatever the accuracy of the GPS. */
+  reachM: number;
+  /** Its outline, as the GeoJSON multipolygon that the pipeline wrote. */
+  footprint: string;
+};
+
 export type Bounds = {
   south: number;
   north: number;
@@ -124,6 +132,23 @@ const PHOTOS = `
   where monument_id = $id
   order by rank
 `;
+
+// The box of each footprint, widened by the distance at which the monument
+// may be captured, tells whether a place is close enough to consider it.
+const CAPTURABLE_AROUND = `
+  select
+    id, title, arrondissement, category, century, readiness,
+    capture_reach_m as reachM,
+    footprint
+  from monuments
+  where readiness <> 'not_ready'
+    and $lat between min_lat - (max(capture_reach_m, $leastReach) + $margin) / $metresPerLat
+                 and max_lat + (max(capture_reach_m, $leastReach) + $margin) / $metresPerLat
+    and $lon between min_lon - (max(capture_reach_m, $leastReach) + $margin) / $metresPerLon
+                 and max_lon + (max(capture_reach_m, $leastReach) + $margin) / $metresPerLon
+`;
+
+const METRES_PER_DEGREE = 111_195;
 
 // The bundle writes the architects as a JSON array.
 type DetailsRow = Omit<MonumentDetails, 'architects'> & { architects: string };
@@ -186,4 +211,24 @@ export async function getMonument(db: SQLiteDatabase, id: string): Promise<Monum
 /** The photos of a monument, the best one first. */
 export async function listPhotos(db: SQLiteDatabase, id: string): Promise<MonumentPhoto[]> {
   return db.getAllAsync<MonumentPhoto>(PHOTOS, { $id: id });
+}
+
+/**
+ * The monuments that may be captured from a place or from `marginM` around it.
+ * `leastReachM` is the distance within which any monument can be captured.
+ */
+export async function listCapturableAround(
+  db: SQLiteDatabase,
+  place: { latitude: number; longitude: number },
+  leastReachM: number,
+  marginM: number,
+): Promise<CapturableMonument[]> {
+  return db.getAllAsync<CapturableMonument>(CAPTURABLE_AROUND, {
+    $lat: place.latitude,
+    $lon: place.longitude,
+    $leastReach: leastReachM,
+    $margin: marginM,
+    $metresPerLat: METRES_PER_DEGREE,
+    $metresPerLon: METRES_PER_DEGREE * Math.cos((place.latitude * Math.PI) / 180),
+  });
 }
