@@ -97,6 +97,7 @@ def test_monument_row_is_what_the_app_shows() -> None:
         [place("PA1"), place("PA2", footprint_source="buffer")],
         [{"merimee_id": "PA1", "visibility": "visible"}],
         {"PA1": 15},
+        {"PA1": 222, "PA2": 40},
     )
     # Sorted by reference, so that the file is the same at every run.
     assert [row["merimee_id"] for row in rows] == ["PA1", "PA2"]
@@ -109,6 +110,10 @@ def test_monument_row_is_what_the_app_shows() -> None:
         "arrondissement": 4,
         "lat": 48.8505,
         "lon": 2.3505,
+        "min_lat": 48.85,
+        "max_lat": 48.851,
+        "min_lon": 2.35,
+        "max_lon": 2.351,
         "footprint": bundle.to_geojson(SQUARE),
         "footprint_source": "osm_footprint",
         "category": "hôtel",
@@ -118,6 +123,7 @@ def test_monument_row_is_what_the_app_shows() -> None:
         "protection": "classé",
         "visibility": "visible",
         "readiness": "ready",
+        "capture_reach_m": 222,
         "photo_count": 15,
     }
     assert rows[1]["title"] == "Immeuble, 62 rue Saint-Antoine"
@@ -137,7 +143,8 @@ def test_monuments_with_the_same_name_are_told_apart_by_their_address() -> None:
         notice("PA4"),
     ]
     places = [place(f"PA{number}") for number in range(1, 5)]
-    rows = bundle.build_monuments(notices, [], [], places, [], {})
+    reaches = dict.fromkeys(["PA1", "PA2", "PA3", "PA4"], 50)
+    rows = bundle.build_monuments(notices, [], [], places, [], {}, reaches)
     assert [row["title"] for row in rows] == [
         "Immeuble en bordure du Palais-Royal, 12 rue de Montpensier",
         "Immeuble en bordure du Palais-Royal, 14 rue de Montpensier",
@@ -148,8 +155,52 @@ def test_monuments_with_the_same_name_are_told_apart_by_their_address() -> None:
 
 def test_notices_without_protection_or_location_are_left_out() -> None:
     notices = [notice("PA1"), notice("PA2", protection=None), notice("PA3")]
-    rows = bundle.build_monuments(notices, [], [], [place("PA1"), place("PA2")], [], {})
+    places = [place("PA1"), place("PA2")]
+    rows = bundle.build_monuments(notices, [], [], places, [], {}, {"PA1": 50})
     assert [row["merimee_id"] for row in rows] == ["PA1"]
+
+
+def test_a_monument_can_be_captured_from_twice_its_length() -> None:
+    # A degree of latitude is 111 km: the square is 111 m long, 73 m wide.
+    tower = box(2.36, 48.85, 2.3601, 48.8501)
+    palace = box(2.37, 48.85, 2.38, 48.852)
+    places = [
+        place("PA1"),
+        place("PA2", geometry=tower),
+        place("PA3", geometry=palace),
+        place("PA4", geometry=MultiPolygon([SQUARE, tower])),
+    ]
+    reaches = bundle.capture_reaches(places, {})
+    assert reaches["PA1"] == pytest.approx(222, abs=2)
+    assert reaches["PA2"] == pytest.approx(22, abs=1)
+    # However long, never more than what a phone can frame.
+    assert reaches["PA3"] == 300
+    # In several pieces, the length is the one of the whole.
+    assert reaches["PA4"] == 300
+
+
+def test_a_distance_set_by_hand_can_only_extend_the_reach() -> None:
+    tower = box(2.36, 48.85, 2.3601, 48.8501)
+    places = [place("PA1"), place("PA2", geometry=tower)]
+    reaches = bundle.capture_reaches(places, {"PA1": 100, "PA2": 800, "PA9": 500})
+    assert reaches["PA1"] == pytest.approx(222, abs=2)
+    assert reaches["PA2"] == 800
+    assert "PA9" not in reaches
+
+
+def test_distances_set_by_hand_are_read_and_checked(tmp_path: Path) -> None:
+    path = tmp_path / "capture_reach.csv"
+    assert bundle.read_reaches(path) == {}
+    header = "merimee_id,name,reach_m,note\n"
+    path.write_text(header + "PA1,Tour Eiffel,800,far\nPA2,Arc,300,\n")
+    assert bundle.read_reaches(path) == {"PA1": 800, "PA2": 300}
+    path.write_text(header + "PA1,Tour Eiffel,800,\nPA1,Tour Eiffel,600,\n")
+    with pytest.raises(ValueError, match="line 3: PA1 appears twice"):
+        bundle.read_reaches(path)
+    for wrong in ("far", "0", "-5", ""):
+        path.write_text(header + f"PA1,Tour Eiffel,{wrong},\n")
+        with pytest.raises(ValueError, match="line 2: .* is not a distance"):
+            bundle.read_reaches(path)
 
 
 def test_only_the_first_photos_of_each_monument_are_kept() -> None:
@@ -203,6 +254,7 @@ def run_main(folder: Path, out: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         "COMMONS_FILES_PARQUET": folder / "commons_files.parquet",
         "BUNDLE_DB": out / "assets" / "lutece.db",
         "BUNDLE_JSON": out / "assets" / "bundle.json",
+        "REACHES_CSV": folder / "capture_reach.csv",
     }
     for name, path in paths.items():
         monkeypatch.setattr(bundle, name, path)
@@ -240,6 +292,10 @@ def test_real_notices_are_bundled(
     assert json.loads(church["footprint"])["type"] == "MultiPolygon"
     assert 48.86 < church["lat"] < 48.87
     assert 2.34 < church["lon"] < 2.35
+    # Saint-Eustache is 109 m long.
+    assert church["capture_reach_m"] == pytest.approx(217, abs=3)
+    assert church["min_lat"] < church["lat"] < church["max_lat"]
+    assert church["min_lon"] < church["lon"] < church["max_lon"]
     # The café has no name of its own, and only its inside is protected.
     cafe = database.execute(
         "select title, readiness from monuments where merimee_id = 'PA00085786'"

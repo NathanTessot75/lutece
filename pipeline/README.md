@@ -27,7 +27,7 @@ uv run ruff format .    # formatage
 | 6. `visibility` | `uv run python -m lutece_pipeline.visibility` | `merimee.parquet`, `review/visibility_overrides.csv`, `review/visibility_labels.csv` | `data/interim/visibility.parquet`, `data/interim/visibility_to_review.csv`, `data/interim/visibility_evaluation.csv` |
 | 7. `ingest_commons` | `uv run python -m lutece_pipeline.ingest_commons` | `merimee.parquet`, `entities.parquet`, `wikidata_items.parquet`, API Commons, `review/commons_labels.csv` | `data/interim/commons_files.parquet`, `data/interim/commons_categories.parquet`, `data/interim/commons_evaluation.csv` |
 | 11. `load_postgres` | `uv run python -m lutece_pipeline.load_postgres` | les sorties des étapes 1 à 7, une base Postgres | tables `monuments` et `reference_images` |
-| 11. `export_bundle` | `uv run python -m lutece_pipeline.export_bundle` | les sorties des étapes 1 à 7 | `apps/mobile/assets/data/lutece.db`, `apps/mobile/assets/data/bundle.json` |
+| 11. `export_bundle` | `uv run python -m lutece_pipeline.export_bundle` | les sorties des étapes 1 à 7, `review/capture_reach.csv` | `apps/mobile/assets/data/lutece.db`, `apps/mobile/assets/data/bundle.json` |
 | 12. `quality_report` | `uv run python -m lutece_pipeline.quality_report` | les sorties des étapes 1 à 7 | `data/processed/monuments_quality.parquet`, `data/processed/quality_problems.csv`, `docs/rapport/qualite-donnees.md` |
 
 Options :
@@ -938,7 +938,7 @@ base locale ne tourne pas.
 L'app fonctionne hors ligne : tout ce qu'elle affiche des monuments vient d'un
 fichier SQLite que l'étape `export_bundle` écrit dans ses ressources,
 `apps/mobile/assets/data/lutece.db`. C'est la moitié « app » de l'étape 11 du
-SPEC. Le fichier pèse 3,8 Mo et il est versionné : l'app se compile sans
+SPEC. Le fichier pèse 3,9 Mo et il est versionné : l'app se compile sans
 relancer le pipeline.
 
 ### Contenu
@@ -951,9 +951,10 @@ relancer le pipeline.
 
 Colonnes de `monuments` : `id` (le même identifiant que dans Postgres),
 `merimee_id`, `title`, `name`, `address`, `arrondissement`, `lat`, `lon`,
+`min_lat`, `max_lat`, `min_lon`, `max_lon` (le cadre de l'emprise),
 `footprint` (multipolygone GeoJSON en WGS84, 6 décimales), `footprint_source`,
 `category`, `century`, `architects` (tableau JSON), `wikidata_qid`,
-`protection`, `visibility`, `readiness` et `photo_count`.
+`protection`, `visibility`, `readiness`, `capture_reach_m` et `photo_count`.
 
 - **`title`** est ce que l'app affiche : le nom du monument, ou son genre suivi
   de sa première adresse quand il n'a pas de nom propre (« Immeuble, 12 rue
@@ -962,6 +963,32 @@ Colonnes de `monuments` : `id` (le même identifiant que dans Postgres),
   Palais-Royal ».
 - **`readiness`** reprend les niveaux du rapport de qualité : `ready`,
   `approximate`, `not_ready`.
+- **`capture_reach_m`** est la distance, en mètres, jusqu'à laquelle on peut
+  capturer le monument quelle que soit la précision du GPS (voir ci-dessous).
+
+### Distance de capture
+
+Le SPEC (§6.1) retient les monuments dont l'emprise est à moins de
+`clamp(2 × précision GPS, 50 m, 150 m)`. Avec un bon GPS, cela fait 50 m : trop
+peu pour un grand monument, qu'on photographie de loin, et impossible pour
+l'Arc de Triomphe, dont le trottoir le plus proche est à plus de 100 m. L'app
+prend donc la plus grande de deux distances : celle du SPEC, qu'elle calcule
+elle-même, et `capture_reach_m`, calculée ici :
+
+- **par la taille** : deux fois la longueur de l'emprise — le grand côté de
+  son plus petit rectangle englobant —, plafonné à 300 m. La moitié des
+  monuments obtiennent moins de 61 m et s'en tiennent donc à la règle du
+  SPEC ; 240 dépassent 150 m ;
+- **à la main** pour douze monuments hauts, vus de bien plus loin que leur
+  emprise ne le dit : `review/capture_reach.csv` (`merimee_id`, `name`,
+  `reach_m`, `note`). Une valeur à la main ne peut qu'allonger la distance.
+  Tour Eiffel 800 m, Hôtel des Invalides 500 m, Notre-Dame et Panthéon 400 m,
+  Arc de Triomphe et Sacré-Cœur 300 m, puis des colonnes, tours et portes au
+  milieu d'une place (150 à 200 m).
+
+Ces distances sont des choix de départ, à confronter aux captures réelles du
+jeu de test (phase 4). La validation côté serveur devra appliquer la même
+règle : la colonne sera à charger dans Postgres à ce moment-là.
 
 ### Version
 
@@ -1092,3 +1119,7 @@ par leur adresse.
 - §5.2, étape 7 : les « fichiers portant le modèle Mérimée » ne sont pas
   cherchés. Sur 60 monuments, cette recherche n'apportait 5 photos qu'à 2 des
   29 monuments qui en manquaient.
+- §6.1 : la distance de capture `clamp(2 × précision GPS, 50 m, 150 m)` est
+  trop courte pour les grands monuments. Elle est complétée par une distance
+  propre à chaque monument (décision du 10 octobre 2026, voir « Distance de
+  capture »).

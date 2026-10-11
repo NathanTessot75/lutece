@@ -2,19 +2,22 @@
 
 The app works offline: everything it shows about the monuments comes from one
 file, built here and shipped among its assets. The file holds the monuments
-with their reference point, their footprint and whether they can be captured,
-and a few photos with their credits. It is small enough to be versioned, so
-the app builds without running the pipeline.
+with their reference point, their footprint, whether they can be captured and
+from how far, and a few photos with their credits. It is small enough to be
+versioned, so the app builds without running the pipeline.
 
 Run with: uv run python -m lutece_pipeline.export_bundle
 """
 
 import argparse
+import csv
 import hashlib
 import json
 import logging
+import math
 import sqlite3
 from collections.abc import Mapping, Sequence
+from itertools import pairwise
 from pathlib import Path
 from typing import Any
 
@@ -32,7 +35,8 @@ from lutece_pipeline import (
     resolve_entities,
     visibility,
 )
-from lutece_pipeline.paths import PIPELINE_ROOT
+from lutece_pipeline.geo import LAMBERT_93, WGS84
+from lutece_pipeline.paths import PIPELINE_ROOT, REVIEW_DIR
 from lutece_pipeline.tables import to_records
 
 logger = logging.getLogger(__name__)
@@ -40,9 +44,14 @@ logger = logging.getLogger(__name__)
 # The photos of a monument page; image recognition will use embeddings instead.
 PHOTOS_PER_MONUMENT = 3
 # Coordinates are written with 6 decimals: about ten centimetres.
-COORDINATE_GRID = 1e-6
+COORDINATE_DECIMALS = 6
+COORDINATE_GRID = 10**-COORDINATE_DECIMALS
 # Several addresses of one notice are separated this way; the first one is shown.
 ADDRESS_SEPARATOR = ";"
+# A monument can be captured from as far as twice its length, whatever the
+# accuracy of the GPS: a large one is photographed from a distance.
+REACH_PER_LENGTH = 2
+MAX_REACH_M = 300
 
 MERIMEE_PARQUET = ingest_merimee.OUTPUT_PARQUET
 ENTITIES_PARQUET = resolve_entities.ENTITIES_PARQUET
@@ -54,6 +63,8 @@ ASSETS_FOLDER = PIPELINE_ROOT.parent / "apps" / "mobile" / "assets" / "data"
 BUNDLE_DB = ASSETS_FOLDER / "lutece.db"
 # What the app must know before it opens the file: which version it carries.
 BUNDLE_JSON = ASSETS_FOLDER / "bundle.json"
+# Tall monuments seen from much further than their footprint tells, set by hand.
+REACHES_CSV = REVIEW_DIR / "capture_reach.csv"
 
 SCHEMA = """
 create table meta (
@@ -70,6 +81,10 @@ create table monuments (
     arrondissement integer,
     lat real not null,
     lon real not null,
+    min_lat real not null,
+    max_lat real not null,
+    min_lon real not null,
+    max_lon real not null,
     footprint text not null,
     footprint_source text not null,
     category text,
@@ -79,6 +94,7 @@ create table monuments (
     protection text not null,
     visibility text not null,
     readiness text not null,
+    capture_reach_m integer not null,
     photo_count integer not null
 ) strict;
 
@@ -104,6 +120,10 @@ MONUMENT_COLUMNS = [
     "arrondissement",
     "lat",
     "lon",
+    "min_lat",
+    "max_lat",
+    "min_lon",
+    "max_lon",
     "footprint",
     "footprint_source",
     "category",
@@ -113,6 +133,7 @@ MONUMENT_COLUMNS = [
     "protection",
     "visibility",
     "readiness",
+    "capture_reach_m",
     "photo_count",
 ]
 PHOTO_COLUMNS = [
@@ -166,6 +187,49 @@ def to_geojson(shape: shapely.Geometry) -> str:
     return shapely.to_geojson(shapely.set_precision(whole, COORDINATE_GRID))
 
 
+def read_reaches(path: Path) -> dict[str, int]:
+    """Read the distances, in metres, set by hand for a few tall monuments."""
+    if not path.exists():
+        return {}
+    reaches: dict[str, int] = {}
+    with path.open(newline="", encoding="utf-8") as file:
+        for line_number, row in enumerate(csv.DictReader(file), start=2):
+            where = f"{path.name} line {line_number}"
+            if row["merimee_id"] in reaches:
+                raise ValueError(f"{where}: {row['merimee_id']} appears twice")
+            if not row["reach_m"].isdecimal() or int(row["reach_m"]) == 0:
+                raise ValueError(f"{where}: {row['reach_m']!r} is not a distance")
+            reaches[row["merimee_id"]] = int(row["reach_m"])
+    return reaches
+
+
+def longest_sides(geometries: Sequence[Record]) -> dict[str, float]:
+    """The length in metres of each footprint: the long side of its tightest box."""
+    shapes = gpd.GeoSeries([row["geometry"] for row in geometries], crs=WGS84)
+    boxes = shapes.to_crs(LAMBERT_93).minimum_rotated_rectangle()
+    lengths = {}
+    for row, box in zip(geometries, boxes, strict=True):
+        corners = shapely.get_coordinates(box).tolist()
+        sides = [math.dist(start, end) for start, end in pairwise(corners)]
+        lengths[row["merimee_id"]] = max(sides, default=0.0)
+    return lengths
+
+
+def capture_reaches(
+    geometries: Sequence[Record], by_hand: Mapping[str, int]
+) -> dict[str, int]:
+    """How far each monument may be captured from, in metres.
+
+    The app adds what the accuracy of the GPS allows; the larger of the two
+    distances applies.
+    """
+    reaches = {}
+    for merimee_id, length in longest_sides(geometries).items():
+        by_size = min(round(REACH_PER_LENGTH * length), MAX_REACH_M)
+        reaches[merimee_id] = max(by_size, by_hand.get(merimee_id, 0))
+    return reaches
+
+
 def build_monuments(
     notices: Sequence[Record],
     entities: Sequence[Record],
@@ -173,6 +237,7 @@ def build_monuments(
     geometries: Sequence[Record],
     visibilities: Sequence[Record],
     photo_counts: Mapping[str, int],
+    reaches: Mapping[str, int],
 ) -> list[dict[str, Any]]:
     """One row of the bundle per protected notice that has a location."""
     item_of = {entity["merimee_id"]: entity["wikidata_qid"] for entity in entities}
@@ -191,6 +256,7 @@ def build_monuments(
             items_by_id.get(qid, {}).get("architects")
         )
         visible = seen.get(merimee_id, visibility.UNKNOWN)
+        west, south, east, north = shapely.bounds(place["geometry"]).tolist()
         rows.append(
             {
                 "id": str(load_postgres.monument_id(merimee_id)),
@@ -201,6 +267,11 @@ def build_monuments(
                 "arrondissement": notice["arrondissement"],
                 "lat": place["ref_lat"],
                 "lon": place["ref_lon"],
+                # The box of the footprint lets the app find what is around.
+                "min_lat": round(south, COORDINATE_DECIMALS),
+                "max_lat": round(north, COORDINATE_DECIMALS),
+                "min_lon": round(west, COORDINATE_DECIMALS),
+                "max_lon": round(east, COORDINATE_DECIMALS),
                 "footprint": to_geojson(place["geometry"]),
                 "footprint_source": place["footprint_source"],
                 "category": kinds[0] if kinds else None,
@@ -212,6 +283,7 @@ def build_monuments(
                 "readiness": quality_report.readiness(
                     visible, place["footprint_source"]
                 ),
+                "capture_reach_m": reaches[merimee_id],
                 "photo_count": photo_counts.get(merimee_id, 0),
             }
         )
@@ -295,13 +367,19 @@ def main(argv: Sequence[str] | None = None) -> int:
     for file in files:
         if file["selected"]:
             counts[file["merimee_id"]] = counts.get(file["merimee_id"], 0) + 1
+    geometries = to_records(pd.DataFrame(gpd.read_parquet(GEOMETRIES_PARQUET)))
+    by_hand = read_reaches(REACHES_CSV)
+    stale = sorted(set(by_hand) - {row["merimee_id"] for row in geometries})
+    if stale:
+        logger.warning("%d distances match no monument: %s", len(stale), stale)
     monuments = build_monuments(
         to_records(pd.read_parquet(MERIMEE_PARQUET)),
         to_records(pd.read_parquet(ENTITIES_PARQUET)),
         to_records(pd.read_parquet(WIKIDATA_ITEMS_PARQUET)),
-        to_records(pd.DataFrame(gpd.read_parquet(GEOMETRIES_PARQUET))),
+        geometries,
         to_records(pd.read_parquet(VISIBILITY_PARQUET)),
         counts,
+        capture_reaches(geometries, by_hand),
     )
     photos = build_photos(files, monuments)
     version = content_version(monuments, photos)
