@@ -2,7 +2,7 @@
 
 import logging
 import time
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Collection, Mapping
 
 import httpx
 
@@ -42,15 +42,43 @@ def post_form(
     and network errors are retried. The delay starts at base_delay seconds and
     doubles after each failure, unless the server says how long to wait.
     """
+    return _send(lambda: client.post(url, data=dict(form)), url, pause, base_delay)
+
+
+def get(
+    client: httpx.Client,
+    url: str,
+    *,
+    pause: Pause = time.sleep,
+    base_delay: float = 2.0,
+    accepted: Collection[int] = (),
+) -> httpx.Response:
+    """GET a page and return the response, retried like a posted form.
+
+    `accepted` lists the error statuses that are an answer in themselves, such
+    as the 404 of a service that has nothing to say about a page.
+    """
+    return _send(lambda: client.get(url), url, pause, base_delay, accepted)
+
+
+def _send(
+    request: Callable[[], httpx.Response],
+    url: str,
+    pause: Pause,
+    base_delay: float,
+    accepted: Collection[int] = (),
+) -> httpx.Response:
     reason = ""
     for attempt in range(1, MAX_ATTEMPTS + 1):
         delay = base_delay * 2 ** (attempt - 1)
         try:
-            response = client.post(url, data=dict(form))
+            response = request()
         except httpx.TransportError as error:
             reason = repr(error)
         else:
             if response.status_code == httpx.codes.OK:
+                return response
+            if response.status_code in accepted:
                 return response
             if response.status_code != 429 and response.status_code < 500:
                 response.raise_for_status()
