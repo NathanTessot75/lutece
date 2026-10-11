@@ -9,6 +9,7 @@ import {
   getMonument,
   listPhotos,
 } from '@/db/monuments';
+import { useCaptures } from '@/features/collection/CapturesProvider';
 import { MonumentPage } from '@/features/monuments/MonumentPage';
 import { useTheme } from '@/lib/theme';
 
@@ -22,6 +23,7 @@ export default function MonumentScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const db = useSQLiteContext();
   const theme = useTheme();
+  const { byMonument } = useCaptures();
   const [loaded, setLoaded] = useState<Loaded | null>(null);
 
   useEffect(() => {
@@ -41,7 +43,11 @@ export default function MonumentScreen() {
     <>
       <Stack.Screen options={{ title: '', headerBackButtonDisplayMode: 'minimal' }} />
       {shown?.monument ? (
-        <MonumentPage monument={shown.monument} photos={shown.photos} />
+        <MonumentPage
+          monument={shown.monument}
+          photos={shown.photos}
+          capture={byMonument.get(id) ?? null}
+        />
       ) : (
         <View style={[styles.empty, { backgroundColor: theme.background }]}>
           {shown && (

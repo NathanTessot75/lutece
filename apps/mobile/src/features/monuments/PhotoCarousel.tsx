@@ -60,21 +60,58 @@ function Photo({ photo, width, theme }: { photo: MonumentPhoto; width: number; t
   );
 }
 
-/** The photos of a monument, side by side, each with its author and licence. */
-export function PhotoCarousel({ photos }: { photos: MonumentPhoto[] }) {
+/** The picture that the player took when capturing the monument. */
+export type OwnPhoto = {
+  uri: string;
+  caption: string;
+};
+
+function Own({ photo, width, theme }: { photo: OwnPhoto; width: number; theme: Theme }) {
+  return (
+    <View style={{ width }}>
+      <Image
+        source={{ uri: photo.uri }}
+        style={{ width, height: width * HEIGHT_PER_WIDTH, backgroundColor: theme.separator }}
+        resizeMode="cover"
+        accessibilityIgnoresInvertColors
+      />
+      <Text style={[styles.credit, { color: theme.secondaryText }]} numberOfLines={1}>
+        {photo.caption}
+      </Text>
+    </View>
+  );
+}
+
+type Props = {
+  photos: MonumentPhoto[];
+  own?: OwnPhoto | null;
+};
+
+/**
+ * The photos of a monument, side by side: the one of the player first, then
+ * the reference ones, each with its author and licence.
+ */
+export function PhotoCarousel({ photos, own = null }: Props) {
   const theme = useTheme();
   const { width } = useWindowDimensions();
   const [shown, setShown] = useState(0);
+  const slides = [...(own ? [own] : []), ...photos];
 
-  if (photos.length === 0) {
+  if (slides.length === 0) {
     return <Placeholder text="Pas encore de photo" width={width} theme={theme} />;
   }
   return (
     <View>
       <FlatList
-        data={photos}
-        keyExtractor={(photo) => String(photo.rank)}
-        renderItem={({ item }) => <Photo photo={item} width={width} theme={theme} />}
+        data={slides}
+        keyExtractor={(slide) => ('uri' in slide ? 'own' : String(slide.rank))}
+        renderItem={({ item }) =>
+          'uri' in item ? (
+            <Own photo={item} width={width} theme={theme} />
+          ) : (
+            <Photo photo={item} width={width} theme={theme} />
+          )
+        }
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
@@ -82,10 +119,10 @@ export function PhotoCarousel({ photos }: { photos: MonumentPhoto[] }) {
           setShown(Math.round(nativeEvent.contentOffset.x / width))
         }
       />
-      {photos.length > 1 && (
+      {slides.length > 1 && (
         <View style={styles.counter}>
           <Text style={styles.counterText}>
-            {shown + 1} / {photos.length}
+            {shown + 1} / {slides.length}
           </Text>
         </View>
       )}

@@ -1,7 +1,9 @@
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import type { Capture } from '@/db/captures';
 import type { MonumentDetails, MonumentPhoto } from '@/db/monuments';
-import { capitalize, formatArrondissement, formatCentury } from '@/lib/format';
+import { photoUri } from '@/features/capture/photos';
+import { capitalize, formatArrondissement, formatCentury, formatDate } from '@/lib/format';
 import { type Theme, useTheme } from '@/lib/theme';
 
 import { PhotoCarousel } from './PhotoCarousel';
@@ -60,14 +62,28 @@ function describeLocation(monument: MonumentDetails): string[] {
   return lines;
 }
 
-/** Whether the monument can be captured, and why not when it cannot. */
-function describeStatus(monument: MonumentDetails): string {
-  if (monument.readiness !== 'not_ready') {
-    return 'Peut être capturé';
+type Status = { text: string; background: string; color: string };
+
+/** Whether the monument is captured, can be, or cannot and why. */
+function describeStatus(monument: MonumentDetails, capture: Capture | null, theme: Theme): Status {
+  if (capture !== null) {
+    return {
+      text: `Capturé le ${formatDate(capture.capturedAt)}`,
+      background: theme.accent,
+      color: theme.onAccent,
+    };
   }
-  return monument.visibility === 'non_visible'
-    ? 'Consultation seule : ne se voit pas depuis la rue'
-    : 'Consultation seule : visibilité à vérifier';
+  if (monument.readiness !== 'not_ready') {
+    return { text: 'À capturer', background: theme.pending, color: theme.background };
+  }
+  return {
+    text:
+      monument.visibility === 'non_visible'
+        ? 'Consultation seule : ne se voit pas depuis la rue'
+        : 'Consultation seule : visibilité à vérifier',
+    background: theme.muted,
+    color: theme.onAccent,
+  };
 }
 
 function Section({ title, theme }: { title: string; theme: Theme }) {
@@ -77,18 +93,23 @@ function Section({ title, theme }: { title: string; theme: Theme }) {
 type Props = {
   monument: MonumentDetails;
   photos: MonumentPhoto[];
+  /** The capture of the monument by the player, if any. */
+  capture: Capture | null;
 };
 
-export function MonumentPage({ monument, photos }: Props) {
+export function MonumentPage({ monument, photos, capture }: Props) {
   const theme = useTheme();
-  const capturable = monument.readiness !== 'not_ready';
+  const status = describeStatus(monument, capture, theme);
+  const own = capture?.photoFile
+    ? { uri: photoUri(capture.photoFile), caption: `Ta photo du ${formatDate(capture.capturedAt)}` }
+    : null;
   return (
     <ScrollView
       style={{ backgroundColor: theme.background }}
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={styles.content}
     >
-      <PhotoCarousel photos={photos} />
+      <PhotoCarousel photos={photos} own={own} />
       <View style={styles.heading}>
         <Text style={[styles.title, { color: theme.text }]}>{monument.title}</Text>
         {describeLocation(monument).map((line) => (
@@ -96,12 +117,8 @@ export function MonumentPage({ monument, photos }: Props) {
             {line}
           </Text>
         ))}
-        <View
-          style={[styles.status, { backgroundColor: capturable ? theme.accent : theme.muted }]}
-        >
-          <Text style={[styles.statusText, { color: theme.onAccent }]}>
-            {describeStatus(monument)}
-          </Text>
+        <View style={[styles.status, { backgroundColor: status.background }]}>
+          <Text style={[styles.statusText, { color: status.color }]}>{status.text}</Text>
         </View>
       </View>
 
