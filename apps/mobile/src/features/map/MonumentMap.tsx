@@ -223,10 +223,10 @@ export function MonumentMap() {
           )}
           <Pressable
             style={[styles.button, { backgroundColor: theme.accent }]}
-            onPress={() => router.push('/aim')}
+            onPress={() => router.push('/capture')}
             accessibilityRole="button"
           >
-            <Text style={[styles.buttonLabel, { color: theme.onAccent }]}>Viser</Text>
+            <Text style={[styles.buttonLabel, { color: theme.onAccent }]}>Capturer</Text>
           </Pressable>
         </View>
         {selection && (
