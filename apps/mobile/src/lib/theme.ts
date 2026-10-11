@@ -6,9 +6,11 @@ export type Theme = {
   text: string;
   secondaryText: string;
   separator: string;
-  /** What can be captured, and what the app invites to touch. */
+  /** What the player has captured, and what the app invites to touch. */
   accent: string;
   onAccent: string;
+  /** What remains to capture. */
+  pending: string;
   /** What can only be looked at. */
   muted: string;
 };
@@ -21,7 +23,8 @@ const LIGHT: Theme = {
   separator: '#D1D1D6',
   accent: '#B5472B',
   onAccent: '#FFFFFF',
-  muted: '#A1A1A8',
+  pending: '#55555A',
+  muted: '#B0B0B6',
 };
 
 const DARK: Theme = {
@@ -32,6 +35,7 @@ const DARK: Theme = {
   separator: '#38383A',
   accent: '#E0694A',
   onAccent: '#FFFFFF',
+  pending: '#C7C7CC',
   muted: '#6E6E75',
 };
 

@@ -6,6 +6,7 @@ import MapView, { type LatLng, Marker, Polygon, type Region } from 'react-native
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { type MonumentPlace, getFootprint } from '@/db/monuments';
+import { useCaptures } from '@/features/collection/CapturesProvider';
 import { useLocationAccess } from '@/lib/location';
 import { type Theme, useTheme } from '@/lib/theme';
 
@@ -41,6 +42,14 @@ function hasPin(marks: Mark[], monument: MonumentPlace): boolean {
   return marks.some((mark) => mark.kind === 'monument' && mark.monument.id === monument.id);
 }
 
+/** The city takes colour as it is captured: grey until then (SPEC §2). */
+function pinColor(monument: MonumentPlace, captured: boolean, theme: Theme): string {
+  if (captured) {
+    return theme.accent;
+  }
+  return monument.readiness === 'not_ready' ? theme.muted : theme.pending;
+}
+
 function groupSize(count: number): number {
   if (count < 10) {
     return 34;
@@ -54,11 +63,11 @@ function Group({ count, theme }: { count: number; theme: Theme }) {
     <View
       style={[
         styles.group,
-        { width: size, height: size, borderRadius: size / 2, backgroundColor: theme.accent },
-        { borderColor: theme.onAccent },
+        { width: size, height: size, borderRadius: size / 2, backgroundColor: theme.pending },
+        { borderColor: theme.background },
       ]}
     >
-      <Text style={[styles.groupCount, { color: theme.onAccent }]}>{count}</Text>
+      <Text style={[styles.groupCount, { color: theme.background }]}>{count}</Text>
     </View>
   );
 }
@@ -68,6 +77,7 @@ export function MonumentMap() {
   const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const { byMonument: captured } = useCaptures();
   const location = useLocationAccess();
   const map = useRef<MapView>(null);
   const region = useRef(PARIS);
@@ -190,7 +200,7 @@ export function MonumentMap() {
           mark.kind === 'group' ? (
             <Marker
               // A group is drawn once: its colours only change with a new key.
-              key={`${mark.key}:${theme.accent}`}
+              key={`${mark.key}:${theme.pending}`}
               coordinate={{ latitude: mark.latitude, longitude: mark.longitude }}
               tracksViewChanges={false}
               onPress={() => zoomInto(mark)}
@@ -201,7 +211,7 @@ export function MonumentMap() {
             <Marker
               key={mark.monument.id}
               coordinate={{ latitude: mark.monument.lat, longitude: mark.monument.lon }}
-              pinColor={mark.monument.readiness === 'not_ready' ? theme.muted : theme.accent}
+              pinColor={pinColor(mark.monument, captured.has(mark.monument.id), theme)}
               onSelect={() => select(mark.monument)}
               onDeselect={() => deselect(mark.monument)}
             />
