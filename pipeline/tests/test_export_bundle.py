@@ -175,32 +175,16 @@ def test_monuments_that_the_selection_hides_are_left_out() -> None:
     assert [row["merimee_id"] for row in rows] == ["PA1", "PA3"]
 
 
-def test_a_monument_can_be_captured_from_twice_its_length() -> None:
-    # A degree of latitude is 111 km: the square is 111 m long, 73 m wide.
-    tower = box(2.36, 48.85, 2.3601, 48.8501)
+def test_only_a_distance_set_by_hand_extends_the_reach() -> None:
+    # However long a palace, its size says nothing of where it is seen from.
     palace = box(2.37, 48.85, 2.38, 48.852)
-    places = [
-        place("PA1"),
-        place("PA2", geometry=tower),
-        place("PA3", geometry=palace),
-        place("PA4", geometry=MultiPolygon([SQUARE, tower])),
-    ]
-    reaches = bundle.capture_reaches(places, {})
-    assert reaches["PA1"] == pytest.approx(222, abs=2)
-    assert reaches["PA2"] == pytest.approx(22, abs=1)
-    # However long, never more than what a phone can frame.
-    assert reaches["PA3"] == 300
-    # In several pieces, the length is the one of the whole.
-    assert reaches["PA4"] == 300
-
-
-def test_a_distance_set_by_hand_can_only_extend_the_reach() -> None:
-    tower = box(2.36, 48.85, 2.3601, 48.8501)
-    places = [place("PA1"), place("PA2", geometry=tower)]
-    reaches = bundle.capture_reaches(places, {"PA1": 100, "PA2": 800, "PA9": 500})
-    assert reaches["PA1"] == pytest.approx(222, abs=2)
-    assert reaches["PA2"] == 800
-    assert "PA9" not in reaches
+    notices = [notice("PA1"), notice("PA2"), notice("PA3")]
+    places = [place("PA1"), place("PA2", geometry=palace), place("PA3")]
+    by_hand = {"PA3": 800, "PA9": 500}
+    rows = bundle.build_monuments(
+        notices, [], [], places, [], {}, by_hand, {"PA1", "PA2", "PA3"}
+    )
+    assert [row["capture_reach_m"] for row in rows] == [0, 0, 800]
 
 
 def test_distances_set_by_hand_are_read_and_checked(tmp_path: Path) -> None:
@@ -311,8 +295,8 @@ def test_real_notices_are_bundled(
     assert json.loads(church["footprint"])["type"] == "MultiPolygon"
     assert 48.86 < church["lat"] < 48.87
     assert 2.34 < church["lon"] < 2.35
-    # Saint-Eustache is 109 m long.
-    assert church["capture_reach_m"] == pytest.approx(217, abs=3)
+    # No distance is set by hand in the sample: the GPS alone gives the reach.
+    assert church["capture_reach_m"] == 0
     assert church["min_lat"] < church["lat"] < church["max_lat"]
     assert church["min_lon"] < church["lon"] < church["max_lon"]
     # The café has no name of its own. Only its inside is protected, which

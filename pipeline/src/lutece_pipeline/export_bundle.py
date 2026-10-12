@@ -14,10 +14,8 @@ import csv
 import hashlib
 import json
 import logging
-import math
 import sqlite3
 from collections.abc import Collection, Mapping, Sequence
-from itertools import pairwise
 from pathlib import Path
 from typing import Any
 
@@ -36,7 +34,6 @@ from lutece_pipeline import (
     selection,
     visibility,
 )
-from lutece_pipeline.geo import LAMBERT_93, WGS84
 from lutece_pipeline.paths import PIPELINE_ROOT, REVIEW_DIR
 from lutece_pipeline.tables import to_records
 
@@ -49,10 +46,6 @@ COORDINATE_DECIMALS = 6
 COORDINATE_GRID = 10**-COORDINATE_DECIMALS
 # Several addresses of one notice are separated this way; the first one is shown.
 ADDRESS_SEPARATOR = ";"
-# A monument can be captured from as far as twice its length, whatever the
-# accuracy of the GPS: a large one is photographed from a distance.
-REACH_PER_LENGTH = 2
-MAX_REACH_M = 300
 
 MERIMEE_PARQUET = ingest_merimee.OUTPUT_PARQUET
 ENTITIES_PARQUET = resolve_entities.ENTITIES_PARQUET
@@ -65,7 +58,8 @@ ASSETS_FOLDER = PIPELINE_ROOT.parent / "apps" / "mobile" / "assets" / "data"
 BUNDLE_DB = ASSETS_FOLDER / "lutece.db"
 # What the app must know before it opens the file: which version it carries.
 BUNDLE_JSON = ASSETS_FOLDER / "bundle.json"
-# Tall monuments seen from much further than their footprint tells, set by hand.
+# Monuments seen from afar, above the roofs or across an open space: how far
+# they may be captured from is set by hand, one by one.
 REACHES_CSV = REVIEW_DIR / "capture_reach.csv"
 
 SCHEMA = """
@@ -190,7 +184,13 @@ def to_geojson(shape: shapely.Geometry) -> str:
 
 
 def read_reaches(path: Path) -> dict[str, int]:
-    """Read the distances, in metres, set by hand for a few tall monuments."""
+    """Read the distances, in metres, from which a few monuments may be captured.
+
+    The app allows what the accuracy of the GPS does, 50 to 150 m; a monument
+    listed here can be captured from further. The size of a footprint is no
+    guide: a long school is no more visible from afar than a house, and other
+    buildings stand in the way (field test of 12 October 2026).
+    """
     if not path.exists():
         return {}
     reaches: dict[str, int] = {}
@@ -202,33 +202,6 @@ def read_reaches(path: Path) -> dict[str, int]:
             if not row["reach_m"].isdecimal() or int(row["reach_m"]) == 0:
                 raise ValueError(f"{where}: {row['reach_m']!r} is not a distance")
             reaches[row["merimee_id"]] = int(row["reach_m"])
-    return reaches
-
-
-def longest_sides(geometries: Sequence[Record]) -> dict[str, float]:
-    """The length in metres of each footprint: the long side of its tightest box."""
-    shapes = gpd.GeoSeries([row["geometry"] for row in geometries], crs=WGS84)
-    boxes = shapes.to_crs(LAMBERT_93).minimum_rotated_rectangle()
-    lengths = {}
-    for row, box in zip(geometries, boxes, strict=True):
-        corners = shapely.get_coordinates(box).tolist()
-        sides = [math.dist(start, end) for start, end in pairwise(corners)]
-        lengths[row["merimee_id"]] = max(sides, default=0.0)
-    return lengths
-
-
-def capture_reaches(
-    geometries: Sequence[Record], by_hand: Mapping[str, int]
-) -> dict[str, int]:
-    """How far each monument may be captured from, in metres.
-
-    The app adds what the accuracy of the GPS allows; the larger of the two
-    distances applies.
-    """
-    reaches = {}
-    for merimee_id, length in longest_sides(geometries).items():
-        by_size = min(round(REACH_PER_LENGTH * length), MAX_REACH_M)
-        reaches[merimee_id] = max(by_size, by_hand.get(merimee_id, 0))
     return reaches
 
 
@@ -287,7 +260,7 @@ def build_monuments(
                 "readiness": quality_report.readiness(
                     visible, view.get("reason"), place["footprint_source"]
                 ),
-                "capture_reach_m": reaches[merimee_id],
+                "capture_reach_m": reaches.get(merimee_id, 0),
                 "photo_count": photo_counts.get(merimee_id, 0),
             }
         )
@@ -385,7 +358,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         geometries,
         to_records(pd.read_parquet(VISIBILITY_PARQUET)),
         counts,
-        capture_reaches(geometries, by_hand),
+        by_hand,
         shown,
     )
     photos = build_photos(files, monuments)

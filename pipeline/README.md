@@ -1075,25 +1075,32 @@ Colonnes de `monuments` : `id` (le même identifiant que dans Postgres),
 
 Le SPEC (§6.1) retient les monuments dont l'emprise est à moins de
 `clamp(2 × précision GPS, 50 m, 150 m)`. Avec un bon GPS, cela fait 50 m : trop
-peu pour un grand monument, qu'on photographie de loin, et impossible pour
-l'Arc de Triomphe, dont le trottoir le plus proche est à plus de 100 m. L'app
-prend donc la plus grande de deux distances : celle du SPEC, qu'elle calcule
-elle-même, et `capture_reach_m`, calculée ici :
+peu pour un monument qu'on photographie de loin, et impossible pour l'Arc de
+Triomphe, dont le trottoir le plus proche est à plus de 100 m. L'app prend
+donc la plus grande de deux distances : celle du SPEC, qu'elle calcule
+elle-même, et `capture_reach_m`, qui vaut 0 sauf pour les monuments de
+`review/capture_reach.csv` (`merimee_id`, `name`, `reach_m`, `note`).
 
-- **par la taille** : deux fois la longueur de l'emprise — le grand côté de
-  son plus petit rectangle englobant —, plafonné à 300 m. La moitié des
-  monuments obtiennent moins de 61 m et s'en tiennent donc à la règle du
-  SPEC ; 240 dépassent 150 m ;
-- **à la main** pour douze monuments hauts, vus de bien plus loin que leur
-  emprise ne le dit : `review/capture_reach.csv` (`merimee_id`, `name`,
-  `reach_m`, `note`). Une valeur à la main ne peut qu'allonger la distance.
-  Tour Eiffel 800 m, Hôtel des Invalides 500 m, Notre-Dame et Panthéon 400 m,
-  Arc de Triomphe et Sacré-Cœur 300 m, puis des colonnes, tours et portes au
-  milieu d'une place (150 à 200 m).
+Ce fichier, tenu à la main, liste 24 monuments qu'on voit de loin, par-dessus
+les toits ou au bout d'un espace dégagé : tour Eiffel 800 m, Hôtel des
+Invalides 500 m, Notre-Dame, Panthéon et palais de Chaillot 400 m, Arc de
+Triomphe, Sacré-Cœur, Opéra Garnier, Madeleine et École militaire 300 m,
+palais du Luxembourg 250 m, puis des colonnes, tours, portes, églises et
+palais devant une place ou un fleuve (150 à 200 m).
 
-Ces distances sont des choix de départ, à confronter aux captures réelles du
-jeu de test (phase 4). La validation côté serveur devra appliquer la même
-règle : la colonne sera à charger dans Postgres à ce moment-là.
+**La taille de l'emprise n'entre plus dans le calcul.** Du 10 au 12 octobre
+2026, la distance valait au moins deux fois la longueur de l'emprise, jusqu'à
+300 m. L'essai dans la rue l'a invalidée : depuis la rue Soufflot, le lycée
+Saint-Louis, long de 128 m, se capturait à 254 m, derrière plusieurs pâtés de
+maisons. Un bâtiment long n'est pas plus visible de loin qu'une maison ; 135
+monuments sur 323 avaient ainsi une portée de plus de 150 m.
+
+La géométrie seule ne sait pas ce qui s'interpose entre le joueur et le
+monument : à 50 m, on capture encore à travers un immeuble. C'est la
+comparaison d'images (phase 3) qui dira si le monument est dans le cadre, et
+qui permettra d'allonger les distances sans risque. La validation côté serveur
+devra appliquer la même règle : la colonne sera à charger dans Postgres à ce
+moment-là.
 
 ### Version
 
@@ -1236,9 +1243,9 @@ par leur adresse.
   cherchés. Sur 60 monuments, cette recherche n'apportait 5 photos qu'à 2 des
   29 monuments qui en manquaient.
 - §6.1 : la distance de capture `clamp(2 × précision GPS, 50 m, 150 m)` est
-  trop courte pour les grands monuments. Elle est complétée par une distance
-  propre à chaque monument (décision du 10 octobre 2026, voir « Distance de
-  capture »).
+  trop courte pour les monuments qu'on voit de loin. Elle est complétée par une
+  distance fixée à la main pour 24 d'entre eux (décisions des 10 et 12 octobre
+  2026, voir « Distance de capture »).
 - §4 et §6.1 : `expo-location` ne donne pas la précision du cap en degrés sur
   iOS, mais un niveau de 0 à 3 (3 : moins de 20°, 2 : moins de 35°, 1 : moins
   de 50°). Le cône « cap ± (30° + précision du cap) » utilise la borne du
