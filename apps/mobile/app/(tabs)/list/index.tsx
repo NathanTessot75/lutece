@@ -29,7 +29,7 @@ export default function ListScreen() {
       <Stack.Screen options={{ title: 'Lutèce', headerLargeTitle: true }} />
       <MonumentList
         sections={sections}
-        caption={`${formatCount(BUNDLE_MONUMENT_COUNT)} monuments protégés à Paris`}
+        caption={`${formatCount(BUNDLE_MONUMENT_COUNT)} monuments et lieux de Paris`}
       />
     </>
   );

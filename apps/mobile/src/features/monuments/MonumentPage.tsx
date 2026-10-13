@@ -30,18 +30,25 @@ function listFacts(monument: MonumentDetails): Fact[] {
   }
   facts.push({
     label: 'Protection',
-    value: `${capitalize(monument.protection)} au titre des monuments historiques`,
+    value: monument.protection
+      ? `${capitalize(monument.protection)} au titre des monuments historiques`
+      : 'Aucune : ce lieu n’est pas un monument historique',
   });
   return facts;
 }
 
 function listSources(monument: MonumentDetails): Source[] {
-  const sources = [
-    {
+  const sources: Source[] = [];
+  if (monument.wikipedia) {
+    const page = encodeURIComponent(monument.wikipedia.replaceAll(' ', '_'));
+    sources.push({ label: 'Wikipédia', url: `https://fr.wikipedia.org/wiki/${page}` });
+  }
+  if (monument.merimeeId) {
+    sources.push({
       label: 'Notice Mérimée (ministère de la Culture)',
       url: `https://pop.culture.gouv.fr/notice/merimee/${monument.merimeeId}`,
-    },
-  ];
+    });
+  }
   if (monument.wikidataQid) {
     sources.push({
       label: 'Wikidata',
@@ -154,7 +161,7 @@ export function MonumentPage({ monument, photos, capture }: Props) {
       <Section title="Histoire" theme={theme} />
       <View style={[styles.group, { backgroundColor: theme.surface }]}>
         <Text style={[styles.note, { color: theme.secondaryText }]}>
-          Fiche à enrichir : l’histoire de ce monument n’est pas encore rédigée.
+          Fiche à enrichir : l’histoire de ce lieu n’est pas encore rédigée.
         </Text>
       </View>
 

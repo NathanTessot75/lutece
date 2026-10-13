@@ -17,11 +17,15 @@ export type Visibility = 'visible' | 'non_visible' | 'inconnu';
 
 /** Everything the page of a monument says about it. */
 export type MonumentDetails = MonumentSummary & {
-  merimeeId: string;
+  /** The notice of a protected monument; none for a place that is not one. */
+  merimeeId: string | null;
   address: string | null;
   architects: string[];
   wikidataQid: string | null;
-  protection: string;
+  /** The title of the article of the French Wikipedia that speaks of it. */
+  wikipedia: string | null;
+  /** « classé » or « inscrit »; none for a place that is not protected. */
+  protection: string | null;
   visibility: Visibility;
 };
 
@@ -120,6 +124,7 @@ const DETAILS = `
     address,
     architects,
     wikidata_qid as wikidataQid,
+    wikipedia,
     protection,
     visibility
   from monuments
