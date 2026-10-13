@@ -27,6 +27,7 @@ uv run ruff format .    # formatage
 | 6. `visibility` | `uv run python -m lutece_pipeline.visibility` | `merimee.parquet`, `review/visibility_overrides.csv`, `review/visibility_labels.csv` | `data/interim/visibility.parquet`, `data/interim/visibility_to_review.csv`, `data/interim/visibility_evaluation.csv` |
 | 7. `ingest_commons` | `uv run python -m lutece_pipeline.ingest_commons` | `merimee.parquet`, `entities.parquet`, `wikidata_items.parquet`, API Commons, `review/commons_labels.csv` | `data/interim/commons_files.parquet`, `data/interim/commons_categories.parquet`, `data/interim/commons_evaluation.csv` |
 | — `selection` | `uv run python -m lutece_pipeline.selection` | `merimee.parquet`, `entities.parquet`, `wikidata_items.parquet`, `visibility.parquet`, Wikidata, statistiques de Wikipédia, `review/selection_overrides.csv` | `data/interim/selection.parquet`, `data/interim/selection_ranking.csv` |
+| — `landmarks` | `uv run python -m lutece_pipeline.landmarks` | `selection.parquet`, `geometries.parquet`, Wikidata, statistiques de Wikipédia | `data/interim/landmark_candidates.parquet`, `data/interim/landmark_candidates.csv` |
 | 11. `load_postgres` | `uv run python -m lutece_pipeline.load_postgres` | les sorties des étapes 1 à 7, une base Postgres | tables `monuments` et `reference_images` |
 | 11. `export_bundle` | `uv run python -m lutece_pipeline.export_bundle` | les sorties des étapes 1 à 7, `selection.parquet`, `review/capture_reach.csv` | `apps/mobile/assets/data/lutece.db`, `apps/mobile/assets/data/bundle.json` |
 | 12. `quality_report` | `uv run python -m lutece_pipeline.quality_report` | les sorties des étapes 1 à 7 | `data/processed/monuments_quality.parquet`, `data/processed/quality_problems.csv`, `docs/rapport/qualite-donnees.md` |
@@ -962,6 +963,45 @@ immeubles, pour 77 genres différents. Tous sont capturables.
 avec leur nom, pour le relire. Les réponses des services sont conservées dans
 `data/raw/wikidata/neighbours.json` et `data/raw/wikipedia/pageviews.json` ;
 `--offline` les rejoue.
+
+## Lieux non protégés
+
+La base Mérimée ne contient que ce que l'État protège. La tour Montparnasse,
+le Centre Pompidou ou le Moulin Rouge n'y sont pas, alors qu'on se pose des
+questions en passant devant. Le SPEC laissait la question ouverte (§11) ; il a
+été décidé le 12 octobre 2026 de les ajouter. Deux étapes s'en chargent.
+
+### `landmarks` : les candidats
+
+L'étape demande à Wikidata les lieux de Paris (propriété P131, à travers les
+arrondissements et les quartiers) qui ont des coordonnées, un article dans
+Wikipédia en français, au moins 4 liens entre sites, et pas de notice de
+monument protégé : 1 950 lieux.
+
+> La propriété P380 porte aussi les identifiants du label « Architecture
+> contemporaine remarquable », qui commencent par `ACR` et ne protègent rien.
+> Écarter tout ce qui a une valeur P380 faisait disparaître l'Opéra Bastille,
+> la Cité des sciences ou le musée du quai Branly : seuls les identifiants en
+> `PA` sont écartés.
+
+Chaque lieu est mesuré comme un monument (lectures de l'article sur un an,
+nombre de sites) et placé sur l'échelle des monuments : il est assez connu
+s'il fait au moins le score du 350e, le dernier montré. L'étape propose
+ensuite de le garder ou non, avec la première raison de l'écarter :
+
+| Raison | Lieux |
+|---|---|
+| pas un lieu devant lequel se tenir (arrondissement, rue, station, événement, organisation, école) | 939 |
+| trop peu connu | 349 |
+| déjà sur la carte : dans un monument montré, ou à moins de 20 m | 157 |
+| espace vert (parc, bois, cimetière), où viser n'a guère de sens | 107 |
+| disparu (date de fin P576) | 58 |
+| **proposé** | **340** |
+
+Ces règles dégrossissent, elles ne décident pas : parmi les 340, il reste des
+gares de RER, des bâtiments disparus sans date de fin, des ministères, une
+vingtaine de ponts. `data/interim/landmark_candidates.csv` donne la liste, le
+plus connu d'abord, pour la relire.
 
 ## Chargement dans Postgres
 
