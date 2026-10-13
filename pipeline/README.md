@@ -1170,15 +1170,15 @@ base locale ne tourne pas.
 L'app fonctionne hors ligne : tout ce qu'elle affiche des monuments vient d'un
 fichier SQLite que l'étape `export_bundle` écrit dans ses ressources,
 `apps/mobile/assets/data/lutece.db`. C'est la moitié « app » de l'étape 11 du
-SPEC. Le fichier pèse 0,9 Mo et il est versionné : l'app se compile sans
+SPEC. Le fichier pèse 1,1 Mo et il est versionné : l'app se compile sans
 relancer le pipeline.
 
 ### Contenu
 
 | Table | Lignes | Contenu |
 |---|---|---|
-| `monuments` | 323 | une ligne par monument que la sélection garde |
-| `photos` | 933 | les 3 premières photos sélectionnées de chaque monument, avec auteur et licence |
+| `monuments` | 394 | une ligne par monument que la sélection garde (323) et par lieu non protégé (71) |
+| `photos` | 1 143 | les 3 premières photos sélectionnées de chacun, avec auteur et licence |
 | `meta` | 3 | version du contenu et effectifs |
 
 Colonnes de `monuments` : `id` (le même identifiant que dans Postgres),
