@@ -30,7 +30,7 @@ uv run ruff format .    # formatage
 | — `landmarks` | `uv run python -m lutece_pipeline.landmarks` | `selection.parquet`, `geometries.parquet`, Wikidata, statistiques de Wikipédia | `data/interim/landmark_candidates.parquet`, `data/interim/landmark_candidates.csv` |
 | — `landmark_places` | `uv run python -m lutece_pipeline.landmark_places` | `review/landmarks.csv`, les réponses de `landmarks`, OpenStreetMap, Commons | `data/interim/landmarks.parquet`, `data/interim/landmark_files.parquet` |
 | 11. `load_postgres` | `uv run python -m lutece_pipeline.load_postgres` | les sorties des étapes 1 à 7, une base Postgres | tables `monuments` et `reference_images` |
-| 11. `export_bundle` | `uv run python -m lutece_pipeline.export_bundle` | les sorties des étapes 1 à 7, `selection.parquet`, `review/capture_reach.csv` | `apps/mobile/assets/data/lutece.db`, `apps/mobile/assets/data/bundle.json` |
+| 11. `export_bundle` | `uv run python -m lutece_pipeline.export_bundle` | les sorties des étapes 1 à 7, `selection.parquet`, `landmarks.parquet`, `landmark_files.parquet`, `review/capture_reach.csv` | `apps/mobile/assets/data/lutece.db`, `apps/mobile/assets/data/bundle.json` |
 | 12. `quality_report` | `uv run python -m lutece_pipeline.quality_report` | les sorties des étapes 1 à 7 | `data/processed/monuments_quality.parquet`, `data/processed/quality_problems.csv`, `docs/rapport/qualite-donnees.md` |
 
 Options :
@@ -1186,7 +1186,12 @@ Colonnes de `monuments` : `id` (le même identifiant que dans Postgres),
 `min_lat`, `max_lat`, `min_lon`, `max_lon` (le cadre de l'emprise),
 `footprint` (multipolygone GeoJSON en WGS84, 6 décimales), `footprint_source`,
 `category`, `century`, `architects` (tableau JSON), `wikidata_qid`,
-`protection`, `visibility`, `readiness`, `capture_reach_m` et `photo_count`.
+`wikipedia` (le titre de l'article), `protection`, `visibility`, `readiness`,
+`capture_reach_m` et `photo_count`.
+
+Un lieu non protégé a une ligne comme un monument, sans `merimee_id`, sans
+`protection` et sans `address`. Son identifiant est tiré de son identifiant
+Wikidata, comme celui d'un monument l'est de sa notice.
 
 - **`title`** est ce que l'app affiche : le nom du monument, ou son genre suivi
   de sa première adresse quand il n'a pas de nom propre (« Immeuble, 12 rue
@@ -1206,7 +1211,10 @@ peu pour un monument qu'on photographie de loin, et impossible pour l'Arc de
 Triomphe, dont le trottoir le plus proche est à plus de 100 m. L'app prend
 donc la plus grande de deux distances : celle du SPEC, qu'elle calcule
 elle-même, et `capture_reach_m`, qui vaut 0 sauf pour les monuments de
-`review/capture_reach.csv` (`merimee_id`, `name`, `reach_m`, `note`).
+`review/capture_reach.csv` (`merimee_id`, `name`, `reach_m`, `note`) et pour
+les lieux non protégés auxquels `review/landmarks.csv` en donne une : 1 500 m
+pour la tour Montparnasse, 500 m pour les tours Duo et le Tribunal de Paris,
+300 m pour la BnF, 150 à 200 m pour les stades, salles et musées isolés.
 
 Ce fichier, tenu à la main, liste 24 monuments qu'on voit de loin, par-dessus
 les toits ou au bout d'un espace dégagé : tour Eiffel 800 m, Hôtel des

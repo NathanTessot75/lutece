@@ -2,7 +2,8 @@
 
 The app works offline: everything it shows about the monuments comes from one
 file, built here and shipped among its assets. The file holds the monuments
-that the selection step keeps, with their reference point, their footprint, whether they can be captured and
+that the selection step keeps and the places, not protected, that a review
+has added to them, with their reference point, their footprint, whether they can be captured and
 from how far, and a few photos with their credits. It is small enough to be
 versioned, so the app builds without running the pipeline.
 
@@ -15,7 +16,8 @@ import hashlib
 import json
 import logging
 import sqlite3
-from collections.abc import Collection, Mapping, Sequence
+import uuid
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -28,6 +30,7 @@ from lutece_pipeline import (
     ingest_commons,
     ingest_merimee,
     ingest_wikidata,
+    landmark_places,
     load_postgres,
     quality_report,
     resolve_entities,
@@ -54,6 +57,8 @@ GEOMETRIES_PARQUET = geometry.GEOMETRIES_PARQUET
 VISIBILITY_PARQUET = visibility.VISIBILITY_PARQUET
 COMMONS_FILES_PARQUET = ingest_commons.FILES_PARQUET
 SELECTION_PARQUET = selection.SELECTION_PARQUET
+LANDMARKS_PARQUET = landmark_places.PLACES_PARQUET
+LANDMARK_FILES_PARQUET = landmark_places.FILES_PARQUET
 ASSETS_FOLDER = PIPELINE_ROOT.parent / "apps" / "mobile" / "assets" / "data"
 BUNDLE_DB = ASSETS_FOLDER / "lutece.db"
 # What the app must know before it opens the file: which version it carries.
@@ -68,9 +73,10 @@ create table meta (
     value text not null
 ) strict;
 
+-- A place that is not a protected monument has no notice and no protection.
 create table monuments (
     id text primary key,
-    merimee_id text not null unique,
+    merimee_id text unique,
     title text not null,
     name text not null,
     address text,
@@ -87,7 +93,8 @@ create table monuments (
     century integer,
     architects text not null,
     wikidata_qid text,
-    protection text not null,
+    wikipedia text,
+    protection text,
     visibility text not null,
     readiness text not null,
     capture_reach_m integer not null,
@@ -126,6 +133,7 @@ MONUMENT_COLUMNS = [
     "century",
     "architects",
     "wikidata_qid",
+    "wikipedia",
     "protection",
     "visibility",
     "readiness",
@@ -213,9 +221,12 @@ def build_monuments(
     visibilities: Sequence[Record],
     photo_counts: Mapping[str, int],
     reaches: Mapping[str, int],
-    shown: Collection[str],
+    shown: Mapping[str, str | None],
 ) -> list[dict[str, Any]]:
-    """One row of the bundle per monument that the app shows and can locate."""
+    """One row of the bundle per monument that the app shows and can locate.
+
+    `shown` gives, for each monument to show, the article that speaks of it.
+    """
     item_of = {entity["merimee_id"]: entity["wikidata_qid"] for entity in entities}
     items_by_id = {item["qid"]: item for item in items}
     places = {row["merimee_id"]: row for row in geometries}
@@ -255,6 +266,7 @@ def build_monuments(
                 "century": notice["construction_century"],
                 "architects": json.dumps(architects, ensure_ascii=False),
                 "wikidata_qid": qid,
+                "wikipedia": shown[merimee_id],
                 "protection": notice["protection"],
                 "visibility": visible,
                 "readiness": quality_report.readiness(
@@ -266,6 +278,62 @@ def build_monuments(
         )
     tell_apart(rows)
     return rows
+
+
+def landmark_id(qid: str) -> str:
+    """The identifier of a place without a notice, always the same for an item."""
+    return str(uuid.uuid5(load_postgres.NAMESPACE, f"wikidata:{qid}"))
+
+
+def build_landmarks(
+    places: Sequence[Record], photo_counts: Mapping[str, int]
+) -> list[dict[str, Any]]:
+    """One row of the bundle per place, not protected, that a review has kept."""
+    rows = []
+    for place in sorted(places, key=lambda place: int(place["qid"][1:])):
+        west, south, east, north = shapely.bounds(place["geometry"]).tolist()
+        rows.append(
+            {
+                "id": landmark_id(place["qid"]),
+                "merimee_id": None,
+                "title": place["title"],
+                "name": place["title"],
+                "address": None,
+                "arrondissement": place["arrondissement"],
+                "lat": place["ref_lat"],
+                "lon": place["ref_lon"],
+                "min_lat": round(south, COORDINATE_DECIMALS),
+                "max_lat": round(north, COORDINATE_DECIMALS),
+                "min_lon": round(west, COORDINATE_DECIMALS),
+                "max_lon": round(east, COORDINATE_DECIMALS),
+                "footprint": to_geojson(place["geometry"]),
+                "footprint_source": place["footprint_source"],
+                "category": place["kind"],
+                "century": place["century"],
+                "architects": json.dumps(
+                    load_postgres.names(place["architects"]), ensure_ascii=False
+                ),
+                "wikidata_qid": place["qid"],
+                "wikipedia": place["article"],
+                "protection": None,
+                "visibility": visibility.VISIBLE,
+                "readiness": quality_report.readiness(
+                    visibility.VISIBLE, None, place["footprint_source"]
+                ),
+                "capture_reach_m": place["reach_m"],
+                "photo_count": photo_counts.get(place["qid"], 0),
+            }
+        )
+    return rows
+
+
+def count_selected(files: Sequence[Record]) -> dict[str, int]:
+    """How many photos are selected for each monument or place."""
+    counts: dict[str, int] = {}
+    for file in files:
+        if file["selected"]:
+            counts[file["merimee_id"]] = counts.get(file["merimee_id"], 0) + 1
+    return counts
 
 
 def build_photos(
@@ -340,28 +408,40 @@ def main(argv: Sequence[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 
     files = to_records(pd.read_parquet(COMMONS_FILES_PARQUET))
-    counts: dict[str, int] = {}
-    for file in files:
-        if file["selected"]:
-            counts[file["merimee_id"]] = counts.get(file["merimee_id"], 0) + 1
     geometries = to_records(pd.DataFrame(gpd.read_parquet(GEOMETRIES_PARQUET)))
-    chosen = pd.read_parquet(SELECTION_PARQUET)
-    shown = set(chosen.loc[chosen["shown"], "merimee_id"])
     by_hand = read_reaches(REACHES_CSV)
     stale = sorted(set(by_hand) - {row["merimee_id"] for row in geometries})
     if stale:
         logger.warning("%d distances match no monument: %s", len(stale), stale)
+    chosen = to_records(pd.read_parquet(SELECTION_PARQUET))
+    shown = {row["merimee_id"]: row["article"] for row in chosen if row["shown"]}
     monuments = build_monuments(
         to_records(pd.read_parquet(MERIMEE_PARQUET)),
         to_records(pd.read_parquet(ENTITIES_PARQUET)),
         to_records(pd.read_parquet(WIKIDATA_ITEMS_PARQUET)),
         geometries,
         to_records(pd.read_parquet(VISIBILITY_PARQUET)),
-        counts,
+        count_selected(files),
         by_hand,
         shown,
     )
     photos = build_photos(files, monuments)
+    # The places that are not monuments come after them, when there are some.
+    if LANDMARKS_PARQUET.exists():
+        places = to_records(pd.DataFrame(gpd.read_parquet(LANDMARKS_PARQUET)))
+        place_files = to_records(pd.read_parquet(LANDMARK_FILES_PARQUET))
+        landmark_rows = build_landmarks(places, count_selected(place_files))
+        keys = [
+            {"merimee_id": row["wikidata_qid"], "id": row["id"]}
+            for row in landmark_rows
+        ]
+        monuments += landmark_rows
+        photos = sorted(
+            photos + build_photos(place_files, keys),
+            key=lambda row: (row["monument_id"], row["rank"]),
+        )
+        # A place may bear the name of a monument: the address tells them apart.
+        tell_apart(monuments)
     version = content_version(monuments, photos)
     write_bundle(BUNDLE_DB, monuments, photos, version)
     summary = {"version": version, "monuments": len(monuments), "photos": len(photos)}

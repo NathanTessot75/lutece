@@ -2,12 +2,15 @@ import json
 import sqlite3
 from pathlib import Path
 
+import geopandas as gpd
 import pandas as pd
 import pytest
 from shapely.geometry import MultiPolygon, box
 
 from lutece_pipeline import export_bundle as bundle
+from lutece_pipeline import ingest_commons as commons
 from lutece_pipeline import load_postgres
+from lutece_pipeline.tables import from_rows, write_parquet
 
 SQUARE = box(2.35, 48.85, 2.351, 48.851)
 
@@ -99,7 +102,7 @@ def test_monument_row_is_what_the_app_shows() -> None:
         [{"merimee_id": "PA1", "visibility": "visible"}],
         {"PA1": 15},
         {"PA1": 222, "PA2": 40},
-        {"PA1", "PA2"},
+        {"PA1": "Hôtel de Sully", "PA2": None},
     )
     # Sorted by reference, so that the file is the same at every run.
     assert [row["merimee_id"] for row in rows] == ["PA1", "PA2"]
@@ -122,6 +125,7 @@ def test_monument_row_is_what_the_app_shows() -> None:
         "century": 17,
         "architects": '["Jean Androuet du Cerceau"]',
         "wikidata_qid": "Q42",
+        "wikipedia": "Hôtel de Sully",
         "protection": "classé",
         "visibility": "visible",
         "readiness": "ready",
@@ -146,7 +150,8 @@ def test_monuments_with_the_same_name_are_told_apart_by_their_address() -> None:
     ]
     places = [place(f"PA{number}") for number in range(1, 5)]
     reaches = dict.fromkeys(["PA1", "PA2", "PA3", "PA4"], 50)
-    rows = bundle.build_monuments(notices, [], [], places, [], {}, reaches, reaches)
+    shown = dict.fromkeys(reaches)
+    rows = bundle.build_monuments(notices, [], [], places, [], {}, reaches, shown)
     assert [row["title"] for row in rows] == [
         "Immeuble en bordure du Palais-Royal, 12 rue de Montpensier",
         "Immeuble en bordure du Palais-Royal, 14 rue de Montpensier",
@@ -158,7 +163,7 @@ def test_monuments_with_the_same_name_are_told_apart_by_their_address() -> None:
 def test_notices_without_protection_or_location_are_left_out() -> None:
     notices = [notice("PA1"), notice("PA2", protection=None), notice("PA3")]
     places = [place("PA1"), place("PA2")]
-    everything = {"PA1", "PA2", "PA3"}
+    everything = dict.fromkeys(["PA1", "PA2", "PA3"])
     rows = bundle.build_monuments(
         notices, [], [], places, [], {}, {"PA1": 50}, everything
     )
@@ -169,9 +174,8 @@ def test_monuments_that_the_selection_hides_are_left_out() -> None:
     notices = [notice("PA1"), notice("PA2"), notice("PA3")]
     places = [place("PA1"), place("PA2"), place("PA3")]
     reaches = dict.fromkeys(["PA1", "PA2", "PA3"], 50)
-    rows = bundle.build_monuments(
-        notices, [], [], places, [], {}, reaches, {"PA1", "PA3", "PA9"}
-    )
+    shown = dict.fromkeys(["PA1", "PA3", "PA9"])
+    rows = bundle.build_monuments(notices, [], [], places, [], {}, reaches, shown)
     assert [row["merimee_id"] for row in rows] == ["PA1", "PA3"]
 
 
@@ -181,10 +185,56 @@ def test_only_a_distance_set_by_hand_extends_the_reach() -> None:
     notices = [notice("PA1"), notice("PA2"), notice("PA3")]
     places = [place("PA1"), place("PA2", geometry=palace), place("PA3")]
     by_hand = {"PA3": 800, "PA9": 500}
-    rows = bundle.build_monuments(
-        notices, [], [], places, [], {}, by_hand, {"PA1", "PA2", "PA3"}
-    )
+    shown = dict.fromkeys(["PA1", "PA2", "PA3"])
+    rows = bundle.build_monuments(notices, [], [], places, [], {}, by_hand, shown)
     assert [row["capture_reach_m"] for row in rows] == [0, 0, 800]
+
+
+def landmark(qid: str, **changes: object) -> dict[str, object]:
+    """A line of the landmark places step."""
+    return {
+        "qid": qid,
+        "title": "Tour Montparnasse",
+        "kind": "gratte-ciel",
+        "arrondissement": 15,
+        "ref_lat": 48.8505,
+        "ref_lon": 2.3505,
+        "geometry": SQUARE,
+        "footprint_source": "osm_footprint",
+        "century": 20,
+        "architects": ["Jean Saubot", "Eugène Beaudouin"],
+        "article": "Tour Montparnasse",
+        "reach_m": 1500,
+        **changes,
+    }
+
+
+def test_place_without_a_notice_has_the_row_of_a_monument() -> None:
+    places = [
+        landmark("Q323767"),
+        landmark("Q13397", title="Pyramide du Louvre", footprint_source="buffer"),
+    ]
+    rows = bundle.build_landmarks(places, {"Q323767": 12})
+    # Sorted by item, so that the file is the same at every run.
+    assert [row["wikidata_qid"] for row in rows] == ["Q13397", "Q323767"]
+    tower = rows[1]
+    assert set(tower) == set(bundle.MONUMENT_COLUMNS)
+    assert tower["id"] == bundle.landmark_id("Q323767")
+    assert tower["id"] != str(load_postgres.monument_id("Q323767"))
+    assert tower["merimee_id"] is None
+    assert tower["protection"] is None
+    assert tower["address"] is None
+    assert (tower["title"], tower["name"]) == ("Tour Montparnasse",) * 2
+    assert tower["category"] == "gratte-ciel"
+    assert tower["architects"] == '["Jean Saubot", "Eugène Beaudouin"]'
+    assert tower["wikipedia"] == "Tour Montparnasse"
+    assert (tower["visibility"], tower["readiness"]) == ("visible", "ready")
+    assert tower["capture_reach_m"] == 1500
+    assert tower["photo_count"] == 12
+    assert (tower["min_lat"], tower["max_lon"]) == (48.85, 2.351)
+    # A place that OpenStreetMap does not outline is marked by a circle.
+    assert rows[0]["readiness"] == "approximate"
+    assert rows[0]["photo_count"] == 0
 
 
 def test_distances_set_by_hand_are_read_and_checked(tmp_path: Path) -> None:
@@ -246,7 +296,9 @@ def test_version_changes_with_the_content() -> None:
 def run_main(folder: Path, out: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     # Every notice of the sample is shown: the selection has its own tests.
     notices = pd.read_parquet(folder / "merimee.parquet", columns=["merimee_id"])
-    notices.assign(shown=True).to_parquet(out / "selection.parquet", index=False)
+    notices.assign(shown=True, article="Un article").to_parquet(
+        out / "selection.parquet", index=False
+    )
     paths = {
         "MERIMEE_PARQUET": folder / "merimee.parquet",
         "ENTITIES_PARQUET": folder / "entities.parquet",
@@ -258,6 +310,8 @@ def run_main(folder: Path, out: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         "BUNDLE_JSON": out / "assets" / "bundle.json",
         "REACHES_CSV": folder / "capture_reach.csv",
         "SELECTION_PARQUET": out / "selection.parquet",
+        "LANDMARKS_PARQUET": out / "landmarks.parquet",
+        "LANDMARK_FILES_PARQUET": out / "landmark_files.parquet",
     }
     for name, path in paths.items():
         monkeypatch.setattr(bundle, name, path)
@@ -328,3 +382,56 @@ def test_real_notices_are_bundled(
     written = path.read_bytes()
     run_main(pipeline_tables, tmp_path, monkeypatch)
     assert path.read_bytes() == written
+
+
+def test_places_without_a_notice_are_bundled_with_the_monuments(
+    pipeline_tables: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    place = landmark("Q323767", group="Tours", views=9, languages=48)
+    place["commons_category"] = "Tour Montparnasse"
+    shape = place.pop("geometry")
+    gpd.GeoDataFrame([place], geometry=[shape], crs="EPSG:4326").to_parquet(
+        tmp_path / "landmarks.parquet", index=False
+    )
+    names = commons.FILES_SCHEMA.names
+    photos = [
+        {**dict.fromkeys(names), **file("Q323767", rank), "source": "category"}
+        for rank in (2, 1, None)
+    ]
+    write_parquet(
+        from_rows(photos, commons.FILES_SCHEMA),
+        commons.FILES_SCHEMA,
+        tmp_path / "landmark_files.parquet",
+    )
+    run_main(pipeline_tables, tmp_path, monkeypatch)
+
+    summary = json.loads((tmp_path / "assets" / "bundle.json").read_text())
+    # The nine monuments of the sample, and the tower.
+    assert summary["monuments"] == 10
+    database = sqlite3.connect(tmp_path / "assets" / "lutece.db")
+    database.row_factory = sqlite3.Row
+    tower = dict(
+        database.execute(
+            "select * from monuments where wikidata_qid = 'Q323767'"
+        ).fetchone()
+    )
+    assert tower["id"] == bundle.landmark_id("Q323767")
+    assert tower["merimee_id"] is None
+    assert tower["protection"] is None
+    assert tower["title"] == "Tour Montparnasse"
+    assert tower["wikipedia"] == "Tour Montparnasse"
+    assert tower["readiness"] == "ready"
+    assert tower["capture_reach_m"] == 1500
+    assert tower["photo_count"] == 2
+    ranks = database.execute(
+        "select rank from photos where monument_id = ? order by rank", (tower["id"],)
+    ).fetchall()
+    assert [row["rank"] for row in ranks] == [1, 2]
+    # The monuments keep their notice and the article that the selection found.
+    church = database.execute(
+        "select merimee_id, wikipedia, protection from monuments"
+        " where merimee_id = 'PA00085795'"
+    ).fetchone()
+    assert tuple(church) == ("PA00085795", "Un article", "classé")
+    assert database.execute("pragma foreign_key_check").fetchall() == []
+    database.close()
