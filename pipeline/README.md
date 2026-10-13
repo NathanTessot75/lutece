@@ -28,6 +28,7 @@ uv run ruff format .    # formatage
 | 7. `ingest_commons` | `uv run python -m lutece_pipeline.ingest_commons` | `merimee.parquet`, `entities.parquet`, `wikidata_items.parquet`, API Commons, `review/commons_labels.csv` | `data/interim/commons_files.parquet`, `data/interim/commons_categories.parquet`, `data/interim/commons_evaluation.csv` |
 | — `selection` | `uv run python -m lutece_pipeline.selection` | `merimee.parquet`, `entities.parquet`, `wikidata_items.parquet`, `visibility.parquet`, Wikidata, statistiques de Wikipédia, `review/selection_overrides.csv` | `data/interim/selection.parquet`, `data/interim/selection_ranking.csv` |
 | — `landmarks` | `uv run python -m lutece_pipeline.landmarks` | `selection.parquet`, `geometries.parquet`, Wikidata, statistiques de Wikipédia | `data/interim/landmark_candidates.parquet`, `data/interim/landmark_candidates.csv` |
+| — `landmark_places` | `uv run python -m lutece_pipeline.landmark_places` | `review/landmarks.csv`, les réponses de `landmarks`, OpenStreetMap, Commons | `data/interim/landmarks.parquet`, `data/interim/landmark_files.parquet` |
 | 11. `load_postgres` | `uv run python -m lutece_pipeline.load_postgres` | les sorties des étapes 1 à 7, une base Postgres | tables `monuments` et `reference_images` |
 | 11. `export_bundle` | `uv run python -m lutece_pipeline.export_bundle` | les sorties des étapes 1 à 7, `selection.parquet`, `review/capture_reach.csv` | `apps/mobile/assets/data/lutece.db`, `apps/mobile/assets/data/bundle.json` |
 | 12. `quality_report` | `uv run python -m lutece_pipeline.quality_report` | les sorties des étapes 1 à 7 | `data/processed/monuments_quality.parquet`, `data/processed/quality_problems.csv`, `docs/rapport/qualite-donnees.md` |
@@ -1003,6 +1004,92 @@ gares de RER, des bâtiments disparus sans date de fin, des ministères, une
 vingtaine de ponts. `data/interim/landmark_candidates.csv` donne la liste, le
 plus connu d'abord, pour la relire.
 
+### La relecture : `review/landmarks.csv`
+
+Un lieu n'entre dans l'app que si ce fichier le garde. Colonnes : `qid`,
+`name`, `title` (le nom affiché), `kind` (son genre), `group`, `decision`
+(`keep` ou `drop`), `reach_m` (la distance de capture, 0 pour celle du GPS),
+`osm` (les objets d'OpenStreetMap qui dessinent le lieu, écrits
+`way/123 relation/45`, quand la carte ne le relie pas à Wikidata), `photos`
+(les fichiers de Commons à montrer en premier, écrits
+`Premier.jpg | Deuxième.jpg`) et `note`.
+
+71 lieux sont gardés, relus un par un : 16 tours et bâtiments modernes, 10
+stades et grandes salles, 7 musées, 17 cabarets, cafés et magasins célèbres,
+9 places, 12 curiosités et repères. Ont été laissés de côté ce qui est déjà
+sur la carte sous un autre nom (musée du Louvre, Catacombes, place de la
+Bastille), ce qui a disparu, les ponts non protégés, les palaces, les gares
+de RER, les hôpitaux et les ministères.
+
+### `landmark_places` : contour, faits et photos
+
+Pour chaque lieu gardé :
+
+- **le contour** vient des objets d'OpenStreetMap étiquetés `wikidata=Q…` et
+  de ceux que la relecture nomme : leurs surfaces réunies ; à défaut leurs
+  lignes, élargies de 3 m ; à défaut un cercle de 10 m autour du point ;
+- **l'arrondissement** est celui dont la limite, dans OpenStreetMap, contient
+  le centre du contour ;
+- **le siècle et les architectes** viennent de Wikidata (P571, P84) ;
+- **les photos** sont cherchées et filtrées par les fonctions de l'étape 7,
+  dans la catégorie Commons du lieu, puis rangées autrement (voir plus bas).
+
+Sur les 71 lieux, 64 ont une surface, 3 une ligne (deux places et la fontaine
+Stravinsky) et 4 un cercle : le point zéro, le zouave du pont de l'Alma, le mur
+des je t'aime et le bouquet de tulipes, qui sont des points.
+
+> OpenStreetMap ne connaît un café ou un cabaret que comme un point, et relie
+> la BnF, la maison de l'UNESCO et les tours Duo à un autre élément de
+> Wikidata, ou à aucun. Sans la colonne `osm`, 20 lieux n'avaient qu'un cercle,
+> dont la BnF. Pour 16 d'entre eux la relecture nomme le bâtiment : celui qui
+> contient le point du café, ou l'emprise du site. Un objet nommé que la carte
+> n'a plus arrête l'étape.
+
+> Wikidata ne situe la Philharmonie et le stade Jean-Bouin que « à Paris » :
+> l'arrondissement lu dans P131 manquait. Les limites des arrondissements le
+> donnent pour tous, y compris une place à cheval sur plusieurs, rangée dans
+> celui où tombe son centre.
+
+#### L'ordre des photos
+
+La catégorie Commons d'un monument contient des photos d'un bâtiment. Celle
+d'un stade, d'une salle de concert ou d'une tour contient aussi des matchs, des
+invités et des vues prises d'en haut : avec l'ordre de l'étape 7, la première
+photo de la tour Montparnasse était celle de sa terrasse, et celle du Centre
+Pompidou une file d'attente. L'étape range donc les photos gardées ainsi :
+
+1. celles que la relecture nomme, dans son ordre ;
+2. l'image que Wikidata donne au lieu ;
+3. les fichiers dont le nom contient un nom du lieu (son titre, son nom dans
+   Wikidata, le titre de son article, sa catégorie Commons), sans tenir compte
+   des accents ni des mots courants ;
+4. les autres.
+
+Dans chaque groupe, l'ordre de l'étape 7 est conservé. Une photo nommée par la
+relecture a été regardée : ce que l'étape 7 lui reprochait pour son sujet (une
+vue de loin, un détail) ne compte plus. Son format et sa licence comptent
+toujours, et une photo nommée qui n'est pas trouvée arrête l'étape.
+
+13 lieux ont des photos nommées, choisies en les regardant : la tour
+Montparnasse, le Centre Pompidou, la Fondation Louis-Vuitton, l'Opéra Bastille,
+la Philharmonie, le Zénith, la Géode, la Cinémathèque, le Palais des congrès,
+le Parc des Princes, l'Arena Porte de la Chapelle, le Crazy Horse et l'Hôtel
+Drouot.
+
+> Limite : les photos n'ont été regardées que là où l'ordre commençait mal.
+> Ailleurs la première est l'image de Wikidata, non vérifiée, et les deuxième
+> et troisième restent inégales pour une dizaine de salles, de stades et de
+> musées dont la catégorie Commons contient surtout des événements (Géode,
+> Roland-Garros, musée Bourdelle, Parc des expositions).
+
+`landmarks.parquet` a une ligne par lieu avec son contour ;
+`landmark_files.parquet` a les colonnes de `commons_files.parquet`, la colonne
+`merimee_id` portant ici l'identifiant Wikidata. `--offline` rejoue les
+réponses conservées dans `data/raw/`.
+
+Ces lieux ne sont pas chargés dans Postgres pour l'instant : la table
+`monuments` exige un numéro de notice.
+
 ## Chargement dans Postgres
 
 L'étape `load_postgres` remplit les tables `monuments` et `reference_images`,
@@ -1306,3 +1393,7 @@ par leur adresse.
   monument est capturable dès qu'on peut se tenir devant, même si seul son
   intérieur ou sa cour est protégé (décision du 11 octobre 2026, voir
   « Niveaux de préparation »).
+- §11 : la question « inclure du patrimoine non protégé ? » est tranchée.
+  71 lieux connus qui ne sont pas des monuments historiques sont ajoutés à
+  l'app, à partir de Wikidata et après relecture (décision du 12 octobre 2026,
+  voir « Lieux non protégés »).

@@ -26,6 +26,7 @@ Référence complète : `SPEC.md` (fait foi en cas de contradiction).
 | `pipeline` | `uv run ruff check .` · `uv run ruff format .` · `uv run pytest` | lint · format · tests |
 | `pipeline` | `uv run python -m lutece_pipeline.load_postgres` | charger les monuments dans la base locale |
 | `pipeline` | `uv run python -m lutece_pipeline.selection --offline` | choisir les monuments que l'app montre (sans `--offline` : interroge Wikidata) |
+| `pipeline` | `uv run python -m lutece_pipeline.landmark_places --offline` | reconstruire les lieux non protégés gardés dans `review/landmarks.csv` |
 | `pipeline` | `uv run python -m lutece_pipeline.export_bundle` | régénérer le fichier des monuments embarqué dans l'app |
 | racine | `supabase start` · `supabase stop` | pile locale (runtime de conteneurs requis) |
 | racine | `supabase migration up` | appliquer les nouvelles migrations sans vider la base |
