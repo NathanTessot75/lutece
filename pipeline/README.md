@@ -1189,7 +1189,7 @@ relancer le pipeline.
 | Table | Lignes | Contenu |
 |---|---|---|
 | `monuments` | 394 | une ligne par monument que la sélection garde (323) et par lieu non protégé (71) |
-| `photos` | 1 143 | les 3 premières photos sélectionnées de chacun, avec auteur et licence |
+| `photos` | 1 118 | les 3 premières photos sélectionnées de chacun, hors photos écartées (voir « Photos écartées »), avec auteur et licence |
 | `meta` | 3 | version du contenu et effectifs |
 
 Colonnes de `monuments` : `id` (le même identifiant que dans Postgres),
