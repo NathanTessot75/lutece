@@ -10,11 +10,17 @@ requires-python = ">=3.13"
 dependencies = [
     "geopandas>=1.2.0",
     "httpx>=0.28.1",
+    "onnx>=1.23.2",
+    "onnxruntime>=1.31.0",
     "pandas>=3.0.6",
+    "pillow>=12.3.0",
     "psycopg[binary]>=3.3.6",
     "pyarrow>=25.0.1",
     "rapidfuzz>=3.14.6",
+    "scikit-learn>=1.9.1",
     "shapely>=2.2.0",
+    "torch>=2.14.1",
+    "transformers>=5.19.0",
 ]
 
 [project.scripts]

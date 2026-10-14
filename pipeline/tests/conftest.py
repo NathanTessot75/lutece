@@ -4,8 +4,10 @@ from pathlib import Path
 import geopandas as gpd
 import pandas as pd
 import pytest
+import torch
+from transformers import Dinov2Config, Dinov2Model
 
-from lutece_pipeline import geometry, visibility
+from lutece_pipeline import export_model, geometry, visibility, vision
 from lutece_pipeline import ingest_commons as commons
 from lutece_pipeline import ingest_merimee as merimee
 from lutece_pipeline import ingest_osm as osm
@@ -97,3 +99,29 @@ def pipeline_tables(resolved_tables: Path) -> Path:
         resolved_tables / "commons_files.parquet",
     )
     return resolved_tables
+
+
+@pytest.fixture(scope="session")
+def small_embedder() -> export_model.Embedder:
+    """A model shaped like the real one, with one layer and weights drawn at random."""
+    torch.manual_seed(0)
+    shape = Dinov2Config(
+        hidden_size=vision.DIMENSIONS,
+        num_hidden_layers=1,
+        num_attention_heads=2,
+        mlp_ratio=1,
+        # Trained on photos of 3 patches by 3: its grid is resized to 16 by 16.
+        image_size=42,
+        patch_size=14,
+    )
+    return export_model.Embedder(Dinov2Model(shape)).eval()
+
+
+@pytest.fixture(scope="session")
+def exported_models(
+    small_embedder: export_model.Embedder, tmp_path_factory: pytest.TempPathFactory
+) -> Path:
+    """The folder of the three forms of the small model, as the export step writes them."""
+    folder = tmp_path_factory.mktemp("models")
+    export_model.export(small_embedder, folder)
+    return folder

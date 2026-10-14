@@ -33,6 +33,7 @@ uv run ruff format .    # formatage
 | 11. `export_bundle` | `uv run python -m lutece_pipeline.export_bundle` | les sorties des étapes 1 à 7, `selection.parquet`, `landmarks.parquet`, `landmark_files.parquet`, `review/capture_reach.csv` | `apps/mobile/assets/data/lutece.db`, `apps/mobile/assets/data/bundle.json` |
 | 12. `quality_report` | `uv run python -m lutece_pipeline.quality_report` | les sorties des étapes 1 à 7 | `data/processed/monuments_quality.parquet`, `data/processed/quality_problems.csv`, `docs/rapport/qualite-donnees.md` |
 | — `fetch_reference_photos` | `uv run python -m lutece_pipeline.fetch_reference_photos` | `commons_files.parquet`, `landmark_files.parquet`, `selection.parquet`, Wikimedia Commons | `data/raw/commons/photos/`, `data/interim/reference_photos.parquet` |
+| — `export_model` | `uv run python -m lutece_pipeline.export_model` | les poids de DINOv2 ViT-S/14 (Hugging Face) | `data/processed/models/` : trois fichiers ONNX et `models.json` |
 
 Options :
 
@@ -1373,6 +1374,52 @@ télécharge les photos sélectionnées des lieux que l'app montre.
   l'étape 7 est signalé et sauté ; une réponse qui n'est pas une image arrête
   l'étape.
 
+### `export_model` : le modèle en ONNX
+
+Le modèle est **DINOv2 ViT-S/14** (Meta, licence Apache 2.0, 22 millions de
+paramètres), recommandé par le SPEC (§6.2). Il transforme une photo en un
+vecteur de 384 nombres ; deux photos du même bâtiment donnent des vecteurs
+proches. Les poids viennent de `facebook/dinov2-small` sur Hugging Face, à
+une révision fixée dans le code.
+
+Le modèle exporté prend les pixels d'une ou plusieurs photos et rend, pour
+chacune, le vecteur de la photo entière, ramené à la longueur 1 : la
+ressemblance de deux photos est alors le produit scalaire de leurs vecteurs,
+ce que l'app calcule sans autre bibliothèque.
+
+| Forme | Fichier | Poids | Accord avec le modèle entraîné (sur du bruit) |
+|---|---|---|---|
+| `float32`, tel qu'entraîné | `dinov2-small.onnx` | 86,7 Mo | 1,0000 |
+| `fp16`, nombres sur 16 bits | `dinov2-small-fp16.onnx` | 43,5 Mo | 1,0000 |
+| `int8`, poids des couches sur 8 bits | `dinov2-small-int8.onnx` | 22,5 Mo | 0,9733 |
+
+`models.json` décrit les trois fichiers, avec leur empreinte SHA-256. L'étape
+s'arrête si le modèle exporté ne dit plus la même chose que le modèle
+entraîné (cosinus sous 0,9999).
+
+> Le modèle entraîné recalcule pour chaque photo la position de ses carreaux,
+> en redimensionnant une grille. Converti en 16 bits, ce redimensionnement ne
+> s'exécutait plus. Comme toutes les photos ont la même taille, l'export le
+> fait une fois pour toutes et l'inscrit dans le modèle : le graphe n'en
+> contient plus, ce qui convient aussi mieux à un téléphone. Le résultat est
+> le même (cosinus de 0,9999999).
+
+> L'export par défaut de PyTorch 2.14 demande la bibliothèque `onnxscript`,
+> que le SPEC ne prévoit pas. L'export classique (`dynamo=False`) suffit.
+
+### `vision` : préparer une photo
+
+Ce module n'est pas une étape : il contient ce qui transforme une photo en ce
+que le modèle lit, et que l'app devra reproduire à l'identique (SPEC §6.3).
+
+1. La photo est lue dans le bon sens (note d'orientation du téléphone) et en
+   couleurs.
+2. Elle est ramenée à un carré de 224 px, par interpolation bicubique : soit
+   en gardant son centre (`crop`), soit en gardant tout et en la déformant
+   (`squash`).
+3. Ses couleurs sont mises entre 0 et 1, puis centrées et réduites avec les
+   moyennes et écarts-types d'ImageNet, comme à l'entraînement du modèle.
+
 ## Écarts constatés avec le SPEC
 
 - §5.1 : le portail `data.culture.gouv.fr` redirige vers
@@ -1450,3 +1497,5 @@ télécharge les photos sélectionnées des lieux que l'app montre.
 - §9 : la phase 3 commence avant la fin de la phase 2 (comptes, connexion
   Apple, TestFlight), qui demande un compte Apple Developer payant et sera
   faite en dernier (décision du 12 octobre 2026).
+- §4 : `pillow`, que le SPEC ne liste pas, lit les photos de référence
+  (décision du 14 octobre 2026).
