@@ -3,13 +3,14 @@ import sqlite3
 from pathlib import Path
 
 import geopandas as gpd
+import numpy as np
 import pandas as pd
 import pytest
 from shapely.geometry import MultiPolygon, box
 
+from lutece_pipeline import embed_references, export_model, load_postgres
 from lutece_pipeline import export_bundle as bundle
 from lutece_pipeline import ingest_commons as commons
-from lutece_pipeline import load_postgres
 from lutece_pipeline.tables import from_rows, write_parquet
 
 SQUARE = box(2.35, 48.85, 2.351, 48.851)
@@ -293,6 +294,39 @@ def test_version_changes_with_the_content() -> None:
     assert bundle.content_version(monuments, []) != version
 
 
+def test_vector_is_written_on_8_bits_with_its_scale() -> None:
+    vector = np.random.default_rng(5).standard_normal(384).astype(np.float32)
+    vector /= np.linalg.norm(vector)
+    levels, scale = bundle.quantize(vector)
+    assert len(levels) == 384
+    restored = np.frombuffer(levels, dtype=np.int8).astype(np.float32) * scale
+    assert np.linalg.norm(restored) == pytest.approx(1.0, abs=1e-6)
+    assert float(restored @ vector) > 0.9999
+    # The largest number takes the whole range of a byte.
+    assert np.abs(np.frombuffer(levels, dtype=np.int8)).max() == 127
+    assert bundle.quantize(np.zeros(384, dtype=np.float32)) == (bytes(384), 0.0)
+
+
+def test_vectors_follow_the_photos_kept() -> None:
+    files = [file("PA1", 1), file("PA1", 2), file("PA1", None), file("PA9", 1)]
+    kept = bundle.without_set_aside(files, frozenset({("PA1", "File:PA1 1.jpg")}))
+    monuments = [{"merimee_id": "PA1", "id": "uuid-1"}]
+    unit = np.eye(384, dtype=np.float32)
+    vectors = {
+        "File:PA1 2.jpg": unit[0],
+        "File:PA1 None.jpg": unit[1],
+        "File:PA9 1.jpg": unit[2],
+    }
+    rows = bundle.build_vectors(kept, monuments, vectors)
+    # The photo set aside has no vector; the next one takes its rank; neither a
+    # photo that is not selected nor a monument outside the bundle counts.
+    assert [(row["monument_id"], row["rank"]) for row in rows] == [("uuid-1", 1)]
+    assert np.frombuffer(rows[0]["vector"], dtype=np.int8)[0] == 127
+    assert bundle.build_vectors(kept, monuments, {}) == []
+    version = bundle.content_version(monuments, [])
+    assert bundle.content_version(monuments, [], rows) != version
+
+
 def test_photos_set_aside_leave_their_place_to_the_next() -> None:
     files = [
         file("PA1", 1),
@@ -349,6 +383,9 @@ def run_main(folder: Path, out: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         "LANDMARKS_PARQUET": out / "landmarks.parquet",
         "LANDMARK_FILES_PARQUET": out / "landmark_files.parquet",
         "CHECKS_PARQUET": out / "reference_photo_checks.parquet",
+        "EMBEDDINGS_PARQUET": out / "int8-crop.parquet",
+        "MODEL_SOURCE": out / "dinov2-small-int8.onnx",
+        "APP_MODEL_FILE": out / "assets" / "models" / "dinov2-small-int8.onnx",
     }
     for name, path in paths.items():
         monkeypatch.setattr(bundle, name, path)
@@ -371,7 +408,11 @@ def test_real_notices_are_bundled(
         "version": summary["version"],
         "monuments": "9",
         "photos": str(summary["photos"]),
+        "vectors": "0",
     }
+    # Without the vectors of the photos, the model does not come either.
+    assert "model" not in summary
+    assert not (tmp_path / "assets" / "models").exists()
     assert database.execute("pragma integrity_check").fetchone()[0] == "ok"
     assert database.execute("pragma foreign_key_check").fetchall() == []
     church = dict(
@@ -485,3 +526,34 @@ def test_places_without_a_notice_are_bundled_with_the_monuments(
     ).fetchall()
     database.close()
     assert shown == [(1, "https://commons.wikimedia.org/wiki/File:Q323767_2.jpg", 1)]
+
+
+def test_vectors_and_their_model_go_with_the_bundle(
+    pipeline_tables: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    church = pd.read_parquet(pipeline_tables / "commons_files.parquet")
+    church = church[(church["merimee_id"] == "PA00085795") & church["selected"]]
+    titles = list(church.sort_values("rank")["title"])
+    random = np.random.default_rng(2)
+    vectors = random.standard_normal((len(titles), 384)).astype(np.float32)
+    vectors /= np.linalg.norm(vectors, axis=1, keepdims=True)
+    embed_references.write_embeddings(titles, vectors, tmp_path / "int8-crop.parquet")
+    (tmp_path / "dinov2-small-int8.onnx").write_bytes(b"model")
+    run_main(pipeline_tables, tmp_path, monkeypatch)
+
+    summary = json.loads((tmp_path / "assets" / "bundle.json").read_text())
+    assert summary["vectors"] == len(titles)
+    copied = tmp_path / "assets" / "models" / "dinov2-small-int8.onnx"
+    assert copied.read_bytes() == b"model"
+    assert summary["model"] == export_model.checksum(copied)[:12]
+    database = sqlite3.connect(tmp_path / "assets" / "lutece.db")
+    stored = database.execute(
+        "select v.rank, v.scale, v.vector from reference_vectors v"
+        " join monuments m on m.id = v.monument_id"
+        " where m.merimee_id = 'PA00085795' order by v.rank"
+    ).fetchall()
+    assert database.execute("pragma foreign_key_check").fetchall() == []
+    database.close()
+    assert [rank for rank, _, _ in stored] == list(range(1, len(titles) + 1))
+    first = np.frombuffer(stored[0][2], dtype=np.int8).astype(np.float32) * stored[0][1]
+    assert float(first @ vectors[0]) > 0.9999

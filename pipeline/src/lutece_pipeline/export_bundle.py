@@ -15,6 +15,7 @@ import csv
 import hashlib
 import json
 import logging
+import shutil
 import sqlite3
 import uuid
 from collections.abc import Mapping, Sequence
@@ -22,11 +23,14 @@ from pathlib import Path
 from typing import Any
 
 import geopandas as gpd
+import numpy as np
 import pandas as pd
 import shapely
 
 from lutece_pipeline import (
     check_reference_photos,
+    embed_references,
+    export_model,
     geometry,
     ingest_commons,
     ingest_merimee,
@@ -43,8 +47,12 @@ from lutece_pipeline.tables import to_records
 
 logger = logging.getLogger(__name__)
 
-# The photos of a monument page; image recognition will use embeddings instead.
+# The photos of a monument page.
 PHOTOS_PER_MONUMENT = 3
+# The form of the image model that the phone runs, and the framing of its photos:
+# the vectors of the reference photos come from the same.
+APP_MODEL = "int8"
+APP_FRAMING = "crop"
 # Coordinates are written with 6 decimals: about ten centimetres.
 COORDINATE_DECIMALS = 6
 COORDINATE_GRID = 10**-COORDINATE_DECIMALS
@@ -65,6 +73,11 @@ ASSETS_FOLDER = PIPELINE_ROOT.parent / "apps" / "mobile" / "assets" / "data"
 BUNDLE_DB = ASSETS_FOLDER / "lutece.db"
 # What the app must know before it opens the file: which version it carries.
 BUNDLE_JSON = ASSETS_FOLDER / "bundle.json"
+EMBEDDINGS_PARQUET = embed_references.EMBEDDINGS_FOLDER / (
+    embed_references.embeddings_name(APP_MODEL, APP_FRAMING)
+)
+MODEL_SOURCE = export_model.MODELS_FOLDER / export_model.FILES[APP_MODEL]
+APP_MODEL_FILE = ASSETS_FOLDER.parent / "models" / export_model.FILES[APP_MODEL]
 # Monuments seen from afar, above the roofs or across an open space: how far
 # they may be captured from is set by hand, one by one.
 REACHES_CSV = REVIEW_DIR / "capture_reach.csv"
@@ -113,6 +126,17 @@ create table photos (
     author text,
     licence text,
     licence_url text,
+    primary key (monument_id, rank)
+) strict;
+
+-- The vector of each reference photo kept, as the model on the phone gives
+-- it: 384 signed bytes, which multiplied by `scale` make a vector of length 1.
+-- `rank` is that of the photo: the first three are those of `photos`.
+create table reference_vectors (
+    monument_id text not null references monuments (id),
+    rank integer not null,
+    scale real not null,
+    vector blob not null,
     primary key (monument_id, rank)
 ) strict;
 """
@@ -394,20 +418,75 @@ def build_photos(
     return sorted(rows, key=lambda row: (row["monument_id"], row["rank"]))
 
 
-def content_version(monuments: Sequence[Record], photos: Sequence[Record]) -> str:
+def quantize(vector: np.ndarray) -> tuple[bytes, float]:
+    """Write a vector on 8 bits: its 384 numbers as signed bytes, and the scale
+    that gives the bytes a length of 1. Comparing the photos loses nothing
+    measurable this way (see the README)."""
+    peak = float(np.abs(vector).max())
+    levels = (
+        np.round(vector / peak * 127).astype(np.int8)
+        if peak
+        else vector.astype(np.int8)
+    )
+    length = float(np.linalg.norm(levels.astype(np.float32)))
+    return levels.tobytes(), (1 / length if length else 0.0)
+
+
+def build_vectors(
+    files: Sequence[Record],
+    monuments: Sequence[Record],
+    vectors: Mapping[str, np.ndarray],
+) -> list[dict[str, Any]]:
+    """The vectors of the photos selected for each monument of the bundle."""
+    ids = {row["merimee_id"]: row["id"] for row in monuments}
+    rows = []
+    for file in files:
+        if file["selected"] and file["merimee_id"] in ids and file["title"] in vectors:
+            levels, scale = quantize(vectors[file["title"]])
+            rows.append(
+                {
+                    "monument_id": ids[file["merimee_id"]],
+                    "rank": file["rank"],
+                    "scale": scale,
+                    "vector": levels,
+                }
+            )
+    return sorted(rows, key=lambda row: (row["monument_id"], row["rank"]))
+
+
+def read_vectors(path: Path) -> dict[str, np.ndarray]:
+    """The vectors of the reference photos by title, when they were computed."""
+    if not path.exists():
+        return {}
+    titles, vectors = embed_references.read_embeddings(path)
+    return dict(zip(titles, vectors, strict=True))
+
+
+def content_version(
+    monuments: Sequence[Record],
+    photos: Sequence[Record],
+    vectors: Sequence[Record] = (),
+) -> str:
     """A short fingerprint of the content: it changes when any value does.
 
     The app names its copy of the file after it, so a new bundle replaces the
     old one without any number to remember to increase.
     """
+    printed = [{**row, "vector": row["vector"].hex()} for row in vectors]
     content = json.dumps(
-        [SCHEMA, list(monuments), list(photos)], ensure_ascii=False, sort_keys=True
+        [SCHEMA, list(monuments), list(photos), printed],
+        ensure_ascii=False,
+        sort_keys=True,
     )
     return hashlib.sha256(content.encode("utf-8")).hexdigest()[:12]
 
 
 def write_bundle(
-    path: Path, monuments: Sequence[Record], photos: Sequence[Record], version: str
+    path: Path,
+    monuments: Sequence[Record],
+    photos: Sequence[Record],
+    version: str,
+    vectors: Sequence[Record] = (),
 ) -> None:
     """Write the SQLite file from scratch."""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -416,6 +495,7 @@ def write_bundle(
         "version": version,
         "monuments": str(len(monuments)),
         "photos": str(len(photos)),
+        "vectors": str(len(vectors)),
     }
     database = sqlite3.connect(path)
     try:
@@ -428,6 +508,13 @@ def write_bundle(
         database.executemany(
             f"insert into photos values ({', '.join('?' * len(PHOTO_COLUMNS))})",
             [[row[column] for column in PHOTO_COLUMNS] for row in photos],
+        )
+        database.executemany(
+            "insert into reference_vectors values (?, ?, ?, ?)",
+            [
+                [row["monument_id"], row["rank"], row["scale"], row["vector"]]
+                for row in vectors
+            ],
         )
         database.commit()
         database.execute("vacuum")
@@ -464,6 +551,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         shown,
     )
     photos = build_photos(files, monuments)
+    by_title = read_vectors(EMBEDDINGS_PARQUET)
+    vectors = build_vectors(files, monuments, by_title)
     # The places that are not monuments come after them, when there are some.
     if LANDMARKS_PARQUET.exists():
         places = to_records(pd.DataFrame(gpd.read_parquet(LANDMARKS_PARQUET)))
@@ -480,11 +569,27 @@ def main(argv: Sequence[str] | None = None) -> int:
             photos + build_photos(place_files, keys),
             key=lambda row: (row["monument_id"], row["rank"]),
         )
+        vectors = sorted(
+            vectors + build_vectors(place_files, keys, by_title),
+            key=lambda row: (row["monument_id"], row["rank"]),
+        )
         # A place may bear the name of a monument: the address tells them apart.
         tell_apart(monuments)
-    version = content_version(monuments, photos)
-    write_bundle(BUNDLE_DB, monuments, photos, version)
-    summary = {"version": version, "monuments": len(monuments), "photos": len(photos)}
+    version = content_version(monuments, photos, vectors)
+    write_bundle(BUNDLE_DB, monuments, photos, version, vectors)
+    summary = {
+        "version": version,
+        "monuments": len(monuments),
+        "photos": len(photos),
+        "vectors": len(vectors),
+    }
+    # The model that gave the vectors goes with them.
+    if vectors:
+        APP_MODEL_FILE.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(MODEL_SOURCE, APP_MODEL_FILE)
+        summary["model"] = export_model.checksum(APP_MODEL_FILE)[:12]
+    else:
+        logger.warning("No vectors in %s: the bundle has none", EMBEDDINGS_PARQUET)
     BUNDLE_JSON.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
 
     logger.info("Wrote %s (%d bytes)", BUNDLE_DB, BUNDLE_DB.stat().st_size)

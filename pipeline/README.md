@@ -30,7 +30,7 @@ uv run ruff format .    # formatage
 | — `landmarks` | `uv run python -m lutece_pipeline.landmarks` | `selection.parquet`, `geometries.parquet`, Wikidata, statistiques de Wikipédia | `data/interim/landmark_candidates.parquet`, `data/interim/landmark_candidates.csv` |
 | — `landmark_places` | `uv run python -m lutece_pipeline.landmark_places` | `review/landmarks.csv`, les réponses de `landmarks`, OpenStreetMap, Commons | `data/interim/landmarks.parquet`, `data/interim/landmark_files.parquet` |
 | 11. `load_postgres` | `uv run python -m lutece_pipeline.load_postgres` | les sorties des étapes 1 à 7, une base Postgres | tables `monuments` et `reference_images` |
-| 11. `export_bundle` | `uv run python -m lutece_pipeline.export_bundle` | les sorties des étapes 1 à 7, `selection.parquet`, `landmarks.parquet`, `landmark_files.parquet`, `reference_photo_checks.parquet`, `review/capture_reach.csv` | `apps/mobile/assets/data/lutece.db`, `apps/mobile/assets/data/bundle.json` |
+| 11. `export_bundle` | `uv run python -m lutece_pipeline.export_bundle` | les sorties des étapes 1 à 7, `selection.parquet`, `landmarks.parquet`, `landmark_files.parquet`, `reference_photo_checks.parquet`, les vecteurs `int8-crop`, le modèle `int8`, `review/capture_reach.csv` | `apps/mobile/assets/data/lutece.db`, `apps/mobile/assets/data/bundle.json`, `apps/mobile/assets/models/dinov2-small-int8.onnx` |
 | 12. `quality_report` | `uv run python -m lutece_pipeline.quality_report` | les sorties des étapes 1 à 7 | `data/processed/monuments_quality.parquet`, `data/processed/quality_problems.csv`, `docs/rapport/qualite-donnees.md` |
 | — `fetch_reference_photos` | `uv run python -m lutece_pipeline.fetch_reference_photos` | `commons_files.parquet`, `landmark_files.parquet`, `selection.parquet`, Wikimedia Commons | `data/raw/commons/photos/`, `data/interim/reference_photos.parquet` |
 | — `export_model` | `uv run python -m lutece_pipeline.export_model` | les poids de DINOv2 ViT-S/14 (Hugging Face) | `data/processed/models/` : trois fichiers ONNX et `models.json` |
@@ -1181,8 +1181,15 @@ base locale ne tourne pas.
 L'app fonctionne hors ligne : tout ce qu'elle affiche des monuments vient d'un
 fichier SQLite que l'étape `export_bundle` écrit dans ses ressources,
 `apps/mobile/assets/data/lutece.db`. C'est la moitié « app » de l'étape 11 du
-SPEC. Le fichier pèse 1,1 Mo et il est versionné : l'app se compile sans
+SPEC. Le fichier pèse 3,3 Mo et il est versionné : l'app se compile sans
 relancer le pipeline.
+
+L'étape copie aussi dans les ressources de l'app le modèle d'image qui a
+calculé les vecteurs des photos de référence,
+`apps/mobile/assets/models/dinov2-small-int8.onnx` (22,5 Mo, versionné lui
+aussi) : l'app et ses vecteurs viennent du même modèle. `bundle.json` donne la
+version du contenu, les effectifs et les 12 premiers caractères de l'empreinte
+SHA-256 du modèle.
 
 ### Contenu
 
@@ -1190,7 +1197,8 @@ relancer le pipeline.
 |---|---|---|
 | `monuments` | 394 | une ligne par monument que la sélection garde (323) et par lieu non protégé (71) |
 | `photos` | 1 118 | les 3 premières photos sélectionnées de chacun, hors photos écartées (voir « Photos écartées »), avec auteur et licence |
-| `meta` | 3 | version du contenu et effectifs |
+| `reference_vectors` | 4 335 | le vecteur de chaque photo de référence gardée, sur 8 bits (voir ci-dessous) |
+| `meta` | 4 | version du contenu et effectifs |
 
 Colonnes de `monuments` : `id` (le même identifiant que dans Postgres),
 `merimee_id`, `title`, `name`, `address`, `arrondissement`, `lat`, `lon`,
@@ -1213,6 +1221,15 @@ Wikidata, comme celui d'un monument l'est de sa notice.
   `approximate`, `not_ready`.
 - **`capture_reach_m`** est la distance, en mètres, jusqu'à laquelle on peut
   capturer le monument quelle que soit la précision du GPS (voir ci-dessous).
+
+Colonnes de `reference_vectors` : `monument_id`, `rank` (le rang de la photo
+parmi celles gardées : les trois premiers sont ceux de `photos`), `vector`
+(384 octets signés) et `scale`, qui multiplié par les octets donne un vecteur
+de longueur 1. Les vecteurs viennent du modèle `int8`, avec le cadrage
+`crop` : ceux que le téléphone calculera. Les écrire sur 8 bits plutôt que
+sur 32 ne change pas la mesure (89,7 % de bon lieu en premier dans les deux
+cas) et divise leur poids par quatre, 1,6 Mo au lieu de 6,6. 387 lieux ont
+des vecteurs ; les 7 autres n'ont pas de photo de référence.
 
 ### Distance de capture
 
