@@ -32,6 +32,7 @@ uv run ruff format .    # formatage
 | 11. `load_postgres` | `uv run python -m lutece_pipeline.load_postgres` | les sorties des étapes 1 à 7, une base Postgres | tables `monuments` et `reference_images` |
 | 11. `export_bundle` | `uv run python -m lutece_pipeline.export_bundle` | les sorties des étapes 1 à 7, `selection.parquet`, `landmarks.parquet`, `landmark_files.parquet`, `review/capture_reach.csv` | `apps/mobile/assets/data/lutece.db`, `apps/mobile/assets/data/bundle.json` |
 | 12. `quality_report` | `uv run python -m lutece_pipeline.quality_report` | les sorties des étapes 1 à 7 | `data/processed/monuments_quality.parquet`, `data/processed/quality_problems.csv`, `docs/rapport/qualite-donnees.md` |
+| — `fetch_reference_photos` | `uv run python -m lutece_pipeline.fetch_reference_photos` | `commons_files.parquet`, `landmark_files.parquet`, `selection.parquet`, Wikimedia Commons | `data/raw/commons/photos/`, `data/interim/reference_photos.parquet` |
 
 Options :
 
@@ -50,6 +51,10 @@ Options :
 - `load_postgres` charge la base locale de Supabase, sauf si la variable
   d'environnement `LUTECE_DATABASE_URL` désigne une autre base.
   `--data-version N` fixe le numéro de version enregistré avec chaque monument.
+- `fetch_reference_photos` ne télécharge que les photos absentes de
+  `data/raw/commons/photos/` : après une interruption, relancer la commande
+  reprend là où elle s'était arrêtée. `--offline` liste les photos présentes
+  sans rien télécharger.
 
 Les fichiers Parquet se lisent avec `pd.read_parquet(chemin)`. Ajouter
 `dtype_backend="pyarrow"` conserve les entiers avec valeurs manquantes au lieu
@@ -1331,6 +1336,43 @@ par leur adresse.
 - **Les immeubles anonymes dominent** : 710 monuments sont des « immeubles »,
   prêts à 92 % mais avec 2 photos en médiane et 10 % d'articles Wikipédia.
 
+## Reconnaissance d'image
+
+C'est la phase 3 du SPEC (§6) : la photo d'une capture est comparée aux photos
+de référence des candidats que la géométrie a retenus. Les quatre étapes de
+cette section préparent ce qu'il faut pour cela et mesurent, avant de toucher
+à l'app, ce qu'on peut en attendre.
+
+### `fetch_reference_photos` : les photos sur le disque
+
+L'étape 7 et l'étape `landmark_places` choisissent les photos de référence
+mais n'en gardent que l'adresse. Le modèle a besoin des images : l'étape
+télécharge les photos sélectionnées des lieux que l'app montre.
+
+| | |
+|---|---|
+| Références (un lieu, une photo) | 5 059 |
+| Fichiers distincts | 5 012 |
+| Lieux servis | 389 sur 394 (5 n'ont aucune photo) |
+| Poids | 423 Mo |
+
+- **Largeur de 500 px.** Le modèle lit un carré de 224 px : 500 px laissent
+  de quoi recadrer, pour un tiers du poids des 960 px que l'app affiche.
+  Commons ne sert que quelques largeurs fixes. Les 71 fichiers plus étroits
+  que 960 px n'ont pas de vignette : l'original est pris tel quel.
+- **Rangement.** Un titre de fichier contient des espaces, des virgules, des
+  barres obliques : la photo est rangée sous l'empreinte SHA-1 de son titre,
+  `data/raw/commons/photos/ab/ab12….jpg`. Rien de ce dossier ne va dans git.
+- **`reference_photos.parquet`** a une ligne par lieu et par photo présente :
+  `merimee_id` (ou l'identifiant Wikidata d'un lieu sans notice), `title`,
+  `rank`, `author` (à défaut, le compte qui a versé le fichier), `year`,
+  `path` et `bytes`.
+- **Égards pour le service.** Une requête à la fois, 0,1 s de pause entre
+  deux, l'en-tête d'identification des autres étapes. Le téléchargement
+  complet prend environ une heure. Un fichier disparu de Commons depuis
+  l'étape 7 est signalé et sauté ; une réponse qui n'est pas une image arrête
+  l'étape.
+
 ## Écarts constatés avec le SPEC
 
 - §5.1 : le portail `data.culture.gouv.fr` redirige vers
@@ -1405,3 +1447,6 @@ par leur adresse.
   71 lieux connus qui ne sont pas des monuments historiques sont ajoutés à
   l'app, à partir de Wikidata et après relecture (décision du 12 octobre 2026,
   voir « Lieux non protégés »).
+- §9 : la phase 3 commence avant la fin de la phase 2 (comptes, connexion
+  Apple, TestFlight), qui demande un compte Apple Developer payant et sera
+  faite en dernier (décision du 12 octobre 2026).
