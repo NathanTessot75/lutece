@@ -35,6 +35,7 @@ uv run ruff format .    # formatage
 | — `fetch_reference_photos` | `uv run python -m lutece_pipeline.fetch_reference_photos` | `commons_files.parquet`, `landmark_files.parquet`, `selection.parquet`, Wikimedia Commons | `data/raw/commons/photos/`, `data/interim/reference_photos.parquet` |
 | — `export_model` | `uv run python -m lutece_pipeline.export_model` | les poids de DINOv2 ViT-S/14 (Hugging Face) | `data/processed/models/` : trois fichiers ONNX et `models.json` |
 | — `embed_references` | `uv run python -m lutece_pipeline.embed_references` | `reference_photos.parquet`, les photos, un modèle exporté | `data/interim/embeddings/<modèle>-<cadrage>.parquet` |
+| — `check_reference_photos` | `uv run python -m lutece_pipeline.check_reference_photos` | `reference_photos.parquet`, les vecteurs `float32-crop`, `commons_files.parquet`, `landmark_files.parquet`, `review/landmarks.csv`, `review/reference_photo_labels.csv` | `data/interim/reference_photo_checks.parquet`, `data/interim/reference_photo_checks_evaluation.csv` |
 | — `evaluate_retrieval` | `uv run python -m lutece_pipeline.evaluate_retrieval` | `reference_photos.parquet`, les vecteurs, `geometries.parquet`, `landmarks.parquet` | `data/processed/retrieval_evaluation.json` |
 
 Options :
@@ -1482,10 +1483,8 @@ aucune autre photo de son lieu (ressemblance sous 0,25). Les plus basses sont
 un four gallo-romain fouillé à l'Institut national des Jeunes Sourds, des
 portraits pris au Palace, des porcelaines du musée d'Ennery : des photos qui
 ne montrent pas le bâtiment. Jouées comme captures, elles ressemblent aussi
-peu à leur lieu qu'à un autre. En les retirant, le bon lieu vient en premier
-88,6 % des fois et la séparation monte à 0,90 pour les voisins et 0,97 pour
-ailleurs ; ce chiffre flatte le modèle, puisque les photos sont retirées
-d'après la mesure même, et ne vaut que comme indication.
+peu à leur lieu qu'à un autre. L'étape suivante les écarte (voir
+« Photos écartées »).
 
 Certaines confusions tiennent aux données et non au modèle : deux notices
 pour le même ensemble (les deux pavillons de la barrière du Trône, l'hôtel de
@@ -1496,6 +1495,81 @@ Sully et le petit Sully) ont des photos qui montrent la même chose.
 > chiffres disent si le modèle distingue les lieux, pas ce que l'app
 > obtiendra. Dans l'app, la direction visée réduit encore les candidats, ce
 > que cette mesure ignore. Le jeu de test terrain de la phase 4 tranchera.
+
+### `check_reference_photos` : les photos écartées
+
+La mesure précédente le montre : une photo de référence sur dix ne ressemble
+à aucune autre photo de son lieu. L'étape 7 l'avait mesuré à sa façon : un
+quart des photos qu'elle sélectionne ne montrent pas le bâtiment, et aucun mot
+de leur nom ne le dit. Le modèle d'image, lui, peut le voir : une vue du
+bâtiment ressemble aux vues que d'autres en ont prises.
+
+La **ressemblance d'une photo avec son lieu** est son meilleur cosinus avec
+les photos du lieu prises par un autre auteur, ou une autre année. Une série
+de vues d'un intérieur prises le même jour ne se porte donc pas garante
+d'elle-même. Sous **0,35**, la photo est écartée : elle n'est plus montrée
+sur la fiche et ne servira pas à reconnaître le lieu.
+
+#### Le seuil
+
+Pour le choisir, 140 photos ont été tirées au hasard dans six tranches de
+ressemblance, mélangées, regardées sur des planches numérotées sans connaître
+leur tranche, et étiquetées comme à l'étape 7 : `ok` (vue de l'extérieur, à
+l'échelle du bâtiment), `inside`, `detail`, `document` ou `other`. Les
+étiquettes sont dans `review/reference_photo_labels.csv` (`merimee_id`,
+`title`, `label`, `note`) ; l'étape refait le décompte à chaque passage et
+l'écrit dans `reference_photo_checks_evaluation.csv`.
+
+| Ressemblance | Photos | Regardées | Bonnes vues |
+|---|---|---|---|
+| sous 0,15 | 223 | 24 | 1 (4 %) |
+| 0,15 à 0,25 | 252 | 24 | 3 (12 %) |
+| 0,25 à 0,35 | 281 | 24 | 8 (33 %) |
+| 0,35 à 0,45 | 301 | 24 | 14 (58 %) |
+| 0,45 à 0,55 | 376 | 24 | 14 (58 %) |
+| 0,55 et plus | 3 610 | 20 | 18 (90 %) |
+
+Sous 0,35, deux photos sur trois au moins ne montrent pas le bâtiment, et 12
+sur 72 seulement en sont de bonnes vues : c'est là qu'est le seuil. Les
+mauvaises photos qui restent au-dessus sont des détails ou des vues trop
+lointaines, que la ressemblance ne distingue plus. D'après ces proportions,
+le seuil écarte la moitié environ des mauvaises photos et perd un peu plus
+d'une centaine de bonnes vues sur près de 3 800.
+
+#### Les exceptions
+
+Deux sortes de photos ne sont jamais écartées :
+
+- l'image que Wikidata donne au lieu : 56 des 57 regardées à l'étape 7 sont
+  de bonnes vues (20 photos épargnées) ;
+- les photos que nomme `review/landmarks.csv`, qui ont été regardées
+  (12 photos épargnées) : pour une salle ou un stade, les autres photos du
+  lieu montrent surtout des événements, et une bonne vue ne leur ressemble
+  pas.
+
+Une photo dont personne d'autre n'a photographié le lieu n'a pas de
+ressemblance : elle est gardée (16 photos).
+
+#### Ce que l'étape écarte
+
+| | |
+|---|---|
+| Photos vérifiées | 5 059 |
+| Photos écartées | 724 |
+| Lieux restés sans photo | 2 |
+| Lieux restés avec 1 ou 2 photos | 25 |
+
+Les deux lieux restés sans photo n'en avaient que deux, hors sujet : des
+meubles de Le Corbusier et une terrasse pour la villa La Roche, une plaque et
+un boulier romain pour le lycée Henri-IV. Ils seront reconnus à la seule
+géométrie, comme le prévoit le SPEC (§6.3) pour un monument sans photo.
+
+Dans le fichier embarqué, 188 des 1 143 photos montrées changent, sur 117
+fiches : la photo écartée laisse sa place à la suivante. Le four gallo-romain
+de l'Institut national des Jeunes Sourds et les portraits pris au Palace ne
+sont plus montrés. Le seuil se trompe aussi dans l'autre sens : la vue de
+l'Institut depuis la rue Saint-Jacques est écartée, parce que les autres
+photos du lieu sont surtout celles du four.
 
 ## Écarts constatés avec le SPEC
 
