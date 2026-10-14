@@ -1615,6 +1615,46 @@ d'ailleurs, contre 22 % et 37 % avant. La forme `int8` du modèle fait de même
 > bâtiment), pas ce que vaudra le seuil sur des photos de téléphone. La
 > phase 4 le dira.
 
+### Sur le téléphone
+
+L'app reprend ce que fait le pipeline (`apps/mobile/src/features/recognition/`) :
+
+1. la photo est recadrée sur son carré central et réduite à 224 px par
+   `expo-image-manipulator`, puis enregistrée en PNG, sans perte ;
+2. `fast-png` en lit les pixels, dont les couleurs sont mises à l'échelle avec
+   les moyennes et écarts-types d'ImageNet, comme dans `vision` ;
+3. `onnxruntime-react-native` passe ces pixels dans le modèle `int8`, embarqué
+   dans l'app ;
+4. le vecteur obtenu est comparé, par produit scalaire, aux vecteurs des
+   photos de référence que lit SQLite.
+
+> `fast-png` crée un décodeur de texte Latin-1 dès son chargement. Le moteur
+> JavaScript de l'app, Hermes, ne décode que l'UTF-8 : l'import échouait.
+> `src/lib/latin1.ts` ajoute ce décodage, qui tient en quelques lignes (un
+> octet donne le caractère de même code), et doit être importé avant.
+
+#### Le test d'égalité (SPEC §6.3)
+
+Un écran réservé à la version de développement, `lutece://dev/recognition`,
+télécharge la première photo de 20 lieux à la largeur que le pipeline a lue
+(500 px), la prépare et la passe dans le modèle du téléphone, puis compare le
+vecteur obtenu à celui du fichier embarqué. Avec `?run=1`, il se lance seul et
+écrit son résultat dans le journal du serveur de développement.
+
+| Appareil | Cosinus moyen | Pire cosinus | Préparation | Calcul |
+|---|---|---|---|---|
+| simulateur (processeur du Mac) | 0,991 | 0,986 | 95 ms | 32 ms |
+| iPhone 14 Pro, version de développement | 0,991 | 0,984 | 110 ms | 39 ms |
+
+Le modèle se charge en 0,2 à 0,3 seconde, une fois par lancement.
+
+Le cosinus n'atteint pas tout à fait 1 parce que le téléphone ne réduit pas
+l'image comme Pillow, et que la forme `int8` amplifie ces petites
+différences : sur le Mac, deux méthodes de réduction (bicubique et bilinéaire)
+donnent 0,997 avec `float32` et 0,989 avec `int8`. L'écart reste plus petit
+que celui qui sépare `int8` de `float32` sur les mêmes pixels (0,982), qui ne
+change pas la mesure (89,7 % contre 89,8 %).
+
 ## Écarts constatés avec le SPEC
 
 - §5.1 : le portail `data.culture.gouv.fr` redirige vers
