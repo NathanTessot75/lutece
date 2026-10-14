@@ -34,6 +34,7 @@ uv run ruff format .    # formatage
 | 12. `quality_report` | `uv run python -m lutece_pipeline.quality_report` | les sorties des étapes 1 à 7 | `data/processed/monuments_quality.parquet`, `data/processed/quality_problems.csv`, `docs/rapport/qualite-donnees.md` |
 | — `fetch_reference_photos` | `uv run python -m lutece_pipeline.fetch_reference_photos` | `commons_files.parquet`, `landmark_files.parquet`, `selection.parquet`, Wikimedia Commons | `data/raw/commons/photos/`, `data/interim/reference_photos.parquet` |
 | — `export_model` | `uv run python -m lutece_pipeline.export_model` | les poids de DINOv2 ViT-S/14 (Hugging Face) | `data/processed/models/` : trois fichiers ONNX et `models.json` |
+| — `embed_references` | `uv run python -m lutece_pipeline.embed_references` | `reference_photos.parquet`, les photos, un modèle exporté | `data/interim/embeddings/<modèle>-<cadrage>.parquet` |
 
 Options :
 
@@ -56,6 +57,8 @@ Options :
   `data/raw/commons/photos/` : après une interruption, relancer la commande
   reprend là où elle s'était arrêtée. `--offline` liste les photos présentes
   sans rien télécharger.
+- `embed_references --model float32|fp16|int8` choisit le poids du modèle et
+  `--framing crop|squash` le cadrage ; chaque couple écrit son propre fichier.
 
 Les fichiers Parquet se lisent avec `pd.read_parquet(chemin)`. Ajouter
 `dtype_backend="pyarrow"` conserve les entiers avec valeurs manquantes au lieu
@@ -1419,6 +1422,14 @@ que le modèle lit, et que l'app devra reproduire à l'identique (SPEC §6.3).
    (`squash`).
 3. Ses couleurs sont mises entre 0 et 1, puis centrées et réduites avec les
    moyennes et écarts-types d'ImageNet, comme à l'entraînement du modèle.
+
+### `embed_references` : les vecteurs
+
+L'étape passe chaque photo dans une forme du modèle, avec un cadrage, et écrit
+`data/interim/embeddings/<modèle>-<cadrage>.parquet` : `title` et `vector`
+(384 réels). Sur le processeur du Mac, les 5 012 photos prennent 5 à 6
+minutes avec `float32` ou `fp16` (63 à 74 ms par photo) et 3 minutes avec
+`int8` (34 ms).
 
 ## Écarts constatés avec le SPEC
 
