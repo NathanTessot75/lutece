@@ -35,6 +35,7 @@ uv run ruff format .    # formatage
 | — `fetch_reference_photos` | `uv run python -m lutece_pipeline.fetch_reference_photos` | `commons_files.parquet`, `landmark_files.parquet`, `selection.parquet`, Wikimedia Commons | `data/raw/commons/photos/`, `data/interim/reference_photos.parquet` |
 | — `export_model` | `uv run python -m lutece_pipeline.export_model` | les poids de DINOv2 ViT-S/14 (Hugging Face) | `data/processed/models/` : trois fichiers ONNX et `models.json` |
 | — `embed_references` | `uv run python -m lutece_pipeline.embed_references` | `reference_photos.parquet`, les photos, un modèle exporté | `data/interim/embeddings/<modèle>-<cadrage>.parquet` |
+| — `evaluate_retrieval` | `uv run python -m lutece_pipeline.evaluate_retrieval` | `reference_photos.parquet`, les vecteurs, `geometries.parquet`, `landmarks.parquet` | `data/processed/retrieval_evaluation.json` |
 
 Options :
 
@@ -1431,6 +1432,71 @@ L'étape passe chaque photo dans une forme du modèle, avec un cadrage, et écri
 minutes avec `float32` ou `fp16` (63 à 74 ms par photo) et 3 minutes avec
 `int8` (34 ms).
 
+### `evaluate_retrieval` : une première mesure
+
+Chaque photo de référence joue à son tour la photo d'un joueur. Elle est
+comparée aux autres photos de son lieu et à celles des lieux dont le contour
+est à moins de 150 m du sien (la plus grande distance du SPEC §6.1), comme
+l'app comparera une capture aux photos de ses candidats. La ressemblance
+d'une photo avec un lieu est le meilleur cosinus entre son vecteur et ceux
+des photos du lieu.
+
+Les photos du même lieu prises par le même auteur la même année sont écartées
+de la comparaison : ce sont souvent la même vue à quelques secondes d'écart,
+ce que la photo d'un joueur ne sera jamais. 16 photos, seules de leur lieu ou
+de leur série, ne peuvent pas être jouées.
+
+| Modèle | Cadrage | Bon lieu en premier | Séparation des voisins | Séparation d'ailleurs | Accord avec `float32` (moyen, pire) |
+|---|---|---|---|---|---|
+| `float32` | `crop` | 83,6 % | 0,838 | 0,907 | |
+| `float32` | `squash` | 83,7 % | 0,838 | 0,907 | |
+| `fp16` | `crop` | 83,6 % | 0,838 | 0,907 | 1,0000 · 0,9997 |
+| `int8` | `crop` | 83,3 % | 0,839 | 0,908 | 0,9797 · 0,8521 |
+
+Sur 5 043 photos jouées dans 378 lieux, 3 913 ont au moins un autre lieu
+autour, 3,5 candidats en moyenne : au hasard, le bon lieu viendrait en premier
+33,6 % des fois. La « séparation » est la probabilité que le bon lieu
+ressemble plus à la photo qu'un mauvais (aire sous la courbe ROC), le mauvais
+étant un lieu voisin ou un lieu tiré au hasard ailleurs dans Paris.
+
+Ce que la mesure dit :
+
+- **Le modèle classe bien.** Le bon lieu passe de 34 % à 84 % en tête. Avec
+  2 candidats il est premier 90 fois sur 100, avec plus de 5 candidats 74
+  fois sur 100.
+- **Le poids du modèle ne coûte rien.** La forme de 22,5 Mo classe aussi bien
+  que celle de 86,7 Mo (83,3 % contre 83,6 %), et elle est deux fois plus
+  rapide sur le Mac. Reste à vérifier qu'un téléphone l'exécute.
+- **Le cadrage ne change rien** sur ces photos, pour la plupart en largeur.
+  `crop`, le cadrage des auteurs du modèle, est gardé ; la question se
+  reposera avec des photos de téléphone, en hauteur.
+- **Le nombre de photos compte.** Un lieu qui a 12 à 15 photos est premier
+  84 fois sur 100, un lieu qui en a 7 ou moins 62 fois sur 100.
+- **Le modèle refuse mal.** Un seuil qui ne laisse passer que 5 % des mauvais
+  lieux voisins (ressemblance de 0,70) refuserait 44 % des bonnes photos. À
+  l'inverse, un seuil qui ne refuse que 5 % des bonnes photos (0,16) n'écarte
+  que 22 % des voisins et 37 % des lieux d'ailleurs.
+
+Pourquoi il refuse mal : une photo de référence sur dix ne ressemble à
+aucune autre photo de son lieu (ressemblance sous 0,25). Les plus basses sont
+un four gallo-romain fouillé à l'Institut national des Jeunes Sourds, des
+portraits pris au Palace, des porcelaines du musée d'Ennery : des photos qui
+ne montrent pas le bâtiment. Jouées comme captures, elles ressemblent aussi
+peu à leur lieu qu'à un autre. En les retirant, le bon lieu vient en premier
+88,6 % des fois et la séparation monte à 0,90 pour les voisins et 0,97 pour
+ailleurs ; ce chiffre flatte le modèle, puisque les photos sont retirées
+d'après la mesure même, et ne vaut que comme indication.
+
+Certaines confusions tiennent aux données et non au modèle : deux notices
+pour le même ensemble (les deux pavillons de la barrière du Trône, l'hôtel de
+Sully et le petit Sully) ont des photos qui montrent la même chose.
+
+> Limites. Les photos de Commons sont plus propres que celles d'un téléphone
+> dans la rue, de biais, de nuit ou derrière un passant (SPEC §6.3) : ces
+> chiffres disent si le modèle distingue les lieux, pas ce que l'app
+> obtiendra. Dans l'app, la direction visée réduit encore les candidats, ce
+> que cette mesure ignore. Le jeu de test terrain de la phase 4 tranchera.
+
 ## Écarts constatés avec le SPEC
 
 - §5.1 : le portail `data.culture.gouv.fr` redirige vers
@@ -1508,5 +1574,10 @@ minutes avec `float32` ou `fp16` (63 à 74 ms par photo) et 3 minutes avec
 - §9 : la phase 3 commence avant la fin de la phase 2 (comptes, connexion
   Apple, TestFlight), qui demande un compte Apple Developer payant et sera
   faite en dernier (décision du 12 octobre 2026).
+- §6.1 : le SPEC n'emploie l'image que pour départager des candidats. Un essai
+  dans la rue a montré qu'elle doit aussi pouvoir refuser, quand ce qu'on vise
+  n'est pas dans la photo (décision du 14 octobre 2026). La première mesure
+  montre que ce refus n'est pas fiable avec les photos de référence telles
+  qu'elles sont (voir « Reconnaissance d'image »).
 - §4 : `pillow`, que le SPEC ne liste pas, lit les photos de référence
   (décision du 14 octobre 2026).
