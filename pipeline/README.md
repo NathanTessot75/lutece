@@ -1430,8 +1430,14 @@ que le modèle lit, et que l'app devra reproduire à l'identique (SPEC §6.3).
 L'étape passe chaque photo dans une forme du modèle, avec un cadrage, et écrit
 `data/interim/embeddings/<modèle>-<cadrage>.parquet` : `title` et `vector`
 (384 réels). Sur le processeur du Mac, les 5 012 photos prennent 5 à 6
-minutes avec `float32` ou `fp16` (63 à 74 ms par photo) et 3 minutes avec
-`int8` (34 ms).
+minutes avec `float32` ou `fp16` (63 à 74 ms par photo) et moins de 3 minutes
+avec `int8` (32 ms).
+
+Les photos passent **une à une**, comme sur le téléphone. La forme `int8`
+règle l'échelle de ses nombres sur tout le lot de photos qu'on lui donne :
+calculé dans un lot de 32, le vecteur d'une photo dépend des 31 autres, et ne
+ressemble plus qu'à 0,989 (cosinus moyen) à celui de la même photo seule.
+Les formes `float32` et `fp16` ne dépendent pas du lot.
 
 ### `evaluate_retrieval` : une première mesure
 

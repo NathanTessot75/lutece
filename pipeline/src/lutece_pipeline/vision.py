@@ -23,7 +23,11 @@ STD = np.array([0.229, 0.224, 0.225], dtype=np.float32)
 # How a photo that is not square is brought to a square: by keeping its centre,
 # or by keeping everything and distorting it.
 FRAMINGS = ("crop", "squash")
-BATCH_SIZE = 32
+# One photo at a time, as on the phone: the model with weights on 8 bits scales
+# its numbers over the whole batch it is given, so that the vector of a photo
+# would depend on the other photos of its batch (cosine of 0.989 with the
+# vector of the same photo alone).
+BATCH_SIZE = 1
 
 type Pixels = np.ndarray
 type Vectors = np.ndarray
