@@ -257,3 +257,66 @@ export async function countCapturable(db: SQLiteDatabase): Promise<number> {
   );
   return row?.count ?? 0;
 }
+
+/** The vector of a reference photo, written on 8 bits in the bundle. */
+export type ReferenceVector = {
+  rank: number;
+  /** Multiplied by `scale`, the bytes make a vector of length 1. */
+  scale: number;
+  levels: Int8Array;
+};
+
+type VectorRow = { monumentId: string; rank: number; scale: number; vector: Uint8Array };
+
+/** Read the bytes of a vector as SQLite gives them. */
+function toLevels(blob: Uint8Array): Int8Array {
+  return new Int8Array(blob.buffer, blob.byteOffset, blob.byteLength);
+}
+
+/** The vectors of the reference photos of these monuments, by monument. */
+export async function listReferenceVectors(
+  db: SQLiteDatabase,
+  ids: readonly string[],
+): Promise<Map<string, ReferenceVector[]>> {
+  const vectors = new Map<string, ReferenceVector[]>();
+  if (ids.length === 0) {
+    return vectors;
+  }
+  const marks = ids.map(() => '?').join(', ');
+  const rows = await db.getAllAsync<VectorRow>(
+    `select monument_id as monumentId, rank, scale, vector from reference_vectors
+     where monument_id in (${marks}) order by monument_id, rank`,
+    [...ids],
+  );
+  for (const row of rows) {
+    const list = vectors.get(row.monumentId) ?? [];
+    list.push({ rank: row.rank, scale: row.scale, levels: toLevels(row.vector) });
+    vectors.set(row.monumentId, list);
+  }
+  return vectors;
+}
+
+/** A first photo of a monument, with the vector that the pipeline gave it. */
+export type ReferenceSample = ReferenceVector & {
+  id: string;
+  title: string;
+  thumbUrl: string;
+};
+
+/** The first photos of `count` monuments, always the same, with their vectors. */
+export async function listReferenceSamples(
+  db: SQLiteDatabase,
+  count: number,
+): Promise<ReferenceSample[]> {
+  const rows = await db.getAllAsync<Omit<VectorRow, 'monumentId'> & ReferenceSample>(
+    `select m.id, m.title, p.thumb_url as thumbUrl, v.rank, v.scale, v.vector
+     from photos p
+     join reference_vectors v on v.monument_id = p.monument_id and v.rank = p.rank
+     join monuments m on m.id = p.monument_id
+     where p.rank = 1
+     order by m.id
+     limit $count`,
+    { $count: count },
+  );
+  return rows.map(({ vector, ...row }) => ({ ...row, levels: toLevels(vector) }));
+}

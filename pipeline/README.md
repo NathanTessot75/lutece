@@ -1699,3 +1699,9 @@ d'ailleurs, contre 22 % et 37 % avant. La forme `int8` du modèle fait de même
   qu'elles sont (voir « Reconnaissance d'image »).
 - §4 : `pillow`, que le SPEC ne liste pas, lit les photos de référence
   (décision du 14 octobre 2026).
+- §4 : `fast-png`, que le SPEC ne liste pas, lit les pixels de la photo
+  préparée sur le téléphone, qu'`expo-image-manipulator` ne donne pas
+  (décision du 14 octobre 2026). `expo-asset`, déjà présent avec Expo, devient
+  une dépendance directe pour charger le modèle.
+- §4 : `onnxruntime-react-native` 1.24.3 laisse CocoaPods choisir la version du
+  moteur natif `onnxruntime-c` : 1.30.0 au 14 octobre 2026.
