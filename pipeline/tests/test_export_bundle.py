@@ -293,6 +293,42 @@ def test_version_changes_with_the_content() -> None:
     assert bundle.content_version(monuments, []) != version
 
 
+def test_photos_set_aside_leave_their_place_to_the_next() -> None:
+    files = [
+        file("PA1", 1),
+        file("PA1", 2),
+        file("PA1", 3),
+        file("PA1", 4),
+        file("PA1", None),
+        file("PA2", 1),
+    ]
+    set_aside = frozenset({("PA1", "File:PA1 2.jpg"), ("PA1", "File:PA1 None.jpg")})
+    kept = bundle.without_set_aside(files, set_aside)
+    assert [(row["title"], row["rank"]) for row in kept] == [
+        ("File:PA1 1.jpg", 1),
+        ("File:PA1 3.jpg", 2),
+        ("File:PA1 4.jpg", 3),
+        ("File:PA2 1.jpg", 1),
+    ]
+    # The lines given are left as they were.
+    assert files[2]["rank"] == 3
+    assert bundle.without_set_aside(files, frozenset()) == files
+    assert bundle.count_selected(kept) == {"PA1": 3, "PA2": 1}
+
+
+def test_photos_set_aside_are_read_from_the_check(tmp_path: Path) -> None:
+    assert bundle.read_set_aside(tmp_path / "missing.parquet") == frozenset()
+    pd.DataFrame(
+        [
+            {"merimee_id": "PA1", "title": "File:Four.jpg", "kept": False},
+            {"merimee_id": "PA1", "title": "File:Façade.jpg", "kept": True},
+        ]
+    ).to_parquet(tmp_path / "checks.parquet")
+    assert bundle.read_set_aside(tmp_path / "checks.parquet") == {
+        ("PA1", "File:Four.jpg")
+    }
+
+
 def run_main(folder: Path, out: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     # Every notice of the sample is shown: the selection has its own tests.
     notices = pd.read_parquet(folder / "merimee.parquet", columns=["merimee_id"])
@@ -312,6 +348,7 @@ def run_main(folder: Path, out: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         "SELECTION_PARQUET": out / "selection.parquet",
         "LANDMARKS_PARQUET": out / "landmarks.parquet",
         "LANDMARK_FILES_PARQUET": out / "landmark_files.parquet",
+        "CHECKS_PARQUET": out / "reference_photo_checks.parquet",
     }
     for name, path in paths.items():
         monkeypatch.setattr(bundle, name, path)
@@ -435,3 +472,16 @@ def test_places_without_a_notice_are_bundled_with_the_monuments(
     assert tuple(church) == ("PA00085795", "Un article", "classé")
     assert database.execute("pragma foreign_key_check").fetchall() == []
     database.close()
+
+    # Once its first photo is set aside, the tower shows the next one first.
+    pd.DataFrame(
+        [{"merimee_id": "Q323767", "title": "File:Q323767 1.jpg", "kept": False}]
+    ).to_parquet(tmp_path / "reference_photo_checks.parquet")
+    run_main(pipeline_tables, tmp_path, monkeypatch)
+    database = sqlite3.connect(tmp_path / "assets" / "lutece.db")
+    shown = database.execute(
+        "select p.rank, p.page_url, m.photo_count from photos p"
+        " join monuments m on m.id = p.monument_id where m.wikidata_qid = 'Q323767'"
+    ).fetchall()
+    database.close()
+    assert shown == [(1, "https://commons.wikimedia.org/wiki/File:Q323767_2.jpg", 1)]

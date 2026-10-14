@@ -26,6 +26,7 @@ import pandas as pd
 import shapely
 
 from lutece_pipeline import (
+    check_reference_photos,
     geometry,
     ingest_commons,
     ingest_merimee,
@@ -59,6 +60,7 @@ COMMONS_FILES_PARQUET = ingest_commons.FILES_PARQUET
 SELECTION_PARQUET = selection.SELECTION_PARQUET
 LANDMARKS_PARQUET = landmark_places.PLACES_PARQUET
 LANDMARK_FILES_PARQUET = landmark_places.FILES_PARQUET
+CHECKS_PARQUET = check_reference_photos.CHECKS_PARQUET
 ASSETS_FOLDER = PIPELINE_ROOT.parent / "apps" / "mobile" / "assets" / "data"
 BUNDLE_DB = ASSETS_FOLDER / "lutece.db"
 # What the app must know before it opens the file: which version it carries.
@@ -327,6 +329,39 @@ def build_landmarks(
     return rows
 
 
+def without_set_aside(
+    files: Sequence[Record], set_aside: frozenset[tuple[str, str]]
+) -> list[dict[str, Any]]:
+    """The files of a photo step without the photos set aside by their check.
+
+    The selected photos that remain move up: the first three of a place are
+    still the ones the page shows.
+    """
+    kept = [
+        dict(file)
+        for file in files
+        if (file["merimee_id"], file["title"]) not in set_aside
+    ]
+    positions: dict[str, int] = {}
+    selected = sorted(
+        (file for file in kept if file["selected"]),
+        key=lambda file: (file["merimee_id"], file["rank"]),
+    )
+    for file in selected:
+        positions[file["merimee_id"]] = positions.get(file["merimee_id"], 0) + 1
+        file["rank"] = positions[file["merimee_id"]]
+    return kept
+
+
+def read_set_aside(path: Path) -> frozenset[tuple[str, str]]:
+    """The photos that the check of the reference photos set aside, if it ran."""
+    if not path.exists():
+        return frozenset()
+    checks = pd.read_parquet(path)
+    aside = checks[~checks["kept"]]
+    return frozenset(zip(aside["merimee_id"], aside["title"], strict=True))
+
+
 def count_selected(files: Sequence[Record]) -> dict[str, int]:
     """How many photos are selected for each monument or place."""
     counts: dict[str, int] = {}
@@ -407,7 +442,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 
-    files = to_records(pd.read_parquet(COMMONS_FILES_PARQUET))
+    set_aside = read_set_aside(CHECKS_PARQUET)
+    files = without_set_aside(
+        to_records(pd.read_parquet(COMMONS_FILES_PARQUET)), set_aside
+    )
     geometries = to_records(pd.DataFrame(gpd.read_parquet(GEOMETRIES_PARQUET)))
     by_hand = read_reaches(REACHES_CSV)
     stale = sorted(set(by_hand) - {row["merimee_id"] for row in geometries})
@@ -429,7 +467,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     # The places that are not monuments come after them, when there are some.
     if LANDMARKS_PARQUET.exists():
         places = to_records(pd.DataFrame(gpd.read_parquet(LANDMARKS_PARQUET)))
-        place_files = to_records(pd.read_parquet(LANDMARK_FILES_PARQUET))
+        place_files = without_set_aside(
+            to_records(pd.read_parquet(LANDMARK_FILES_PARQUET)), set_aside
+        )
         landmark_rows = build_landmarks(places, count_selected(place_files))
         keys = [
             {"merimee_id": row["wikidata_qid"], "id": row["id"]}
