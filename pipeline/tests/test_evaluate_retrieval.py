@@ -208,6 +208,7 @@ def test_measures_are_written_for_every_set_of_vectors(
         "PLACES_PARQUET": tmp_path / "places.parquet",
         "EMBEDDINGS_FOLDER": folder,
         "REPORT_JSON": tmp_path / "report.json",
+        "CHECKS_PARQUET": tmp_path / "checks.parquet",
     }
     for name, path in paths.items():
         monkeypatch.setattr(evaluate_retrieval, name, path)
@@ -215,9 +216,11 @@ def test_measures_are_written_for_every_set_of_vectors(
 
     report = json.loads((tmp_path / "report.json").read_text())
     assert report["neighbour_m"] == 150.0
-    assert [(run["model"], run["framing"]) for run in report["runs"]] == [
-        ("float32", "crop"),
-        ("int8", "crop"),
+    assert [
+        (run["model"], run["framing"], run["photos"]) for run in report["runs"]
+    ] == [
+        ("float32", "crop", "all"),
+        ("int8", "crop", "all"),
     ]
     trained, light = report["runs"]
     assert trained["captures"] == 7
@@ -226,3 +229,20 @@ def test_measures_are_written_for_every_set_of_vectors(
     assert trained["separation_from_places_around"] == 1.0
     assert "agreement_with_float32" not in trained
     assert 0.9 < light["agreement_with_float32"]["least"] <= 1.0
+
+
+def test_runs_with_and_without_the_photos_set_aside(tmp_path: Path) -> None:
+    titles = [row["title"] for row in INDEX]
+    embed_references.write_embeddings(
+        titles,
+        np.pad(VECTORS, ((0, 0), (0, vision.DIMENSIONS - 3))).astype(np.float32),
+        tmp_path / "float32-crop.parquet",
+    )
+    runs = evaluate_retrieval.evaluate(
+        INDEX, NEIGHBOURS, tmp_path, frozenset({("tower", "File:Tower 2.jpg")})
+    )
+    assert [(run["photos"], run["first"]) for run in runs] == [
+        ("all", 0.8),
+        ("kept", 1.0),
+    ]
+    assert len(evaluate_retrieval.evaluate(INDEX, NEIGHBOURS, tmp_path)) == 1

@@ -39,7 +39,7 @@ from lutece_pipeline import (
     vision,
 )
 from lutece_pipeline.geo import LAMBERT_93
-from lutece_pipeline.paths import PROCESSED_DIR
+from lutece_pipeline.paths import INTERIM_DIR, PROCESSED_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +57,9 @@ GEOMETRIES_PARQUET = geometry.GEOMETRIES_PARQUET
 PLACES_PARQUET = landmark_places.PLACES_PARQUET
 EMBEDDINGS_FOLDER = embed_references.EMBEDDINGS_FOLDER
 REPORT_JSON = PROCESSED_DIR / "retrieval_evaluation.json"
+# Written by the check of the reference photos, which reads this step's module:
+# named here rather than imported.
+CHECKS_PARQUET = INTERIM_DIR / "reference_photo_checks.parquet"
 
 type Record = Mapping[str, Any]
 
@@ -232,8 +235,12 @@ def evaluate(
     index: Sequence[Record],
     neighbours: Mapping[str, Sequence[str]],
     folder: Path,
+    set_aside: frozenset[tuple[str, str]] = frozenset(),
 ) -> list[dict[str, Any]]:
-    """Measure every set of vectors found in the folder."""
+    """Measure every set of vectors found in the folder, with all the photos
+    and, when some were set aside, with those that remain."""
+    kept = [row for row in index if (row["merimee_id"], row["title"]) not in set_aside]
+    sets = [("all", index)] + ([("kept", kept)] if set_aside else [])
     runs = []
     trained: dict[str, tuple[list[str], vision.Vectors]] = {}
     for model in sorted(export_model.FILES):
@@ -242,13 +249,19 @@ def evaluate(
             if not path.exists():
                 continue
             titles, vectors = embed_references.read_embeddings(path)
-            queries, wrong = score_queries(gather(index, titles, vectors), neighbours)
-            run = {"model": model, "framing": framing, **measure(queries, wrong)}
-            if model == "float32":
-                trained[framing] = (titles, vectors)
-            elif framing in trained and trained[framing][0] == titles:
-                run["agreement_with_float32"] = agreement(trained[framing][1], vectors)
-            runs.append(run)
+            for photos, rows in sets:
+                queries, wrong = score_queries(
+                    gather(rows, titles, vectors), neighbours
+                )
+                run = {"model": model, "framing": framing, "photos": photos}
+                run |= measure(queries, wrong)
+                if model == "float32":
+                    trained[framing] = (titles, vectors)
+                elif framing in trained and trained[framing][0] == titles:
+                    run["agreement_with_float32"] = agreement(
+                        trained[framing][1], vectors
+                    )
+                runs.append(run)
     return runs
 
 
@@ -265,7 +278,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     index = pd.read_parquet(INDEX_PARQUET).to_dict("records")
     with_photos = sorted({row["merimee_id"] for row in index})
     neighbours = find_neighbours(footprints.loc[with_photos], NEIGHBOUR_M)
-    runs = evaluate(index, neighbours, EMBEDDINGS_FOLDER)
+    set_aside = frozenset()
+    if CHECKS_PARQUET.exists():
+        checks = pd.read_parquet(CHECKS_PARQUET)
+        aside = checks[~checks["kept"]]
+        set_aside = frozenset(zip(aside["merimee_id"], aside["title"], strict=True))
+    runs = evaluate(index, neighbours, EMBEDDINGS_FOLDER, set_aside)
 
     report = {"neighbour_m": NEIGHBOUR_M, "runs": runs}
     REPORT_JSON.parent.mkdir(parents=True, exist_ok=True)
@@ -273,9 +291,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     logger.info("Wrote %d measures to %s", len(runs), REPORT_JSON)
     for run in runs:
         logger.info(
-            "  %-8s %-7s first %.3f (chance %.3f)   separation %.3f around, %.3f elsewhere",
+            "  %-8s %-7s %-4s first %.3f (chance %.3f)   separation %.3f around, %.3f elsewhere",
             run["model"],
             run["framing"],
+            run["photos"],
             run["first"],
             run["first_by_chance"],
             run["separation_from_places_around"],

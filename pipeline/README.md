@@ -36,7 +36,7 @@ uv run ruff format .    # formatage
 | — `export_model` | `uv run python -m lutece_pipeline.export_model` | les poids de DINOv2 ViT-S/14 (Hugging Face) | `data/processed/models/` : trois fichiers ONNX et `models.json` |
 | — `embed_references` | `uv run python -m lutece_pipeline.embed_references` | `reference_photos.parquet`, les photos, un modèle exporté | `data/interim/embeddings/<modèle>-<cadrage>.parquet` |
 | — `check_reference_photos` | `uv run python -m lutece_pipeline.check_reference_photos` | `reference_photos.parquet`, les vecteurs `float32-crop`, `commons_files.parquet`, `landmark_files.parquet`, `review/landmarks.csv`, `review/reference_photo_labels.csv` | `data/interim/reference_photo_checks.parquet`, `data/interim/reference_photo_checks_evaluation.csv` |
-| — `evaluate_retrieval` | `uv run python -m lutece_pipeline.evaluate_retrieval` | `reference_photos.parquet`, les vecteurs, `geometries.parquet`, `landmarks.parquet` | `data/processed/retrieval_evaluation.json` |
+| — `evaluate_retrieval` | `uv run python -m lutece_pipeline.evaluate_retrieval` | `reference_photos.parquet`, les vecteurs, `geometries.parquet`, `landmarks.parquet`, `reference_photo_checks.parquet` | `data/processed/retrieval_evaluation.json` |
 
 Options :
 
@@ -1570,6 +1570,27 @@ de l'Institut national des Jeunes Sourds et les portraits pris au Palace ne
 sont plus montrés. Le seuil se trompe aussi dans l'autre sens : la vue de
 l'Institut depuis la rue Saint-Jacques est écartée, parce que les autres
 photos du lieu sont surtout celles du four.
+
+#### La mesure, sans les photos écartées
+
+`evaluate_retrieval` refait la mesure sans les photos écartées, ni comme
+captures ni comme références (lignes `kept` du rapport) :
+
+| Photos | Captures jouées | Bon lieu en premier | Séparation des voisins | Séparation d'ailleurs |
+|---|---|---|---|---|
+| toutes | 5 043 | 83,6 % | 0,838 | 0,907 |
+| sans les écartées | 4 311 | 89,8 % | 0,922 | 0,979 |
+
+Le refus devient utilisable : un seuil qui ne refuse que 5 % des bonnes
+photos (ressemblance de 0,42) écarte 66 % des lieux voisins et 87 % des lieux
+d'ailleurs, contre 22 % et 37 % avant. La forme `int8` du modèle fait de même
+(89,7 %).
+
+> Ces chiffres flattent le modèle : les photos écartées le sont d'après la
+> ressemblance même que la mesure compare. Les étiquettes disent ce qui est
+> retiré (aux deux tiers au moins des photos qui ne montrent pas le
+> bâtiment), pas ce que vaudra le seuil sur des photos de téléphone. La
+> phase 4 le dira.
 
 ## Écarts constatés avec le SPEC
 
