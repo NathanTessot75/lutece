@@ -30,8 +30,9 @@ uv run ruff format .    # formatage
 | — `landmarks` | `uv run python -m lutece_pipeline.landmarks` | `selection.parquet`, `geometries.parquet`, Wikidata, statistiques de Wikipédia | `data/interim/landmark_candidates.parquet`, `data/interim/landmark_candidates.csv` |
 | — `landmark_places` | `uv run python -m lutece_pipeline.landmark_places` | `review/landmarks.csv`, les réponses de `landmarks`, OpenStreetMap, Commons | `data/interim/landmarks.parquet`, `data/interim/landmark_files.parquet` |
 | 9. `rarity` | `uv run python -m lutece_pipeline.rarity` | `selection.parquet`, `merimee.parquet`, `landmarks.parquet` | `data/interim/rarity.parquet`, `data/interim/rarity_ranking.csv` |
+| — `series` | `uv run python -m lutece_pipeline.series` | `selection.parquet`, `merimee.parquet`, `landmarks.parquet`, `review/series.csv`, `review/series_overrides.csv` | `data/interim/series.parquet`, `data/interim/series_members.parquet`, `data/interim/series_review.csv` |
 | 11. `load_postgres` | `uv run python -m lutece_pipeline.load_postgres` | les sorties des étapes 1 à 7, une base Postgres | tables `monuments` et `reference_images` |
-| 11. `export_bundle` | `uv run python -m lutece_pipeline.export_bundle` | les sorties des étapes 1 à 7, `selection.parquet`, `landmarks.parquet`, `landmark_files.parquet`, `reference_photo_checks.parquet`, `rarity.parquet`, les vecteurs `int8-crop`, le modèle `int8`, `review/capture_reach.csv` | `apps/mobile/assets/data/lutece.db`, `apps/mobile/assets/data/bundle.json`, `apps/mobile/assets/models/dinov2-small-int8.onnx` |
+| 11. `export_bundle` | `uv run python -m lutece_pipeline.export_bundle` | les sorties des étapes 1 à 7, `selection.parquet`, `landmarks.parquet`, `landmark_files.parquet`, `reference_photo_checks.parquet`, `rarity.parquet`, `series.parquet`, `series_members.parquet`, les vecteurs `int8-crop`, le modèle `int8`, `review/capture_reach.csv` | `apps/mobile/assets/data/lutece.db`, `apps/mobile/assets/data/bundle.json`, `apps/mobile/assets/models/dinov2-small-int8.onnx` |
 | 12. `quality_report` | `uv run python -m lutece_pipeline.quality_report` | les sorties des étapes 1 à 7 | `data/processed/monuments_quality.parquet`, `data/processed/quality_problems.csv`, `docs/rapport/qualite-donnees.md` |
 | — `fetch_reference_photos` | `uv run python -m lutece_pipeline.fetch_reference_photos` | `commons_files.parquet`, `landmark_files.parquet`, `selection.parquet`, Wikimedia Commons | `data/raw/commons/photos/`, `data/interim/reference_photos.parquet` |
 | — `export_model` | `uv run python -m lutece_pipeline.export_model` | les poids de DINOv2 ViT-S/14 (Hugging Face) | `data/processed/models/` : trois fichiers ONNX et `models.json` |
@@ -1171,6 +1172,47 @@ connu. Relu le 18 octobre 2026 :
 | `rank` | entier | 1 pour le plus connu |
 | `rarity_tier` | texte | `commun`, `peu_commun`, `rare` ou `légendaire` |
 
+## Séries
+
+Le SPEC (§2) donne aux joueurs des séries thématiques à compléter, en plus des
+arrondissements : les ponts, les passages couverts… (décisions du 18 octobre
+2026).
+
+### Règle
+
+Une série réunit les lieux de l'app dont le genre est parmi ceux qu'elle
+liste, et, si elle en nomme, dans ses arrondissements. Le genre est celui que
+l'app affiche : la première dénomination de la notice, ou le genre d'un lieu
+non protégé. Un lieu peut être dans plusieurs séries (un hôtel du Marais est
+aussi un hôtel particulier), ou dans aucune.
+
+- `review/series.csv` décrit les séries, dans l'ordre où l'app les montre :
+  `slug` (l'identifiant), `name`, `description` (une phrase, affichée en tête
+  de la série), `categories` (les genres, séparés par `;`) et
+  `arrondissements` (vide pour tout Paris).
+- `review/series_overrides.csv` (`slug`, `key`, `name`, `decision`, `note`)
+  ajoute (`add`) ou retire (`remove`) un lieu que son genre range mal. `key`
+  est la référence Mérimée, ou l'élément Wikidata d'un lieu sans notice. Les
+  temples de l'Oratoire et des Billettes, que leur notice range parmi les
+  couvents, passent ainsi avec les synagogues, temples et mosquée.
+
+`data/interim/series_review.csv` donne chaque lieu avec ses séries, ceux qui
+n'en ont aucune en premier, pour relire la règle.
+
+### Résultat (18 octobre 2026)
+
+21 séries, de 4 lieux (Cimetières) à 64 (Églises), 335 appartenances. 320 des
+394 lieux sont dans au moins une série ; les 74 autres sont surtout des
+immeubles (10), des maisons (7), des palais (5), des hôtels de voyageurs (4),
+des marchés et des prisons (3 chacun).
+
+### Dans l'app
+
+La progression par arrondissement vient de la colonne `arrondissement` de
+`monuments`, celle par série des tables `series` et `monument_series`. Seuls
+comptent les lieux qui peuvent être capturés (`readiness` autre que
+`not_ready`).
+
 ## Chargement dans Postgres
 
 L'étape `load_postgres` remplit les tables `monuments` et `reference_images`,
@@ -1269,7 +1311,9 @@ SHA-256 du modèle.
 | `monuments` | 394 | une ligne par monument que la sélection garde (323) et par lieu non protégé (71) |
 | `photos` | 1 118 | les 3 premières photos sélectionnées de chacun, hors photos écartées (voir « Photos écartées »), avec auteur et licence |
 | `reference_vectors` | 4 335 | le vecteur de chaque photo de référence gardée, sur 8 bits (voir ci-dessous) |
-| `meta` | 4 | version du contenu et effectifs |
+| `series` | 21 | les séries, dans l'ordre où l'app les montre (voir « Séries ») |
+| `monument_series` | 335 | les lieux de chaque série |
+| `meta` | 5 | version du contenu et effectifs |
 
 Colonnes de `monuments` : `id` (le même identifiant que dans Postgres),
 `merimee_id`, `title`, `name`, `address`, `arrondissement`, `lat`, `lon`,
@@ -1920,3 +1964,8 @@ Nathan, qui l'a accepté (décision du 18 octobre 2026).
   les monuments, sans le nombre de photos sur Commons ni les guides, et les
   points de chaque palier sont fixés dans l'app plutôt que dans la base
   (décision du 18 octobre 2026, voir « Rareté »).
+- §5.3 : la table `series` prend son `slug` pour identifiant, et `series`
+  comme `monument_series` ne sont pour l'instant que dans le fichier embarqué.
+  Les séries se forment par genre de lieu, revu à la main ; l'exemple du SPEC
+  des entrées de métro Guimard n'en est pas une, les stations de métro n'étant
+  pas montrées (décision du 18 octobre 2026, voir « Séries »).

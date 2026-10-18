@@ -1,0 +1,5 @@
+slug,key,name,decision,note
+couvents,PA00085789,Temple de l'Oratoire du Louvre,remove,"Sa notice le range parmi les couvents : c'est l'ancienne chapelle de l'Oratoire, devenue temple protestant."
+cultes,PA00085789,Temple de l'Oratoire du Louvre,add,Temple protestant.
+couvents,PA00086252,Temple des Billettes,remove,"Sa notice le range parmi les couvents : c'est l'église de l'ancien couvent, devenue temple luthérien."
+cultes,PA00086252,Temple des Billettes,add,Temple luthérien.

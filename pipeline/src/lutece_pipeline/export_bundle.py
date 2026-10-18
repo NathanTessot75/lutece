@@ -41,6 +41,7 @@ from lutece_pipeline import (
     rarity,
     resolve_entities,
     selection,
+    series,
     visibility,
 )
 from lutece_pipeline.paths import PIPELINE_ROOT, REVIEW_DIR
@@ -71,6 +72,8 @@ LANDMARKS_PARQUET = landmark_places.PLACES_PARQUET
 LANDMARK_FILES_PARQUET = landmark_places.FILES_PARQUET
 CHECKS_PARQUET = check_reference_photos.CHECKS_PARQUET
 RARITY_PARQUET = rarity.RARITY_PARQUET
+SERIES_PARQUET = series.SERIES_PARQUET
+SERIES_MEMBERS_PARQUET = series.MEMBERS_PARQUET
 ASSETS_FOLDER = PIPELINE_ROOT.parent / "apps" / "mobile" / "assets" / "data"
 BUNDLE_DB = ASSETS_FOLDER / "lutece.db"
 # What the app must know before it opens the file: which version it carries.
@@ -143,6 +146,22 @@ create table reference_vectors (
     vector blob not null,
     primary key (monument_id, rank)
 ) strict;
+
+-- The thematic series, in the order the app shows them, and their places.
+create table series (
+    slug text primary key,
+    name text not null,
+    description text not null,
+    position integer not null
+) strict;
+
+create table monument_series (
+    monument_id text not null references monuments (id),
+    series_slug text not null references series (slug),
+    primary key (series_slug, monument_id)
+) strict;
+
+create index monument_series_monument on monument_series (monument_id);
 """
 MONUMENT_COLUMNS = [
     "id",
@@ -363,6 +382,11 @@ def build_landmarks(
     return rows
 
 
+def place_key(row: Record) -> str:
+    """How the later steps know a place: by its notice, or by its Wikidata item."""
+    return row["merimee_id"] or row["wikidata_qid"]
+
+
 def read_rarity(path: Path) -> dict[str, tuple[float, str]]:
     """The rarity score and tier of each place, by its key in the rarity step."""
     if not path.exists():
@@ -383,7 +407,7 @@ def add_rarity(
     """
     missing = 0
     for row in rows:
-        found = rated.get(row["merimee_id"] or row["wikidata_qid"])
+        found = rated.get(place_key(row))
         if found is None:
             missing += 1
             continue
@@ -391,6 +415,31 @@ def add_rarity(
         row["rarity_score"] = round(score, 4)
         row["rarity_tier"] = tier
     return missing
+
+
+def read_series(
+    series_path: Path, members_path: Path
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """The series and their members, as the series step wrote them; none before."""
+    if not series_path.exists():
+        return [], []
+    return (
+        to_records(pd.read_parquet(series_path)),
+        to_records(pd.read_parquet(members_path)),
+    )
+
+
+def build_memberships(
+    members: Sequence[Record], monuments: Sequence[Record]
+) -> list[dict[str, str]]:
+    """The places of each series that the bundle holds, by their identifier."""
+    ids = {place_key(row): row["id"] for row in monuments}
+    found = [
+        {"monument_id": ids[member["key"]], "series_slug": member["slug"]}
+        for member in members
+        if member["key"] in ids
+    ]
+    return sorted(found, key=lambda row: (row["series_slug"], row["monument_id"]))
 
 
 def without_set_aside(
@@ -506,6 +555,8 @@ def content_version(
     monuments: Sequence[Record],
     photos: Sequence[Record],
     vectors: Sequence[Record] = (),
+    series_rows: Sequence[Record] = (),
+    memberships: Sequence[Record] = (),
 ) -> str:
     """A short fingerprint of the content: it changes when any value does.
 
@@ -514,7 +565,14 @@ def content_version(
     """
     printed = [{**row, "vector": row["vector"].hex()} for row in vectors]
     content = json.dumps(
-        [SCHEMA, list(monuments), list(photos), printed],
+        [
+            SCHEMA,
+            list(monuments),
+            list(photos),
+            printed,
+            list(series_rows),
+            list(memberships),
+        ],
         ensure_ascii=False,
         sort_keys=True,
     )
@@ -527,6 +585,8 @@ def write_bundle(
     photos: Sequence[Record],
     version: str,
     vectors: Sequence[Record] = (),
+    series_rows: Sequence[Record] = (),
+    memberships: Sequence[Record] = (),
 ) -> None:
     """Write the SQLite file from scratch."""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -536,6 +596,7 @@ def write_bundle(
         "monuments": str(len(monuments)),
         "photos": str(len(photos)),
         "vectors": str(len(vectors)),
+        "series": str(len(series_rows)),
     }
     database = sqlite3.connect(path)
     try:
@@ -555,6 +616,17 @@ def write_bundle(
                 [row["monument_id"], row["rank"], row["scale"], row["vector"]]
                 for row in vectors
             ],
+        )
+        database.executemany(
+            "insert into series values (?, ?, ?, ?)",
+            [
+                [row["slug"], row["name"], row["description"], row["position"]]
+                for row in series_rows
+            ],
+        )
+        database.executemany(
+            "insert into monument_series values (?, ?)",
+            [[row["monument_id"], row["series_slug"]] for row in memberships],
         )
         database.commit()
         database.execute("vacuum")
@@ -618,13 +690,20 @@ def main(argv: Sequence[str] | None = None) -> int:
     unrated = add_rarity(monuments, read_rarity(RARITY_PARQUET))
     if unrated:
         logger.warning("%d places have no rarity: run the rarity step", unrated)
-    version = content_version(monuments, photos, vectors)
-    write_bundle(BUNDLE_DB, monuments, photos, version, vectors)
+    series_rows, members = read_series(SERIES_PARQUET, SERIES_MEMBERS_PARQUET)
+    if not series_rows:
+        logger.warning("No series in %s: run the series step", SERIES_PARQUET)
+    memberships = build_memberships(members, monuments)
+    version = content_version(monuments, photos, vectors, series_rows, memberships)
+    write_bundle(
+        BUNDLE_DB, monuments, photos, version, vectors, series_rows, memberships
+    )
     summary = {
         "version": version,
         "monuments": len(monuments),
         "photos": len(photos),
         "vectors": len(vectors),
+        "series": len(series_rows),
     }
     # The model that gave the vectors goes with them.
     if vectors:

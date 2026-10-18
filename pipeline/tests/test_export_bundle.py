@@ -259,6 +259,24 @@ def test_places_get_their_rarity_by_notice_or_by_item() -> None:
     assert rows[2]["rarity_score"] is None
 
 
+def test_series_keep_the_places_that_the_bundle_holds() -> None:
+    monuments = [
+        {"id": "m1", "merimee_id": "PA1", "wikidata_qid": "Q1"},
+        {"id": "m2", "merimee_id": None, "wikidata_qid": "Q323767"},
+    ]
+    members = [
+        {"slug": "tours", "key": "Q323767"},
+        {"slug": "eglises", "key": "PA1"},
+        # A monument that the bundle left out, and one known by its notice only.
+        {"slug": "eglises", "key": "PA9"},
+        {"slug": "eglises", "key": "Q1"},
+    ]
+    assert bundle.build_memberships(members, monuments) == [
+        {"monument_id": "m1", "series_slug": "eglises"},
+        {"monument_id": "m2", "series_slug": "tours"},
+    ]
+
+
 def test_distances_set_by_hand_are_read_and_checked(tmp_path: Path) -> None:
     path = tmp_path / "capture_reach.csv"
     assert bundle.read_reaches(path) == {}
@@ -405,6 +423,8 @@ def run_main(folder: Path, out: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         "LANDMARK_FILES_PARQUET": out / "landmark_files.parquet",
         "CHECKS_PARQUET": out / "reference_photo_checks.parquet",
         "RARITY_PARQUET": out / "rarity.parquet",
+        "SERIES_PARQUET": out / "series.parquet",
+        "SERIES_MEMBERS_PARQUET": out / "series_members.parquet",
         "EMBEDDINGS_PARQUET": out / "int8-crop.parquet",
         "MODEL_SOURCE": out / "dinov2-small-int8.onnx",
         "APP_MODEL_FILE": out / "assets" / "models" / "dinov2-small-int8.onnx",
@@ -431,6 +451,7 @@ def test_real_notices_are_bundled(
         "monuments": "9",
         "photos": str(summary["photos"]),
         "vectors": "0",
+        "series": "0",
     }
     # Without the vectors of the photos, the model does not come either.
     assert "model" not in summary
@@ -508,6 +529,29 @@ def test_places_without_a_notice_are_bundled_with_the_monuments(
         {"key": "PA00085795", "rarity_score": 0.97, "rarity_tier": "légendaire"},
     ]
     pd.DataFrame(rated).to_parquet(tmp_path / "rarity.parquet", index=False)
+    pd.DataFrame(
+        [
+            {
+                "slug": "tours",
+                "name": "Tours",
+                "description": "Les tours.",
+                "position": 1,
+            },
+            {
+                "slug": "eglises",
+                "name": "Églises",
+                "description": "Les églises.",
+                "position": 2,
+            },
+        ]
+    ).to_parquet(tmp_path / "series.parquet", index=False)
+    pd.DataFrame(
+        [
+            {"slug": "tours", "key": "Q323767"},
+            {"slug": "eglises", "key": "PA00085795"},
+            {"slug": "eglises", "key": "PA99999999"},
+        ]
+    ).to_parquet(tmp_path / "series_members.parquet", index=False)
     run_main(pipeline_tables, tmp_path, monkeypatch)
 
     summary = json.loads((tmp_path / "assets" / "bundle.json").read_text())
@@ -540,6 +584,22 @@ def test_places_without_a_notice_are_bundled_with_the_monuments(
     ).fetchone()
     assert tuple(church) == ("PA00085795", "Un article", "classé", "légendaire")
     assert database.execute("pragma foreign_key_check").fetchall() == []
+    # The series and the places of each that the bundle holds.
+    assert summary["series"] == 2
+    assert [
+        tuple(row)
+        for row in database.execute(
+            "select slug, name, position from series order by position"
+        )
+    ] == [("tours", "Tours", 1), ("eglises", "Églises", 2)]
+    assert [
+        tuple(row)
+        for row in database.execute(
+            "select s.series_slug, coalesce(m.merimee_id, m.wikidata_qid)"
+            " from monument_series s join monuments m on m.id = s.monument_id"
+            " order by 1"
+        )
+    ] == [("eglises", "PA00085795"), ("tours", "Q323767")]
     database.close()
 
     # Once its first photo is set aside, the tower shows the next one first.
