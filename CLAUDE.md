@@ -34,3 +34,5 @@ Référence complète : `SPEC.md` (fait foi en cas de contradiction).
 | racine | `supabase migration up` | appliquer les nouvelles migrations sans vider la base |
 | racine | `supabase db reset` | rejouer migrations et seed (vide la base) |
 | racine | `supabase migration new <name>` | nouvelle migration |
+| racine | `supabase test db` | tests des droits de la base (pgTAP) |
+| racine | `supabase db push` | appliquer les migrations au projet hébergé |
