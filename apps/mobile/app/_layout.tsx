@@ -5,6 +5,7 @@ import { ActivityIndicator, StyleSheet, useColorScheme, View } from 'react-nativ
 
 import { BUNDLE_ASSET, BUNDLE_DATABASE_NAME, removeStaleBundles } from '@/db/bundle';
 import { PlayerDatabaseProvider } from '@/db/PlayerDatabase';
+import { CollectProvider } from '@/features/collect/CollectProvider';
 import { CapturesProvider } from '@/features/collection/CapturesProvider';
 import { useTheme } from '@/lib/theme';
 
@@ -37,9 +38,11 @@ export default function RootLayout() {
         >
           <PlayerDatabaseProvider>
             <CapturesProvider>
-              <Stack>
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              </Stack>
+              <CollectProvider>
+                <Stack>
+                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                </Stack>
+              </CollectProvider>
             </CapturesProvider>
           </PlayerDatabaseProvider>
         </SQLiteProvider>

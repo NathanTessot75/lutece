@@ -1,11 +1,30 @@
+import Constants from 'expo-constants';
 import { useIsFocused } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { type CapturableMonument, listReferenceVectors } from '@/db/monuments';
+import { BUNDLE_MODEL, BUNDLE_VERSION } from '@/db/bundle';
+import {
+  type CapturableMonument,
+  listCapturableAround,
+  listReferenceVectors,
+} from '@/db/monuments';
+import { usePlayerDatabase } from '@/db/PlayerDatabase';
+import { type NewSample, newSampleId } from '@/db/samples';
+import { useCollect } from '@/features/collect/CollectProvider';
+import { type Label, LabelSample } from '@/features/collect/LabelSample';
+import { keepSamplePhoto } from '@/features/collect/photos';
+import {
+  LABEL_WITHIN_M,
+  type LabelChoice,
+  describeCandidates,
+  describeDecision,
+  labelChoices,
+} from '@/features/collect/sample';
 import { useCaptures } from '@/features/collection/CapturesProvider';
+import { parseFootprint } from '@/features/map/footprint';
 import { likeness } from '@/features/recognition/likeness';
 import { embedPhoto, openModel } from '@/features/recognition/model';
 import { type CompassReading, type Position, useLocationAccess } from '@/lib/location';
@@ -17,6 +36,7 @@ import { Captured } from './Captured';
 import { ChooseMonument } from './ChooseMonument';
 import { type Decision, type Refusal, type Scored, decideShot, refuseBeforePhoto } from './decision';
 import { describeCandidate } from './describe';
+import { sight } from './geometry';
 import { keepPhoto } from './photos';
 import { type AimTarget, useAim } from './useAim';
 import { Viewfinder, type ViewfinderHandle } from './Viewfinder';
@@ -28,8 +48,20 @@ type Shot = {
   compass: CompassReading | null;
 };
 
+/** A sample of the field test set, waiting for its label and its photo to be kept. */
+type Draft = Omit<NewSample, 'id' | 'photoFile' | 'labelMonumentId' | 'oblique' | 'hidden'> & {
+  photoUri: string | null;
+};
+
+/** What the photo says: its vector, and how much it looks like each monument. */
+type Seen = {
+  vector: Float32Array;
+  likeness: (id: string) => number | null;
+};
+
 type Stage =
   | { step: 'aiming' }
+  | { step: 'labelling'; draft: Draft; choices: LabelChoice[] }
   | { step: 'choosing'; shot: Shot; candidates: Scored<AimTarget>[]; confirm: boolean }
   | { step: 'captured'; monument: CapturableMonument; photoFile: string | null };
 
@@ -45,14 +77,17 @@ const REFUSALS: Record<Refusal, string> = {
 /** Aim at a monument, shoot, and add it to the collection. */
 export function Capture() {
   const db = useSQLiteContext();
+  const playerDb = usePlayerDatabase();
   const theme = useTheme();
   const { byMonument: captured, record: recordCapture } = useCaptures();
+  const collect = useCollect();
   const location = useLocationAccess();
   const focused = useIsFocused();
   const { position, compass, candidates } = useAim(location.granted);
   const viewfinder = useRef<ViewfinderHandle>(null);
   const [stage, setStage] = useState<Stage>({ step: 'aiming' });
   const [refusal, setRefusal] = useState<Refusal | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   // The model takes a moment to load: better before the first shot than during it.
@@ -98,20 +133,20 @@ export function Capture() {
     setStage({ step: 'captured', monument, photoFile });
   };
 
-  /** How much the photo looks like each monument in sight; nothing to look at without a photo. */
+  /** What the photo says of these monuments; nothing to look at without a photo. */
   const lookAt = async (
     photoUri: string | null,
-    inSight: readonly Candidate<AimTarget>[],
-  ): Promise<((id: string) => number | null) | null> => {
+    among: readonly Candidate<AimTarget>[],
+  ): Promise<Seen | null> => {
     if (photoUri === null) {
       return null;
     }
     try {
       const [vector, references] = await Promise.all([
         embedPhoto(photoUri),
-        listReferenceVectors(db, inSight.map((candidate) => candidate.target.id)),
+        listReferenceVectors(db, among.map((candidate) => candidate.target.id)),
       ]);
-      return (id) => likeness(vector, references.get(id) ?? []);
+      return { vector, likeness: (id) => likeness(vector, references.get(id) ?? []) };
     } catch (failure) {
       // The photo cannot vouch for anything: the geometry alone decides, from close by.
       if (__DEV__) {
@@ -122,6 +157,7 @@ export function Capture() {
   };
 
   const refuse = (reason: Refusal) => {
+    setNotice(null);
     setRefusal(reason);
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
   };
@@ -157,16 +193,98 @@ export function Capture() {
     }
     setBusy(true);
     setRefusal(null);
+    setNotice(null);
     try {
       const photoUri = (await viewfinder.current?.takePicture()) ?? null;
       const shot = { photoUri, position, compass };
       const inSight = candidates.filter((candidate) => candidate.inSight);
-      const looks = await lookAt(photoUri, inSight);
-      await follow(decideShot(candidates, looks, captured), shot);
+      const seen = await lookAt(photoUri, inSight);
+      await follow(decideShot(candidates, seen?.likeness ?? null, captured), shot);
     } finally {
       setBusy(false);
     }
   };
+
+  /**
+   * In collect mode, a shot is a sample of the field test set: the photo is
+   * taken even when nothing is in sight, the app works out what it would have
+   * done, and the player says what the photo shows. The collection is left alone.
+   */
+  const collectShot = async () => {
+    if (position === null || busy) {
+      return;
+    }
+    setBusy(true);
+    setRefusal(null);
+    setNotice(null);
+    try {
+      const photoUri = (await viewfinder.current?.takePicture()) ?? null;
+      const takenAt = new Date().toISOString();
+      const compassWorks = compass !== null && coneHalfWidth(compass.level) !== null;
+      const before = refuseBeforePhoto(candidates, captured, compassWorks);
+      const [seen, around] = await Promise.all([
+        lookAt(photoUri, candidates),
+        listCapturableAround(db, position, LABEL_WITHIN_M, 0),
+      ]);
+      const decision: Decision<AimTarget> =
+        before === null
+          ? decideShot(candidates, seen?.likeness ?? null, captured)
+          : { kind: 'nothing', reason: before };
+      const choices = labelChoices(
+        candidates.map((candidate) => ({ ...candidate, title: candidate.target.monument.title })),
+        around.map((monument) => ({
+          id: monument.id,
+          title: monument.title,
+          distanceM: sight(position, parseFootprint(monument.footprint)).distanceM,
+        })),
+      );
+      const draft: Draft = {
+        takenAt,
+        latitude: position.latitude,
+        longitude: position.longitude,
+        gpsAccuracyM: position.accuracyM,
+        headingDeg: compass?.headingDeg ?? null,
+        headingLevel: compass?.level ?? null,
+        vector: seen?.vector ?? null,
+        candidates: describeCandidates(candidates, seen?.likeness ?? null),
+        decision: describeDecision(decision),
+        bundleVersion: BUNDLE_VERSION,
+        model: BUNDLE_MODEL,
+        appVersion: Constants.expoConfig?.version ?? 'unknown',
+        photoUri,
+      };
+      setStage({ step: 'labelling', draft, choices });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const keepSample = async (draft: Draft, label: Label) => {
+    const { photoUri, ...known } = draft;
+    const id = await newSampleId(playerDb);
+    const photoFile = photoUri === null ? null : await keepSamplePhoto(photoUri, id);
+    await collect.record({
+      ...known,
+      id,
+      photoFile,
+      labelMonumentId: label.monumentId,
+      oblique: label.oblique,
+      hidden: label.hidden,
+    });
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setNotice(`Photo n° ${collect.samples.length + 1} gardée pour le jeu de test.`);
+    setStage({ step: 'aiming' });
+  };
+
+  if (stage.step === 'labelling') {
+    return (
+      <LabelSample
+        choices={stage.choices}
+        onLabel={(label) => void keepSample(stage.draft, label)}
+        onCancel={() => setStage({ step: 'aiming' })}
+      />
+    );
+  }
 
   if (stage.step === 'choosing') {
     return (
@@ -204,7 +322,7 @@ export function Capture() {
         <Viewfinder ref={viewfinder} active={focused} label={label} />
         <Pressable
           style={[styles.shutter, { borderColor: theme.background }, busy && styles.pressed]}
-          onPress={() => void shoot()}
+          onPress={() => void (collect.enabled ? collectShot() : shoot())}
           disabled={busy}
           accessibilityRole="button"
           accessibilityLabel="Capturer"
@@ -212,9 +330,20 @@ export function Capture() {
           <View style={[styles.shutterCore, { backgroundColor: theme.accent }]} />
         </Pressable>
       </View>
+      {collect.enabled && (
+        <Text style={[styles.collect, { color: theme.onAccent, backgroundColor: theme.accent }]}>
+          Mode collecte · {collect.samples.length}{' '}
+          {collect.samples.length > 1 ? 'photos' : 'photo'}
+        </Text>
+      )}
       {refusal !== null && (
         <Text style={[styles.refusal, { color: theme.text, backgroundColor: theme.surface }]}>
           {REFUSALS[refusal]}
+        </Text>
+      )}
+      {notice !== null && (
+        <Text style={[styles.refusal, { color: theme.text, backgroundColor: theme.surface }]}>
+          {notice}
         </Text>
       )}
       <CandidateList
@@ -277,6 +406,17 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.5,
+  },
+  collect: {
+    marginHorizontal: 16,
+    marginTop: 10,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    fontSize: 15,
+    fontWeight: '600',
+    overflow: 'hidden',
+    alignSelf: 'flex-start',
   },
   refusal: {
     marginHorizontal: 16,

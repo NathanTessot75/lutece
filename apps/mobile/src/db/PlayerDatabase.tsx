@@ -26,6 +26,34 @@ const MIGRATIONS = [
     photo_file text
   ) strict;
   `,
+  `
+  create table settings (
+    key text primary key,
+    value text not null
+  ) strict;
+
+  -- A photo taken in collect mode and labelled by the player: the field test
+  -- set (SPEC §8), with all that the app knew and would have decided.
+  create table samples (
+    id text primary key,
+    taken_at text not null,
+    lat real not null,
+    lon real not null,
+    gps_accuracy_m real not null,
+    heading_deg real,
+    heading_level integer,
+    photo_file text,
+    vector blob,
+    candidates text not null,
+    decision text not null,
+    label_monument_id text,
+    oblique integer not null,
+    hidden integer not null,
+    bundle_version text not null,
+    model text not null,
+    app_version text not null
+  ) strict;
+  `,
 ];
 
 async function migrate(db: SQLiteDatabase): Promise<void> {

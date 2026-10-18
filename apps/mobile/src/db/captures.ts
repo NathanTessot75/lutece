@@ -20,7 +20,7 @@ export type NewCapture = {
 };
 
 // A random identifier (UUID version 4), written by SQLite itself.
-const NEW_ID = `
+export const NEW_ID = `
   lower(
     hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' ||
     substr(hex(randomblob(2)), 2) || '-' ||

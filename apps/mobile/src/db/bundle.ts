@@ -17,6 +17,10 @@ export const BUNDLE_DATABASE_NAME = `monuments-${bundle.version}.db`;
 
 export const BUNDLE_MONUMENT_COUNT: number = bundle.monuments;
 
+/** The version of the content, and the fingerprint of the image model that goes with it. */
+export const BUNDLE_VERSION: string = bundle.version;
+export const BUNDLE_MODEL: string = bundle.model;
+
 // Where expo-sqlite keeps its databases, under the documents of the app.
 const SQLITE_FOLDER = 'SQLite';
 // A copy of a bundle, with the files that SQLite may write next to it.
