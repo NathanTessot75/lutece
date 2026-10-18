@@ -57,7 +57,7 @@ function ContributeLink({ theme }: { theme: Theme }) {
   }
   return (
     <Pressable
-      style={[styles.contribute, { backgroundColor: theme.surface }]}
+      style={[styles.card, styles.contribute, { backgroundColor: theme.surface }]}
       onPress={() => router.push('/contribute')}
       accessibilityRole="button"
     >
@@ -65,6 +65,20 @@ function ContributeLink({ theme }: { theme: Theme }) {
       <Text style={[styles.details, { color: theme.secondaryText }]}>
         {enabled ? 'Activé' : 'Désactivé'}
       </Text>
+    </Pressable>
+  );
+}
+
+function ProgressLink({ theme }: { theme: Theme }) {
+  const router = useRouter();
+  return (
+    <Pressable
+      style={[styles.card, styles.progress, { backgroundColor: theme.surface }]}
+      onPress={() => router.push('/progress')}
+      accessibilityRole="button"
+    >
+      <Text style={[styles.title, { color: theme.text }]}>Progression</Text>
+      <Text style={[styles.details, { color: theme.secondaryText }]}>Arrondissements et séries</Text>
     </Pressable>
   );
 }
@@ -120,9 +134,12 @@ export function Collection() {
       contentInsetAdjustmentBehavior="automatic"
       style={{ backgroundColor: theme.background }}
       ListHeaderComponent={
-        <Text style={[styles.caption, { color: theme.secondaryText }]}>
-          {capturable === null ? ' ' : countLine(captures.length, capturable, totalPoints(captures))}
-        </Text>
+        <>
+          <Text style={[styles.caption, { color: theme.secondaryText }]}>
+            {capturable === null ? ' ' : countLine(captures.length, capturable, totalPoints(captures))}
+          </Text>
+          <ProgressLink theme={theme} />
+        </>
       }
       ListEmptyComponent={
         captures.length === 0 ? (
@@ -176,13 +193,19 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 3,
   },
-  contribute: {
+  card: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    margin: 16,
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderRadius: 14,
+  },
+  progress: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+  },
+  contribute: {
+    margin: 16,
   },
 });

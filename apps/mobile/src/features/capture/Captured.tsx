@@ -1,19 +1,24 @@
 import * as Haptics from 'expo-haptics';
 import { useEffect } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
+
+import { useCaptures } from '@/features/collection/CapturesProvider';
+import { advancesOf, formatProgress, isComplete } from '@/features/game/progress';
 
 import type { MonumentSummary } from '@/db/monuments';
 import { formatPoints, tierLabel, tierNote } from '@/features/game/rarity';
 import { describeMonument } from '@/features/monuments/describe';
 import { useOpenMonument } from '@/features/monuments/useOpenMonument';
+import { useGroups } from '@/features/progress/useGroups';
 import { useTheme } from '@/lib/theme';
 
 import { photoUri } from './photos';
 
-// The reward comes after the photo and the name, then the buttons.
+// The reward comes after the photo and the name, then the progress, then the buttons.
 const REWARD_DELAY_MS = 650;
-const ACTIONS_DELAY_MS = 950;
+const PROGRESS_DELAY_MS = 900;
+const ACTIONS_DELAY_MS = 1150;
 
 type Props = {
   monument: MonumentSummary;
@@ -30,6 +35,9 @@ export function Captured({ monument, photoFile, points, onContinue }: Props) {
   const tier = monument.rarityTier;
   const color = tier === null ? theme.accent : theme.rarity[tier];
   const note = tierNote(tier);
+  const groups = useGroups();
+  const { byMonument } = useCaptures();
+  const advances = groups === null ? [] : advancesOf(monument, groups, byMonument);
 
   // A rare place earns a second touch, stronger, when its reward appears.
   useEffect(() => {
@@ -86,6 +94,34 @@ export function Captured({ monument, photoFile, points, onContinue }: Props) {
           <Text style={[styles.note, { color: theme.secondaryText }]}>{note}</Text>
         )}
       </Animated.View>
+      {advances.length > 0 && (
+        <Animated.View
+          entering={FadeInDown.delay(PROGRESS_DELAY_MS)}
+          style={[styles.progress, { backgroundColor: theme.surface }]}
+        >
+          {advances.map((advance) => {
+            const complete = isComplete(advance.progress);
+            return (
+              <View key={`${advance.kind}-${advance.key}`} style={styles.advance}>
+                <View style={styles.advanceText}>
+                  <Text style={[styles.advanceLabel, { color: theme.text }]}>{advance.label}</Text>
+                  {complete && (
+                    <Text style={[styles.complete, { color: theme.accent }]}>
+                      {advance.kind === 'series' ? 'Série terminée !' : 'Arrondissement terminé !'}
+                    </Text>
+                  )}
+                </View>
+                <Text
+                  style={[styles.advanceCount, { color: complete ? theme.accent : theme.secondaryText }]}
+                >
+                  {complete ? '✓ ' : ''}
+                  {formatProgress(advance.progress)}
+                </Text>
+              </View>
+            );
+          })}
+        </Animated.View>
+      )}
       <Animated.View entering={FadeIn.delay(ACTIONS_DELAY_MS)} style={styles.actions}>
         <Pressable
           style={[styles.button, { backgroundColor: theme.accent }]}
@@ -162,6 +198,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     marginTop: 2,
+  },
+  progress: {
+    alignSelf: 'stretch',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+  },
+  advance: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 6,
+  },
+  advanceText: {
+    flex: 1,
+  },
+  advanceLabel: {
+    fontSize: 16,
+  },
+  complete: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginTop: 1,
+  },
+  advanceCount: {
+    fontSize: 16,
+    fontWeight: '600',
+    fontVariant: ['tabular-nums'],
   },
   actions: {
     alignSelf: 'stretch',

@@ -1,11 +1,16 @@
+import { useRouter } from 'expo-router';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import type { Capture } from '@/db/captures';
 import type { MonumentDetails, MonumentPhoto } from '@/db/monuments';
 import { photoUri } from '@/features/capture/photos';
+import { useCaptures } from '@/features/collection/CapturesProvider';
+import { advancesOf, formatProgress, isComplete } from '@/features/game/progress';
 import { formatPoints, pointsFor, tierLabel } from '@/features/game/rarity';
 import { capitalize, formatArrondissement, formatCentury, formatDate } from '@/lib/format';
 import { type Theme, useTheme } from '@/lib/theme';
+
+import { useGroups } from '@/features/progress/useGroups';
 
 import { PhotoCarousel } from './PhotoCarousel';
 
@@ -118,6 +123,10 @@ export function MonumentPage({ monument, photos, capture }: Props) {
   const status = describeStatus(monument, capture, theme);
   const caveat = describeCaveat(monument);
   const tier = monument.rarityTier;
+  const router = useRouter();
+  const groups = useGroups();
+  const { byMonument } = useCaptures();
+  const advances = groups === null ? [] : advancesOf(monument, groups, byMonument);
   const own = capture?.photoFile
     ? { uri: photoUri(capture.photoFile), caption: `Ta photo du ${formatDate(capture.capturedAt)}` }
     : null;
@@ -168,6 +177,42 @@ export function MonumentPage({ monument, photos, capture }: Props) {
           </View>
         ))}
       </View>
+
+      {advances.length > 0 && (
+        <>
+          <Section title="Progression" theme={theme} />
+          <View style={[styles.group, { backgroundColor: theme.surface }]}>
+            {advances.map((advance, index) => (
+              <Pressable
+                key={`${advance.kind}-${advance.key}`}
+                style={[
+                  styles.row,
+                  styles.advance,
+                  index > 0 && styles.following,
+                  { borderColor: theme.separator },
+                ]}
+                onPress={() =>
+                  advance.kind === 'series'
+                    ? router.push({ pathname: '/series/[slug]', params: { slug: advance.key } })
+                    : router.push({
+                        pathname: '/arrondissement/[number]',
+                        params: { number: advance.key },
+                      })
+                }
+                accessibilityRole="button"
+              >
+                <Text style={[styles.link, styles.advanceLabel, { color: theme.accent }]}>
+                  {advance.label}
+                </Text>
+                <Text style={[styles.value, { color: theme.secondaryText }]}>
+                  {isComplete(advance.progress) ? '✓ ' : ''}
+                  {formatProgress(advance.progress)}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </>
+      )}
 
       <Section title="Histoire" theme={theme} />
       <View style={[styles.group, { backgroundColor: theme.surface }]}>
@@ -269,5 +314,13 @@ const styles = StyleSheet.create({
   },
   link: {
     fontSize: 16,
+  },
+  advance: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 12,
+  },
+  advanceLabel: {
+    flex: 1,
   },
 });
