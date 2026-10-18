@@ -54,6 +54,11 @@ const MIGRATIONS = [
     app_version text not null
   ) strict;
   `,
+  `
+  -- When a photo reached the server of Lutèce, for the players who contribute.
+  alter table samples add column uploaded_at text;
+  alter table captures add column uploaded_at text;
+  `,
 ];
 
 async function migrate(db: SQLiteDatabase): Promise<void> {

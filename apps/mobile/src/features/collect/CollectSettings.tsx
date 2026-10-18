@@ -1,10 +1,13 @@
 import { useSQLiteContext } from 'expo-sqlite';
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { listMonumentsByIds } from '@/db/monuments';
 import { formatCount, formatDate } from '@/lib/format';
 import { useTheme } from '@/lib/theme';
+
+import { useContribution } from '@/features/contribute/ContributeProvider';
 
 import { useCollect } from './CollectProvider';
 
@@ -15,7 +18,9 @@ const LATEST = 20;
 export function CollectSettings() {
   const db = useSQLiteContext();
   const theme = useTheme();
+  const router = useRouter();
   const { enabled, setEnabled, samples } = useCollect();
+  const contribution = useContribution();
   const [titles, setTitles] = useState<ReadonlyMap<string, string>>(new Map());
 
   const latest = samples.slice(0, LATEST);
@@ -56,8 +61,21 @@ export function CollectSettings() {
       <Text style={[styles.note, { color: theme.secondaryText }]}>
         Chaque photo prise depuis l’écran de capture devient un exemple du jeu de test : Lutèce
         garde la photo, ta position, ton cap, ce qu’elle aurait décidé et le monument que tu lui
-        indiques. Rien n’est ajouté à ta collection, et rien ne quitte le téléphone.
+        indiques. Rien n’est ajouté à ta collection, et rien ne quitte le téléphone, sauf si tu
+        contribues tes photos.
       </Text>
+      {contribution.available && (
+        <Pressable
+          style={[styles.group, styles.switchRow, { backgroundColor: theme.surface }]}
+          onPress={() => router.push('/contribute')}
+          accessibilityRole="button"
+        >
+          <Text style={[styles.label, { color: theme.text }]}>Contribuer mes photos</Text>
+          <Text style={[styles.date, { color: theme.secondaryText }]}>
+            {contribution.enabled ? 'Activé' : 'Désactivé'}
+          </Text>
+        </Pressable>
+      )}
       <Text style={[styles.count, { color: theme.text }]}>
         {formatCount(samples.length)} {samples.length > 1 ? 'photos' : 'photo'}
         {none > 0 ? ` · ${formatCount(none)} sans monument` : ''}

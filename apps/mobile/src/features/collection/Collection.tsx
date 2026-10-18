@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
 import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -5,6 +6,7 @@ import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native
 import type { Capture } from '@/db/captures';
 import { type MonumentSummary, countCapturable, listMonumentsByIds } from '@/db/monuments';
 import { photoUri } from '@/features/capture/photos';
+import { useContribution } from '@/features/contribute/ContributeProvider';
 import { useOpenMonument } from '@/features/monuments/useOpenMonument';
 import { formatCount, formatDate } from '@/lib/format';
 import { type Theme, useTheme } from '@/lib/theme';
@@ -42,6 +44,26 @@ function Row({ capture, monument, theme, onOpen }: RowProps) {
           Capturé le {formatDate(capture.capturedAt)}
         </Text>
       </View>
+    </Pressable>
+  );
+}
+
+function ContributeLink({ theme }: { theme: Theme }) {
+  const router = useRouter();
+  const { available, enabled } = useContribution();
+  if (!available) {
+    return null;
+  }
+  return (
+    <Pressable
+      style={[styles.contribute, { backgroundColor: theme.surface }]}
+      onPress={() => router.push('/contribute')}
+      accessibilityRole="button"
+    >
+      <Text style={[styles.title, { color: theme.text }]}>Contribuer mes photos</Text>
+      <Text style={[styles.details, { color: theme.secondaryText }]}>
+        {enabled ? 'Activé' : 'Désactivé'}
+      </Text>
     </Pressable>
   );
 }
@@ -108,6 +130,7 @@ export function Collection() {
           </Text>
         ) : null
       }
+      ListFooterComponent={<ContributeLink theme={theme} />}
       renderItem={({ item }) => (
         <Row capture={item.capture} monument={item.monument} theme={theme} onOpen={open} />
       )}
@@ -151,5 +174,14 @@ const styles = StyleSheet.create({
   details: {
     fontSize: 13,
     marginTop: 3,
+  },
+  contribute: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    margin: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 14,
   },
 });

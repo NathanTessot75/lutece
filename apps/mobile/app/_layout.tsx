@@ -7,6 +7,7 @@ import { BUNDLE_ASSET, BUNDLE_DATABASE_NAME, removeStaleBundles } from '@/db/bun
 import { PlayerDatabaseProvider } from '@/db/PlayerDatabase';
 import { CollectProvider } from '@/features/collect/CollectProvider';
 import { CapturesProvider } from '@/features/collection/CapturesProvider';
+import { ContributeProvider } from '@/features/contribute/ContributeProvider';
 import { useTheme } from '@/lib/theme';
 
 function Loading() {
@@ -39,9 +40,11 @@ export default function RootLayout() {
           <PlayerDatabaseProvider>
             <CapturesProvider>
               <CollectProvider>
-                <Stack>
-                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                </Stack>
+                <ContributeProvider>
+                  <Stack>
+                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                  </Stack>
+                </ContributeProvider>
               </CollectProvider>
             </CapturesProvider>
           </PlayerDatabaseProvider>
