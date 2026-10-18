@@ -29,6 +29,7 @@ Référence complète : `SPEC.md` (fait foi en cas de contradiction).
 | `pipeline` | `uv run python -m lutece_pipeline.landmark_places --offline` | reconstruire les lieux non protégés gardés dans `review/landmarks.csv` |
 | `pipeline` | `uv run python -m lutece_pipeline.evaluate_retrieval` | mesurer la reconnaissance d'image (après `fetch_reference_photos`, `export_model`, `embed_references` et `check_reference_photos`) |
 | `pipeline` | `uv run python -m lutece_pipeline.pull_field_samples` | copier les photos du mode collecte depuis l'iPhone (déverrouillé) dans `eval/testset/` |
+| `pipeline` | `uv run python -m lutece_pipeline.rarity` | calculer la rareté des lieux de l'app (avant `export_bundle`) |
 | `pipeline` | `uv run python -m lutece_pipeline.export_bundle` | régénérer le fichier des monuments embarqué dans l'app |
 | racine | `supabase start` · `supabase stop` | pile locale (runtime de conteneurs requis) |
 | racine | `supabase migration up` | appliquer les nouvelles migrations sans vider la base |

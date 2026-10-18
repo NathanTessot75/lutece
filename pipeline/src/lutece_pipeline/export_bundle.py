@@ -38,6 +38,7 @@ from lutece_pipeline import (
     landmark_places,
     load_postgres,
     quality_report,
+    rarity,
     resolve_entities,
     selection,
     visibility,
@@ -69,6 +70,7 @@ SELECTION_PARQUET = selection.SELECTION_PARQUET
 LANDMARKS_PARQUET = landmark_places.PLACES_PARQUET
 LANDMARK_FILES_PARQUET = landmark_places.FILES_PARQUET
 CHECKS_PARQUET = check_reference_photos.CHECKS_PARQUET
+RARITY_PARQUET = rarity.RARITY_PARQUET
 ASSETS_FOLDER = PIPELINE_ROOT.parent / "apps" / "mobile" / "assets" / "data"
 BUNDLE_DB = ASSETS_FOLDER / "lutece.db"
 # What the app must know before it opens the file: which version it carries.
@@ -113,7 +115,9 @@ create table monuments (
     visibility text not null,
     readiness text not null,
     capture_reach_m integer not null,
-    photo_count integer not null
+    photo_count integer not null,
+    rarity_score real,
+    rarity_tier text
 ) strict;
 
 create index monuments_arrondissement on monuments (arrondissement);
@@ -165,6 +169,8 @@ MONUMENT_COLUMNS = [
     "readiness",
     "capture_reach_m",
     "photo_count",
+    "rarity_score",
+    "rarity_tier",
 ]
 PHOTO_COLUMNS = [
     "monument_id",
@@ -300,6 +306,8 @@ def build_monuments(
                 ),
                 "capture_reach_m": reaches.get(merimee_id, 0),
                 "photo_count": photo_counts.get(merimee_id, 0),
+                "rarity_score": None,
+                "rarity_tier": None,
             }
         )
     tell_apart(rows)
@@ -348,9 +356,41 @@ def build_landmarks(
                 ),
                 "capture_reach_m": place["reach_m"],
                 "photo_count": photo_counts.get(place["qid"], 0),
+                "rarity_score": None,
+                "rarity_tier": None,
             }
         )
     return rows
+
+
+def read_rarity(path: Path) -> dict[str, tuple[float, str]]:
+    """The rarity score and tier of each place, by its key in the rarity step."""
+    if not path.exists():
+        return {}
+    return {
+        row["key"]: (row["rarity_score"], row["rarity_tier"])
+        for row in to_records(pd.read_parquet(path))
+    }
+
+
+def add_rarity(
+    rows: Sequence[dict[str, Any]], rated: Mapping[str, tuple[float, str]]
+) -> int:
+    """Give each place its rarity; tell how many the rarity step does not know.
+
+    A monument is known by its Mérimée reference, a place without a notice by
+    its Wikidata item.
+    """
+    missing = 0
+    for row in rows:
+        found = rated.get(row["merimee_id"] or row["wikidata_qid"])
+        if found is None:
+            missing += 1
+            continue
+        score, tier = found
+        row["rarity_score"] = round(score, 4)
+        row["rarity_tier"] = tier
+    return missing
 
 
 def without_set_aside(
@@ -575,6 +615,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         # A place may bear the name of a monument: the address tells them apart.
         tell_apart(monuments)
+    unrated = add_rarity(monuments, read_rarity(RARITY_PARQUET))
+    if unrated:
+        logger.warning("%d places have no rarity: run the rarity step", unrated)
     version = content_version(monuments, photos, vectors)
     write_bundle(BUNDLE_DB, monuments, photos, version, vectors)
     summary = {

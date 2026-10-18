@@ -29,8 +29,9 @@ uv run ruff format .    # formatage
 | — `selection` | `uv run python -m lutece_pipeline.selection` | `merimee.parquet`, `entities.parquet`, `wikidata_items.parquet`, `visibility.parquet`, Wikidata, statistiques de Wikipédia, `review/selection_overrides.csv` | `data/interim/selection.parquet`, `data/interim/selection_ranking.csv` |
 | — `landmarks` | `uv run python -m lutece_pipeline.landmarks` | `selection.parquet`, `geometries.parquet`, Wikidata, statistiques de Wikipédia | `data/interim/landmark_candidates.parquet`, `data/interim/landmark_candidates.csv` |
 | — `landmark_places` | `uv run python -m lutece_pipeline.landmark_places` | `review/landmarks.csv`, les réponses de `landmarks`, OpenStreetMap, Commons | `data/interim/landmarks.parquet`, `data/interim/landmark_files.parquet` |
+| 9. `rarity` | `uv run python -m lutece_pipeline.rarity` | `selection.parquet`, `merimee.parquet`, `landmarks.parquet` | `data/interim/rarity.parquet`, `data/interim/rarity_ranking.csv` |
 | 11. `load_postgres` | `uv run python -m lutece_pipeline.load_postgres` | les sorties des étapes 1 à 7, une base Postgres | tables `monuments` et `reference_images` |
-| 11. `export_bundle` | `uv run python -m lutece_pipeline.export_bundle` | les sorties des étapes 1 à 7, `selection.parquet`, `landmarks.parquet`, `landmark_files.parquet`, `reference_photo_checks.parquet`, les vecteurs `int8-crop`, le modèle `int8`, `review/capture_reach.csv` | `apps/mobile/assets/data/lutece.db`, `apps/mobile/assets/data/bundle.json`, `apps/mobile/assets/models/dinov2-small-int8.onnx` |
+| 11. `export_bundle` | `uv run python -m lutece_pipeline.export_bundle` | les sorties des étapes 1 à 7, `selection.parquet`, `landmarks.parquet`, `landmark_files.parquet`, `reference_photo_checks.parquet`, `rarity.parquet`, les vecteurs `int8-crop`, le modèle `int8`, `review/capture_reach.csv` | `apps/mobile/assets/data/lutece.db`, `apps/mobile/assets/data/bundle.json`, `apps/mobile/assets/models/dinov2-small-int8.onnx` |
 | 12. `quality_report` | `uv run python -m lutece_pipeline.quality_report` | les sorties des étapes 1 à 7 | `data/processed/monuments_quality.parquet`, `data/processed/quality_problems.csv`, `docs/rapport/qualite-donnees.md` |
 | — `fetch_reference_photos` | `uv run python -m lutece_pipeline.fetch_reference_photos` | `commons_files.parquet`, `landmark_files.parquet`, `selection.parquet`, Wikimedia Commons | `data/raw/commons/photos/`, `data/interim/reference_photos.parquet` |
 | — `export_model` | `uv run python -m lutece_pipeline.export_model` | les poids de DINOv2 ViT-S/14 (Hugging Face) | `data/processed/models/` : trois fichiers ONNX et `models.json` |
@@ -1105,6 +1106,71 @@ réponses conservées dans `data/raw/`.
 Ces lieux ne sont pas chargés dans Postgres pour l'instant : la table
 `monuments` exige un numéro de notice.
 
+## Rareté
+
+L'étape `rarity` (SPEC §5.5) mesure à quel point chaque lieu de l'app est
+connu, et retourne la mesure : un lieu que peu de gens connaissent rapporte
+plus de points qu'un lieu célèbre, ce qui pousse à sortir des sentiers battus
+(décisions du 18 octobre 2026).
+
+### Mesure
+
+La notoriété est celle qui a servi à choisir les monuments montrés (voir
+« Sélection des monuments montrés ») : les lectures de l'article de Wikipédia
+en français sur un an et le nombre de langues qui en ont un, chacune changée
+en place parmi les lieux, de 0 à 1, puis la moyenne des deux. Elle est
+recalculée parmi les 394 lieux de l'app, monuments et lieux non protégés
+ensemble, pour que les paliers se partagent ces lieux-là. `rarity_score` vaut
+1 moins la notoriété. Les ex æquo sont départagés par la clé (la référence
+Mérimée, ou l'élément Wikidata), pour que les paliers ne changent pas d'une
+exécution à l'autre.
+
+Le nombre de photos sur Commons reste écarté, comme pour la sélection ; la
+présence dans des guides, facultative dans le SPEC, n'est pas mesurée.
+
+### Paliers et points
+
+| Palier | Part | Lieux | Lectures de l'article sur un an | Points |
+|---|---|---|---|---|
+| `commun` | 40 % | 158 | 12 127 à 497 390 | 10 |
+| `peu_commun` | 30 % | 118 | 3 072 à 115 849 | 25 |
+| `rare` | 20 % | 79 | 2 062 à 16 855 | 50 |
+| `légendaire` | 10 % | 39 | 2 116 à 7 989 | 100 |
+
+Les lectures se chevauchent d'un palier à l'autre parce que les langues
+comptent autant : Le Palace, lu 33 801 fois mais dans 5 langues, est peu
+commun. Les points sont fixés dans l'app
+(`apps/mobile/src/features/game/rarity.ts`) et enregistrés avec chaque
+capture : un nouveau calcul de la rareté ne change pas ce qu'un joueur a déjà
+gagné.
+
+### Vérification à la main
+
+`data/interim/rarity_ranking.csv` donne tous les lieux, du plus connu au moins
+connu. Relu le 18 octobre 2026 :
+
+- en tête viennent la tour Eiffel, Notre-Dame, l'Arc de Triomphe et le
+  Père-Lachaise ;
+- les 39 légendaires sont surtout des hôtels particuliers (hôtel d'Aumont,
+  hôtel Lamoignon), des églises de quartier (Sainte-Marguerite,
+  Saint-Christophe-de-Javel) et des ministères installés dans d'anciens
+  hôtels : ce que le jeu veut faire découvrir ;
+- quelques lieux sont plus fréquentés que leur article ne le dit : la vigne de
+  Montmartre, légendaire, est sur un parcours touristique. À surveiller ; une
+  décision à la main viendra si les essais le demandent.
+
+### Colonnes de `rarity.parquet`
+
+| Colonne | Type | Contenu |
+|---|---|---|
+| `key` | texte | référence Mérimée, ou élément Wikidata d'un lieu sans notice |
+| `name` | texte | nom de la notice, ou titre du lieu |
+| `views`, `languages` | entiers | lectures de l'article sur un an, nombre de langues |
+| `notoriety` | réel | de 0 à 1, 1 pour le plus connu |
+| `rarity_score` | réel | 1 moins la notoriété |
+| `rank` | entier | 1 pour le plus connu |
+| `rarity_tier` | texte | `commun`, `peu_commun`, `rare` ou `légendaire` |
+
 ## Chargement dans Postgres
 
 L'étape `load_postgres` remplit les tables `monuments` et `reference_images`,
@@ -1152,7 +1218,8 @@ l'écrire dans un fichier versionné. Le journal l'affiche sans le mot de passe.
 | `visibility` | `visibility.parquet` |
 | `sources` | les bases d'où vient le monument, avec lien et licence |
 | `data_version` | numéro du chargement |
-| `rarity_score`, `rarity_tier`, `summary_fr`, `story_fr` | vides : étapes à venir |
+| `rarity_score`, `rarity_tier` | vides : la rareté n'est encore que dans le fichier embarqué |
+| `summary_fr`, `story_fr` | vides : étapes à venir |
 
 `reference_images` contient les photos sélectionnées par `ingest_commons` :
 `source_url` (la page du fichier, à créditer), `thumb_url`, `author`,
@@ -1210,7 +1277,8 @@ Colonnes de `monuments` : `id` (le même identifiant que dans Postgres),
 `footprint` (multipolygone GeoJSON en WGS84, 6 décimales), `footprint_source`,
 `category`, `century`, `architects` (tableau JSON), `wikidata_qid`,
 `wikipedia` (le titre de l'article), `protection`, `visibility`, `readiness`,
-`capture_reach_m` et `photo_count`.
+`capture_reach_m`, `photo_count`, `rarity_score` et `rarity_tier` (voir
+« Rareté »).
 
 Un lieu non protégé a une ligne comme un monument, sans `merimee_id`, sans
 `protection` et sans `address`. Son identifiant est tiré de son identifiant
@@ -1848,3 +1916,7 @@ Nathan, qui l'a accepté (décision du 18 octobre 2026).
   provisoires (décision du 18 octobre 2026, voir « La capture avec
   l'image »). Faute de données terrain, les poids d'une somme ne pouvaient
   pas être fixés ; la régression logistique de la phase 4 les apprendra.
+- §5.5 : la rareté se calcule parmi les 394 lieux de l'app et non parmi tous
+  les monuments, sans le nombre de photos sur Commons ni les guides, et les
+  points de chaque palier sont fixés dans l'app plutôt que dans la base
+  (décision du 18 octobre 2026, voir « Rareté »).

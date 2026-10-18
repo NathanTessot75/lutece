@@ -132,6 +132,9 @@ def test_monument_row_is_what_the_app_shows() -> None:
         "readiness": "ready",
         "capture_reach_m": 222,
         "photo_count": 15,
+        # The rarity step comes later: see add_rarity.
+        "rarity_score": None,
+        "rarity_tier": None,
     }
     assert rows[1]["title"] == "Immeuble, 62 rue Saint-Antoine"
     assert rows[1]["wikidata_qid"] is None
@@ -236,6 +239,24 @@ def test_place_without_a_notice_has_the_row_of_a_monument() -> None:
     # A place that OpenStreetMap does not outline is marked by a circle.
     assert rows[0]["readiness"] == "approximate"
     assert rows[0]["photo_count"] == 0
+
+
+def test_places_get_their_rarity_by_notice_or_by_item() -> None:
+    rows = [
+        {"merimee_id": "PA1", "wikidata_qid": "Q1", "rarity_score": None},
+        {"merimee_id": None, "wikidata_qid": "Q323767", "rarity_score": None},
+        {"merimee_id": "PA2", "wikidata_qid": None, "rarity_score": None},
+    ]
+    rated = {
+        "PA1": (0.123456, "rare"),
+        "Q1": (0.9, "légendaire"),
+        "Q323767": (0.0, "commun"),
+    }
+    assert bundle.add_rarity(rows, rated) == 1
+    # A monument is known by its notice, not by its item.
+    assert (rows[0]["rarity_score"], rows[0]["rarity_tier"]) == (0.1235, "rare")
+    assert (rows[1]["rarity_score"], rows[1]["rarity_tier"]) == (0.0, "commun")
+    assert rows[2]["rarity_score"] is None
 
 
 def test_distances_set_by_hand_are_read_and_checked(tmp_path: Path) -> None:
@@ -383,6 +404,7 @@ def run_main(folder: Path, out: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         "LANDMARKS_PARQUET": out / "landmarks.parquet",
         "LANDMARK_FILES_PARQUET": out / "landmark_files.parquet",
         "CHECKS_PARQUET": out / "reference_photo_checks.parquet",
+        "RARITY_PARQUET": out / "rarity.parquet",
         "EMBEDDINGS_PARQUET": out / "int8-crop.parquet",
         "MODEL_SOURCE": out / "dinov2-small-int8.onnx",
         "APP_MODEL_FILE": out / "assets" / "models" / "dinov2-small-int8.onnx",
@@ -481,6 +503,11 @@ def test_places_without_a_notice_are_bundled_with_the_monuments(
         commons.FILES_SCHEMA,
         tmp_path / "landmark_files.parquet",
     )
+    rated = [
+        {"key": "Q323767", "rarity_score": 0.01, "rarity_tier": "commun"},
+        {"key": "PA00085795", "rarity_score": 0.97, "rarity_tier": "légendaire"},
+    ]
+    pd.DataFrame(rated).to_parquet(tmp_path / "rarity.parquet", index=False)
     run_main(pipeline_tables, tmp_path, monkeypatch)
 
     summary = json.loads((tmp_path / "assets" / "bundle.json").read_text())
@@ -501,16 +528,17 @@ def test_places_without_a_notice_are_bundled_with_the_monuments(
     assert tower["readiness"] == "ready"
     assert tower["capture_reach_m"] == 1500
     assert tower["photo_count"] == 2
+    assert (tower["rarity_score"], tower["rarity_tier"]) == (0.01, "commun")
     ranks = database.execute(
         "select rank from photos where monument_id = ? order by rank", (tower["id"],)
     ).fetchall()
     assert [row["rank"] for row in ranks] == [1, 2]
     # The monuments keep their notice and the article that the selection found.
     church = database.execute(
-        "select merimee_id, wikipedia, protection from monuments"
+        "select merimee_id, wikipedia, protection, rarity_tier from monuments"
         " where merimee_id = 'PA00085795'"
     ).fetchone()
-    assert tuple(church) == ("PA00085795", "Un article", "classé")
+    assert tuple(church) == ("PA00085795", "Un article", "classé", "légendaire")
     assert database.execute("pragma foreign_key_check").fetchall() == []
     database.close()
 
