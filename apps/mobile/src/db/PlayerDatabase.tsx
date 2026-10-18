@@ -59,6 +59,10 @@ const MIGRATIONS = [
   alter table samples add column uploaded_at text;
   alter table captures add column uploaded_at text;
   `,
+  `
+  -- What a capture brought, kept as it was when the rarity changes.
+  alter table captures add column points integer;
+  `,
 ];
 
 async function migrate(db: SQLiteDatabase): Promise<void> {

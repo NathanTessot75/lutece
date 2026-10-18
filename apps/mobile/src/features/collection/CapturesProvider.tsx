@@ -1,7 +1,9 @@
+import { useSQLiteContext } from 'expo-sqlite';
 import { type ReactNode, createContext, use, useEffect, useState } from 'react';
 
 import { type Capture, type NewCapture, listCaptures, saveCapture } from '@/db/captures';
 import { usePlayerDatabase } from '@/db/PlayerDatabase';
+import { fillMissingPoints } from '@/features/game/points';
 
 type Captures = {
   /** What the player has captured, the latest first. */
@@ -17,19 +19,22 @@ const CapturesContext = createContext<Captures | null>(null);
 /** Hold the captures of the player for the map, the pages and the collection. */
 export function CapturesProvider({ children }: { children: ReactNode }) {
   const db = usePlayerDatabase();
+  const bundle = useSQLiteContext();
   const [captures, setCaptures] = useState<Capture[]>([]);
 
   useEffect(() => {
     let current = true;
-    void listCaptures(db).then((found) => {
-      if (current) {
-        setCaptures(found);
-      }
-    });
+    void fillMissingPoints(db, bundle)
+      .then(() => listCaptures(db))
+      .then((found) => {
+        if (current) {
+          setCaptures(found);
+        }
+      });
     return () => {
       current = false;
     };
-  }, [db]);
+  }, [db, bundle]);
 
   const record = async (capture: NewCapture) => {
     await saveCapture(db, capture);

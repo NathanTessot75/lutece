@@ -1,42 +1,92 @@
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import { useEffect } from 'react';
+import { Image, Pressable, ScrollView, StyleSheet, Text } from 'react-native';
+import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
 
 import type { MonumentSummary } from '@/db/monuments';
+import { formatPoints, tierLabel, tierNote } from '@/features/game/rarity';
 import { describeMonument } from '@/features/monuments/describe';
 import { useOpenMonument } from '@/features/monuments/useOpenMonument';
 import { useTheme } from '@/lib/theme';
 
 import { photoUri } from './photos';
 
+// The reward comes after the photo and the name, then the buttons.
+const REWARD_DELAY_MS = 650;
+const ACTIONS_DELAY_MS = 950;
+
 type Props = {
   monument: MonumentSummary;
   photoFile: string | null;
+  /** What the capture brought. */
+  points: number;
   onContinue: () => void;
 };
 
 /** The monument is in the collection: the moment a capture is for. */
-export function Captured({ monument, photoFile, onContinue }: Props) {
+export function Captured({ monument, photoFile, points, onContinue }: Props) {
   const theme = useTheme();
   const open = useOpenMonument();
+  const tier = monument.rarityTier;
+  const color = tier === null ? theme.accent : theme.rarity[tier];
+  const note = tierNote(tier);
+
+  // A rare place earns a second touch, stronger, when its reward appears.
+  useEffect(() => {
+    if (tier !== 'rare' && tier !== 'légendaire') {
+      return;
+    }
+    const style =
+      tier === 'légendaire' ? Haptics.ImpactFeedbackStyle.Heavy : Haptics.ImpactFeedbackStyle.Medium;
+    const timer = setTimeout(() => void Haptics.impactAsync(style), REWARD_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [tier]);
+
   return (
     <ScrollView
       style={{ backgroundColor: theme.background }}
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={styles.content}
     >
-      <Text style={[styles.cheer, { color: theme.accent }]}>Capturé !</Text>
+      <Animated.Text
+        entering={ZoomIn.springify().damping(12)}
+        style={[styles.cheer, { color: theme.accent }]}
+      >
+        Capturé !
+      </Animated.Text>
       {photoFile !== null && (
-        <Image
-          source={{ uri: photoUri(photoFile) }}
-          style={[styles.photo, { backgroundColor: theme.separator }]}
-          resizeMode="cover"
-          accessibilityIgnoresInvertColors
-        />
+        <Animated.View entering={FadeIn.duration(400).delay(150)} style={styles.photoFrame}>
+          <Image
+            source={{ uri: photoUri(photoFile) }}
+            style={[styles.photo, { backgroundColor: theme.separator }]}
+            resizeMode="cover"
+            accessibilityIgnoresInvertColors
+          />
+        </Animated.View>
       )}
-      <Text style={[styles.title, { color: theme.text }]}>{monument.title}</Text>
-      <Text style={[styles.details, { color: theme.secondaryText }]}>
-        {describeMonument(monument)}
-      </Text>
-      <View style={styles.actions}>
+      <Animated.View entering={FadeInDown.delay(300)} style={styles.heading}>
+        <Text style={[styles.title, { color: theme.text }]}>{monument.title}</Text>
+        <Text style={[styles.details, { color: theme.secondaryText }]}>
+          {describeMonument(monument)}
+        </Text>
+      </Animated.View>
+      <Animated.View
+        entering={ZoomIn.delay(REWARD_DELAY_MS).springify().damping(10)}
+        style={[styles.reward, { backgroundColor: theme.surface, borderColor: color }]}
+        accessible
+        accessibilityLabel={[tier && tierLabel(tier), `${formatPoints(points)} gagnés`, note]
+          .filter(Boolean)
+          .join('. ')}
+      >
+        {tier !== null && (
+          <Text style={[styles.tier, { color }]}>{tierLabel(tier).toLocaleUpperCase('fr')}</Text>
+        )}
+        <Text style={[styles.points, { color }]}>+{formatPoints(points)}</Text>
+        {note !== null && (
+          <Text style={[styles.note, { color: theme.secondaryText }]}>{note}</Text>
+        )}
+      </Animated.View>
+      <Animated.View entering={FadeIn.delay(ACTIONS_DELAY_MS)} style={styles.actions}>
         <Pressable
           style={[styles.button, { backgroundColor: theme.accent }]}
           onPress={onContinue}
@@ -51,7 +101,7 @@ export function Captured({ monument, photoFile, onContinue }: Props) {
         >
           <Text style={[styles.buttonLabel, { color: theme.accent }]}>Voir la fiche</Text>
         </Pressable>
-      </View>
+      </Animated.View>
     </ScrollView>
   );
 }
@@ -67,11 +117,18 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     marginBottom: 6,
   },
+  photoFrame: {
+    alignSelf: 'stretch',
+    marginBottom: 8,
+  },
   photo: {
     width: '100%',
     aspectRatio: 1,
     borderRadius: 18,
-    marginBottom: 8,
+  },
+  heading: {
+    alignItems: 'center',
+    gap: 4,
   },
   title: {
     fontSize: 22,
@@ -81,6 +138,30 @@ const styles = StyleSheet.create({
   details: {
     fontSize: 15,
     textAlign: 'center',
+  },
+  reward: {
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    gap: 2,
+    marginTop: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 18,
+    borderWidth: 2,
+  },
+  tier: {
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 1.5,
+  },
+  points: {
+    fontSize: 30,
+    fontWeight: '800',
+  },
+  note: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 2,
   },
   actions: {
     alignSelf: 'stretch',

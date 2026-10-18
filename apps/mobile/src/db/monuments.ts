@@ -3,6 +3,9 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 /** Whether the app can offer a monument to capture, as the pipeline decided. */
 export type Readiness = 'ready' | 'approximate' | 'not_ready';
 
+/** How rare a place is, the least known the rarest (SPEC §5.5). */
+export type RarityTier = 'commun' | 'peu_commun' | 'rare' | 'légendaire';
+
 /** What a list shows of a monument. */
 export type MonumentSummary = {
   id: string;
@@ -11,6 +14,8 @@ export type MonumentSummary = {
   category: string | null;
   century: number | null;
   readiness: Readiness;
+  /** None in a bundle written before the rarity step. */
+  rarityTier: RarityTier | null;
 };
 
 export type Visibility = 'visible' | 'non_visible' | 'inconnu';
@@ -84,12 +89,13 @@ export type Bounds = {
 };
 
 const SUMMARIES = `
-  select id, title, arrondissement, category, century, readiness
+  select id, title, arrondissement, category, century, readiness, rarity_tier as rarityTier
   from monuments
 `;
 
 const PLACES = `
-  select id, title, arrondissement, category, century, readiness, lat, lon
+  select id, title, arrondissement, category, century, readiness, rarity_tier as rarityTier,
+    lat, lon
   from monuments
   where lat between $south and $north and lon between $west and $east
 `;
@@ -108,7 +114,8 @@ const CELLS = `
     min(arrondissement) as arrondissement,
     min(category) as category,
     min(century) as century,
-    min(readiness) as readiness
+    min(readiness) as readiness,
+    min(rarity_tier) as rarityTier
   from monuments
   where cast(lat / $latStep as integer) between $firstRow and $lastRow
     and cast(lon / $lonStep as integer) between $firstColumn and $lastColumn
@@ -120,6 +127,7 @@ const FOOTPRINT = 'select footprint from monuments where id = $id';
 const DETAILS = `
   select
     id, title, arrondissement, category, century, readiness,
+    rarity_tier as rarityTier,
     merimee_id as merimeeId,
     address,
     architects,
@@ -143,6 +151,7 @@ const PHOTOS = `
 const CAPTURABLE_AROUND = `
   select
     id, title, arrondissement, category, century, readiness,
+    rarity_tier as rarityTier,
     capture_reach_m as reachM,
     footprint
   from monuments

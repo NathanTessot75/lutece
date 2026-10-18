@@ -3,6 +3,7 @@ import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-na
 import type { Capture } from '@/db/captures';
 import type { MonumentDetails, MonumentPhoto } from '@/db/monuments';
 import { photoUri } from '@/features/capture/photos';
+import { formatPoints, pointsFor, tierLabel } from '@/features/game/rarity';
 import { capitalize, formatArrondissement, formatCentury, formatDate } from '@/lib/format';
 import { type Theme, useTheme } from '@/lib/theme';
 
@@ -116,6 +117,7 @@ export function MonumentPage({ monument, photos, capture }: Props) {
   const theme = useTheme();
   const status = describeStatus(monument, capture, theme);
   const caveat = describeCaveat(monument);
+  const tier = monument.rarityTier;
   const own = capture?.photoFile
     ? { uri: photoUri(capture.photoFile), caption: `Ta photo du ${formatDate(capture.capturedAt)}` }
     : null;
@@ -133,8 +135,17 @@ export function MonumentPage({ monument, photos, capture }: Props) {
             {line}
           </Text>
         ))}
-        <View style={[styles.status, { backgroundColor: status.background }]}>
-          <Text style={[styles.statusText, { color: status.color }]}>{status.text}</Text>
+        <View style={styles.badges}>
+          <View style={[styles.status, { backgroundColor: status.background }]}>
+            <Text style={[styles.statusText, { color: status.color }]}>{status.text}</Text>
+          </View>
+          {tier !== null && (
+            <View style={[styles.status, styles.tier, { borderColor: theme.rarity[tier] }]}>
+              <Text style={[styles.statusText, { color: theme.rarity[tier] }]}>
+                {tierLabel(tier)} · {formatPoints(capture?.points ?? pointsFor(tier))}
+              </Text>
+            </View>
+          )}
         </View>
         {caveat !== null && (
           <Text style={[styles.caveat, { color: theme.secondaryText }]}>{caveat}</Text>
@@ -199,12 +210,22 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 21,
   },
+  badges: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 12,
+  },
   status: {
-    alignSelf: 'flex-start',
     borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 5,
-    marginTop: 12,
+  },
+  // Outlined, as tall as the status beside it.
+  tier: {
+    borderWidth: 1.5,
+    paddingHorizontal: 8.5,
+    paddingVertical: 3.5,
   },
   statusText: {
     fontSize: 13,

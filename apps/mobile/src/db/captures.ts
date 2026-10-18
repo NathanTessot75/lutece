@@ -17,6 +17,8 @@ export type NewCapture = {
   chosenByPlayer: boolean;
   /** The name of the picture, in the folder of the captures. */
   photoFile: string | null;
+  /** What the rarity of the monument brings. */
+  points: number;
 };
 
 // A random identifier (UUID version 4), written by SQLite itself.
@@ -37,11 +39,11 @@ const INSERT = `
   insert or ignore into captures (
     id, monument_id, captured_at, lat, lon, gps_accuracy_m, heading_deg,
     heading_level, geo_score, image_score, final_score, status, chosen_by_player,
-    photo_file
+    photo_file, points
   ) values (
     ${NEW_ID}, $monumentId, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), $lat, $lon,
     $gpsAccuracyM, $headingDeg, $headingLevel, $geoScore, $imageScore,
-    coalesce($imageScore, $geoScore), 'accepted', $chosenByPlayer, $photoFile
+    coalesce($imageScore, $geoScore), 'accepted', $chosenByPlayer, $photoFile, $points
   )
 `;
 
@@ -51,10 +53,12 @@ export type Capture = {
   /** When it was made, as an ISO 8601 date in UTC. */
   capturedAt: string;
   photoFile: string | null;
+  /** None for a capture made before the points, until they are given. */
+  points: number | null;
 };
 
 const CAPTURES = `
-  select monument_id as monumentId, captured_at as capturedAt, photo_file as photoFile
+  select monument_id as monumentId, captured_at as capturedAt, photo_file as photoFile, points
   from captures
   order by captured_at desc
 `;
@@ -71,6 +75,26 @@ export async function saveCapture(db: SQLiteDatabase, capture: NewCapture): Prom
     $imageScore: capture.imageScore,
     $chosenByPlayer: capture.chosenByPlayer ? 1 : 0,
     $photoFile: capture.photoFile,
+    $points: capture.points,
+  });
+}
+
+/** The monuments of the captures made before the points existed. */
+export async function listUnscoredCaptures(db: SQLiteDatabase): Promise<string[]> {
+  const rows = await db.getAllAsync<{ monumentId: string }>(
+    'select monument_id as monumentId from captures where points is null',
+  );
+  return rows.map((row) => row.monumentId);
+}
+
+export async function setCapturePoints(
+  db: SQLiteDatabase,
+  monumentId: string,
+  points: number,
+): Promise<void> {
+  await db.runAsync('update captures set points = $points where monument_id = $monumentId', {
+    $points: points,
+    $monumentId: monumentId,
   });
 }
 

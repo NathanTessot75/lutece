@@ -7,6 +7,7 @@ import type { Capture } from '@/db/captures';
 import { type MonumentSummary, countCapturable, listMonumentsByIds } from '@/db/monuments';
 import { photoUri } from '@/features/capture/photos';
 import { useContribution } from '@/features/contribute/ContributeProvider';
+import { formatPoints, totalPoints } from '@/features/game/rarity';
 import { useOpenMonument } from '@/features/monuments/useOpenMonument';
 import { formatCount, formatDate } from '@/lib/format';
 import { type Theme, useTheme } from '@/lib/theme';
@@ -68,9 +69,9 @@ function ContributeLink({ theme }: { theme: Theme }) {
   );
 }
 
-function countLine(captured: number, capturable: number): string {
+function countLine(captured: number, capturable: number, points: number): string {
   const what = captured > 1 ? 'monuments capturés' : 'monument capturé';
-  return `${formatCount(captured)} ${what} sur ${formatCount(capturable)}`;
+  return `${formatCount(captured)} ${what} sur ${formatCount(capturable)} · ${formatPoints(points)}`;
 }
 
 /** What the player has captured, the latest first. */
@@ -120,7 +121,7 @@ export function Collection() {
       style={{ backgroundColor: theme.background }}
       ListHeaderComponent={
         <Text style={[styles.caption, { color: theme.secondaryText }]}>
-          {capturable === null ? ' ' : countLine(captures.length, capturable)}
+          {capturable === null ? ' ' : countLine(captures.length, capturable, totalPoints(captures))}
         </Text>
       }
       ListEmptyComponent={

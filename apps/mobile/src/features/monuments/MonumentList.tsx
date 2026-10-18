@@ -1,6 +1,7 @@
 import { Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
 
 import type { MonumentSummary } from '@/db/monuments';
+import { tierLabel } from '@/features/game/rarity';
 import { formatArrondissement, formatCount } from '@/lib/format';
 import { type Theme, useTheme } from '@/lib/theme';
 
@@ -16,6 +17,7 @@ type RowProps = {
 
 function Row({ monument, theme, onOpen }: RowProps) {
   const dimmed = monument.readiness === 'not_ready';
+  const details = describeMonument(monument);
   return (
     <Pressable
       style={[styles.row, { backgroundColor: theme.surface, borderColor: theme.separator }]}
@@ -25,7 +27,17 @@ function Row({ monument, theme, onOpen }: RowProps) {
       <Text style={[styles.title, { color: dimmed ? theme.secondaryText : theme.text }]}>
         {monument.title}
       </Text>
-      <Text style={[styles.details, { color: theme.secondaryText }]}>{describeMonument(monument)}</Text>
+      <Text style={[styles.details, { color: theme.secondaryText }]}>
+        {details}
+        {monument.rarityTier !== null && (
+          <>
+            {details && ' · '}
+            <Text style={{ color: theme.rarity[monument.rarityTier] }}>
+              {tierLabel(monument.rarityTier)}
+            </Text>
+          </>
+        )}
+      </Text>
     </Pressable>
   );
 }

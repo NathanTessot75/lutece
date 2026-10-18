@@ -1,5 +1,7 @@
 import { useColorScheme } from 'react-native';
 
+import type { RarityTier } from '@/db/monuments';
+
 export type Theme = {
   background: string;
   surface: string;
@@ -13,6 +15,8 @@ export type Theme = {
   pending: string;
   /** What can only be looked at. */
   muted: string;
+  /** Each tier of rarity, readable as text on the surface and the background. */
+  rarity: Record<RarityTier, string>;
 };
 
 const LIGHT: Theme = {
@@ -25,6 +29,12 @@ const LIGHT: Theme = {
   onAccent: '#FFFFFF',
   pending: '#55555A',
   muted: '#B0B0B6',
+  rarity: {
+    commun: '#6C6C70',
+    peu_commun: '#1F7A45',
+    rare: '#2459B8',
+    légendaire: '#9A6500',
+  },
 };
 
 const DARK: Theme = {
@@ -37,6 +47,12 @@ const DARK: Theme = {
   onAccent: '#FFFFFF',
   pending: '#C7C7CC',
   muted: '#6E6E75',
+  rarity: {
+    commun: '#AEAEB2',
+    peu_commun: '#4CD787',
+    rare: '#7AA8FF',
+    légendaire: '#F2C14E',
+  },
 };
 
 /** The colours of the current appearance of the phone, light or dark. */

@@ -24,6 +24,7 @@ import {
   labelChoices,
 } from '@/features/collect/sample';
 import { useCaptures } from '@/features/collection/CapturesProvider';
+import { pointsFor } from '@/features/game/rarity';
 import { parseFootprint } from '@/features/map/footprint';
 import { likeness } from '@/features/recognition/likeness';
 import { embedPhoto, openModel } from '@/features/recognition/model';
@@ -63,7 +64,7 @@ type Stage =
   | { step: 'aiming' }
   | { step: 'labelling'; draft: Draft; choices: LabelChoice[] }
   | { step: 'choosing'; shot: Shot; candidates: Scored<AimTarget>[]; confirm: boolean }
-  | { step: 'captured'; monument: CapturableMonument; photoFile: string | null };
+  | { step: 'captured'; monument: CapturableMonument; photoFile: string | null; points: number };
 
 const REFUSALS: Record<Refusal, string> = {
   out_of_reach: 'Aucun monument à capturer ici : approche-toi d’un monument.',
@@ -117,6 +118,7 @@ export function Capture() {
   const record = async (candidate: Scored<AimTarget>, shot: Shot, chosenByPlayer: boolean) => {
     const { monument } = candidate.target;
     const photoFile = shot.photoUri === null ? null : await keepPhoto(shot.photoUri, monument.id);
+    const points = pointsFor(monument.rarityTier);
     await recordCapture({
       monumentId: monument.id,
       latitude: shot.position.latitude,
@@ -128,9 +130,10 @@ export function Capture() {
       imageScore: candidate.likeness,
       chosenByPlayer,
       photoFile,
+      points,
     });
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setStage({ step: 'captured', monument, photoFile });
+    setStage({ step: 'captured', monument, photoFile, points });
   };
 
   /** What the photo says of these monuments; nothing to look at without a photo. */
@@ -301,6 +304,7 @@ export function Capture() {
       <Captured
         monument={stage.monument}
         photoFile={stage.photoFile}
+        points={stage.points}
         onContinue={() => setStage({ step: 'aiming' })}
       />
     );
