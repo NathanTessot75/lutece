@@ -32,9 +32,11 @@ Référence complète : `SPEC.md` (fait foi en cas de contradiction).
 | `pipeline` | `uv run python -m lutece_pipeline.rarity` | calculer la rareté des lieux de l'app (avant `export_bundle`) |
 | `pipeline` | `uv run python -m lutece_pipeline.series` | ranger les lieux de l'app en séries d'après `review/series.csv` (avant `export_bundle`) |
 | `pipeline` | `uv run python -m lutece_pipeline.export_bundle` | régénérer le fichier des monuments embarqué dans l'app |
+| `pipeline` | `uv run python -m lutece_pipeline.export_places` | écrire les lieux de l'app pour le serveur (`supabase/seeds/places.sql`, après `export_bundle`) |
 | racine | `supabase start` · `supabase stop` | pile locale (runtime de conteneurs requis) |
 | racine | `supabase migration up` | appliquer les nouvelles migrations sans vider la base |
 | racine | `supabase db reset` | rejouer migrations et seed (vide la base) |
 | racine | `supabase migration new <name>` | nouvelle migration |
 | racine | `supabase test db` | tests des droits de la base (pgTAP) |
 | racine | `supabase db push` | appliquer les migrations au projet hébergé |
+| racine | `supabase db push --include-seed` | idem, avec les lieux de `supabase/seeds/` |
