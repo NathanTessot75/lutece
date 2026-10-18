@@ -55,10 +55,14 @@ export type Capture = {
   photoFile: string | null;
   /** None for a capture made before the points, until they are given. */
   points: number | null;
+  /** Where the player stood. */
+  latitude: number;
+  longitude: number;
 };
 
 const CAPTURES = `
-  select monument_id as monumentId, captured_at as capturedAt, photo_file as photoFile, points
+  select monument_id as monumentId, captured_at as capturedAt, photo_file as photoFile, points,
+    lat as latitude, lon as longitude
   from captures
   order by captured_at desc
 `;

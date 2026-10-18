@@ -1969,3 +1969,9 @@ Nathan, qui l'a accepté (décision du 18 octobre 2026).
   Les séries se forment par genre de lieu, revu à la main ; l'exemple du SPEC
   des entrées de métro Guimard n'en est pas une, les stations de métro n'étant
   pas montrées (décision du 18 octobre 2026, voir « Séries »).
+- §5.3 : les badges (`achievements`, `user_achievements`) ne sont pas des
+  tables. L'app les définit (`apps/mobile/src/features/game/badges.ts`) et les
+  déduit des captures : chacun est daté par la capture qui l'a gagné. Les
+  « 10 km marchés » du SPEC, faute de suivre la position en continu, sont la
+  somme des trajets à vol d'oiseau entre les captures d'une même journée. Les
+  icônes sont des emojis provisoires (décision du 19 octobre 2026).
