@@ -11,6 +11,7 @@ import {
   markSent,
 } from '@/db/contributions';
 import { fitWithin } from '@/features/collect/sample';
+import { signedInPlayer } from '@/lib/supabase';
 
 import { type ContributionRow, captureRow, photoPath, sampleRow } from './rows';
 
@@ -22,19 +23,6 @@ const CAPTURE_FOLDER = 'captures';
 const ALREADY_RECEIVED = '23505';
 // As the photos of the samples: the camera's own file is too heavy for the bucket.
 const QUALITY = 0.85;
-
-/** The anonymous player on this phone, signed in the first time. */
-async function player(client: SupabaseClient): Promise<string> {
-  const { data } = await client.auth.getSession();
-  if (data.session) {
-    return data.session.user.id;
-  }
-  const { data: signedIn, error } = await client.auth.signInAnonymously();
-  if (error || !signedIn.user) {
-    throw error ?? new Error('No anonymous player');
-  }
-  return signedIn.user.id;
-}
 
 /** The bytes of a photo, its longest side brought down to the size of a sample. */
 async function lighter(file: File): Promise<Uint8Array> {
@@ -85,7 +73,7 @@ export async function sendPending(
   db: SQLiteDatabase,
   keepGoing: () => boolean,
 ): Promise<number> {
-  const userId = await player(client);
+  const userId = await signedInPlayer(client);
   const appVersion = Constants.expoConfig?.version ?? 'unknown';
   let sent = 0;
   for (const sample of await listUnsentSamples(db)) {

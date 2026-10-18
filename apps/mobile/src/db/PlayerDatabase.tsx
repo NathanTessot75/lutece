@@ -63,6 +63,11 @@ const MIGRATIONS = [
   -- What a capture brought, kept as it was when the rarity changes.
   alter table captures add column points integer;
   `,
+  `
+  -- When a capture reached the leaderboards, and what the server made of it.
+  alter table captures add column ranked_at text;
+  alter table captures add column rank_status text;
+  `,
 ];
 
 async function migrate(db: SQLiteDatabase): Promise<void> {

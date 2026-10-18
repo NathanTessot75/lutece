@@ -10,6 +10,19 @@ const URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const KEY = process.env.EXPO_PUBLIC_SUPABASE_KEY;
 
 /** The server of Lutèce; none in a build made without its address. */
+/** The anonymous player on this phone, signed in the first time. */
+export async function signedInPlayer(client: SupabaseClient): Promise<string> {
+  const { data } = await client.auth.getSession();
+  if (data.session) {
+    return data.session.user.id;
+  }
+  const { data: signedIn, error } = await client.auth.signInAnonymously();
+  if (error || !signedIn.user) {
+    throw error ?? new Error('No anonymous player');
+  }
+  return signedIn.user.id;
+}
+
 export const supabase: SupabaseClient | null =
   URL && KEY
     ? createClient(URL, KEY, {

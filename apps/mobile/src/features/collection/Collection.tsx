@@ -9,6 +9,7 @@ import { photoUri } from '@/features/capture/photos';
 import { useBadgeBook } from '@/features/badges/useBadgeBook';
 import { useContribution } from '@/features/contribute/ContributeProvider';
 import { formatPoints, totalPoints } from '@/features/game/rarity';
+import { useRanking } from '@/features/ranking/RankingProvider';
 import { useOpenMonument } from '@/features/monuments/useOpenMonument';
 import { formatCount, formatDate } from '@/lib/format';
 import { type Theme, useTheme } from '@/lib/theme';
@@ -102,6 +103,26 @@ function BadgesLink({ theme }: { theme: Theme }) {
   );
 }
 
+function LeaderboardLink({ theme }: { theme: Theme }) {
+  const router = useRouter();
+  const { available, username } = useRanking();
+  if (!available) {
+    return null;
+  }
+  return (
+    <Pressable
+      style={[styles.card, styles.progress, { backgroundColor: theme.surface }]}
+      onPress={() => router.push('/leaderboard')}
+      accessibilityRole="button"
+    >
+      <Text style={[styles.title, { color: theme.text }]}>Classement</Text>
+      <Text style={[styles.details, { color: theme.secondaryText }]} numberOfLines={1}>
+        {username ?? 'Rejoindre'}
+      </Text>
+    </Pressable>
+  );
+}
+
 function countLine(captured: number, capturable: number, points: number): string {
   const what = captured > 1 ? 'monuments capturés' : 'monument capturé';
   return `${formatCount(captured)} ${what} sur ${formatCount(capturable)} · ${formatPoints(points)}`;
@@ -159,6 +180,7 @@ export function Collection() {
           </Text>
           <ProgressLink theme={theme} />
           <BadgesLink theme={theme} />
+          <LeaderboardLink theme={theme} />
         </>
       }
       ListEmptyComponent={

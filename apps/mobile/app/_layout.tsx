@@ -8,6 +8,7 @@ import { PlayerDatabaseProvider } from '@/db/PlayerDatabase';
 import { CollectProvider } from '@/features/collect/CollectProvider';
 import { CapturesProvider } from '@/features/collection/CapturesProvider';
 import { ContributeProvider } from '@/features/contribute/ContributeProvider';
+import { RankingProvider } from '@/features/ranking/RankingProvider';
 import { useTheme } from '@/lib/theme';
 
 function Loading() {
@@ -41,9 +42,11 @@ export default function RootLayout() {
             <CapturesProvider>
               <CollectProvider>
                 <ContributeProvider>
-                  <Stack>
-                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                  </Stack>
+                  <RankingProvider>
+                    <Stack>
+                      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                    </Stack>
+                  </RankingProvider>
                 </ContributeProvider>
               </CollectProvider>
             </CapturesProvider>
