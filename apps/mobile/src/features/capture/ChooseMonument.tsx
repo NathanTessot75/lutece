@@ -5,18 +5,34 @@ import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { listPhotos } from '@/db/monuments';
 import { useTheme } from '@/lib/theme';
 
-import type { Candidate } from './candidates';
+import type { Scored } from './decision';
 import { describeCandidate } from './describe';
 import type { AimTarget } from './useAim';
 
 type Props = {
-  candidates: Candidate<AimTarget>[];
-  onChoose: (candidate: Candidate<AimTarget>) => void;
+  candidates: Scored<AimTarget>[];
+  /** Whether the photo could not tell: the player confirms what the geometry offers. */
+  confirm: boolean;
+  onChoose: (candidate: Scored<AimTarget>) => void;
   onCancel: () => void;
 };
 
-/** Several monuments are as likely: the player tells which one they shot. */
-export function ChooseMonument({ candidates, onChoose, onCancel }: Props) {
+function wording(confirm: boolean, count: number) {
+  if (!confirm) {
+    return {
+      question: 'C’est lequel ?',
+      hint: 'Ta photo ressemble à plusieurs monuments. Lequel viens-tu de photographier ?',
+      cancel: 'Aucun de ceux-là',
+    };
+  }
+  const hint = 'Lutèce ne peut pas le vérifier sur ta photo : confirme que tu es bien devant.';
+  return count === 1
+    ? { question: 'C’est bien lui ?', hint, cancel: 'Ce n’est pas lui' }
+    : { question: 'C’est lequel ?', hint, cancel: 'Aucun de ceux-là' };
+}
+
+/** The photo cannot settle it: the player tells which monument they shot. */
+export function ChooseMonument({ candidates, confirm, onChoose, onCancel }: Props) {
   const db = useSQLiteContext();
   const theme = useTheme();
   // The best reference photo of each candidate, to recognise it by.
@@ -38,16 +54,15 @@ export function ChooseMonument({ candidates, onChoose, onCancel }: Props) {
     };
   }, [db, candidates]);
 
+  const words = wording(confirm, candidates.length);
   return (
     <ScrollView
       style={{ backgroundColor: theme.background }}
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={styles.content}
     >
-      <Text style={[styles.question, { color: theme.text }]}>C’est lequel ?</Text>
-      <Text style={[styles.hint, { color: theme.secondaryText }]}>
-        Plusieurs monuments sont devant toi. Lequel viens-tu de photographier ?
-      </Text>
+      <Text style={[styles.question, { color: theme.text }]}>{words.question}</Text>
+      <Text style={[styles.hint, { color: theme.secondaryText }]}>{words.hint}</Text>
       {candidates.map((candidate) => (
         <Pressable
           key={candidate.target.id}
@@ -75,7 +90,7 @@ export function ChooseMonument({ candidates, onChoose, onCancel }: Props) {
         </Pressable>
       ))}
       <Pressable style={styles.cancel} onPress={onCancel} accessibilityRole="button">
-        <Text style={[styles.cancelLabel, { color: theme.accent }]}>Aucun de ceux-là</Text>
+        <Text style={[styles.cancelLabel, { color: theme.accent }]}>{words.cancel}</Text>
       </Pressable>
     </ScrollView>
   );

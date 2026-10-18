@@ -1655,6 +1655,50 @@ donnent 0,997 avec `float32` et 0,989 avec `int8`. L'écart reste plus petit
 que celui qui sépare `int8` de `float32` sur les mêmes pixels (0,982), qui ne
 change pas la mesure (89,7 % contre 89,8 %).
 
+### La capture avec l'image
+
+Dans l'app (`apps/mobile/src/features/capture/decision.ts`), la géométrie
+choisit les candidats et l'image les départage :
+
+1. **Avant la photo**, la géométrie seule dit s'il y a quelque chose à
+   capturer dans l'axe du téléphone, comme en phase 2 (rien à portée, rien en
+   face, boussole perdue, déjà capturé).
+2. **Après la photo**, chaque candidat dans l'axe reçoit sa ressemblance avec
+   la photo : le meilleur cosinus avec ses photos de référence.
+3. **Aucun candidat ne ressemble à la photo** (sous 0,42) : rien n'est
+   capturé, « Lutèce ne reconnaît pas de monument sur ta photo ».
+4. **Le premier devance le deuxième de 0,10 ou plus** : il est capturé sans
+   rien demander. Sinon le joueur choisit entre les 2 ou 3 candidats proches,
+   avec leur photo.
+5. **La photo montre surtout un lieu déjà capturé** : rien n'est capturé,
+   « Tu as déjà capturé ce monument », même si un autre candidat est dans
+   l'axe.
+6. **Ce que la photo ne peut pas vérifier** (un lieu sans photo de référence,
+   ou une capture sans photo, caméra refusée) se capture à 30 m au plus, après
+   confirmation du joueur (SPEC §6.3).
+
+`evaluate_retrieval` lit ces règles sur les photos de référence jouées comme
+captures (lignes `leads` et `refusals` du rapport). Avec le modèle `int8`,
+sans les photos écartées :
+
+| Écart exigé | Captures sans demander | Bon lieu parmi elles |
+|---|---|---|
+| 0,05 | 89 % | 95,3 % |
+| 0,10 | 80,5 % | 97,4 % |
+| 0,15 | 72,8 % | 98,4 % |
+
+| Seuil de reconnaissance | Photos refusées alors qu'elles montrent leur lieu |
+|---|---|
+| 0,35 | 0,8 % |
+| 0,42 | 4,1 % |
+| 0,50 | 10,3 % |
+
+Les seuils retenus, 0,42 et 0,10, sont provisoires : ils viennent de photos de
+Commons, plus nettes que celles d'un téléphone dans la rue. La capture
+enregistre sa ressemblance (`image_score`) à côté de son score géométrique ;
+son score final est la ressemblance, ou le score géométrique quand la photo
+n'a rien pu dire. La phase 4 apprendra comment combiner les deux.
+
 ## Écarts constatés avec le SPEC
 
 - §5.1 : le portail `data.culture.gouv.fr` redirige vers
@@ -1745,3 +1789,8 @@ change pas la mesure (89,7 % contre 89,8 %).
   une dépendance directe pour charger le modèle.
 - §4 : `onnxruntime-react-native` 1.24.3 laisse CocoaPods choisir la version du
   moteur natif `onnxruntime-c` : 1.30.0 au 14 octobre 2026.
+- §6.1 : au lieu d'une somme pondérée de la géométrie et de l'image, la
+  géométrie choisit les candidats et l'image les classe, avec deux seuils
+  provisoires (décision du 18 octobre 2026, voir « La capture avec
+  l'image »). Faute de données terrain, les poids d'une somme ne pouvaient
+  pas être fixés ; la régression logistique de la phase 4 les apprendra.

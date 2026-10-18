@@ -2,6 +2,7 @@ import { Asset } from 'expo-asset';
 import { InferenceSession, Tensor } from 'onnxruntime-react-native';
 
 import { SIDE } from './pixels';
+import { preparePhoto } from './prepare';
 
 // DINOv2 ViT-S/14 with its weights on 8 bits, exported by the pipeline
 // (export_model) and copied with the vectors of the reference photos.
@@ -37,4 +38,10 @@ export async function embed(
   const input = new Tensor('float32', pixels, [1, 3, SIDE, SIDE]);
   const output = await session.run({ pixels: input });
   return output.embedding.data as Float32Array;
+}
+
+/** Give the vector, of length 1, of a photo on the phone. */
+export async function embedPhoto(uri: string): Promise<Float32Array> {
+  const [session, pixels] = await Promise.all([openModel(), preparePhoto(uri)]);
+  return embed(session, pixels);
 }

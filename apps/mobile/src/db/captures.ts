@@ -11,6 +11,8 @@ export type NewCapture = {
   /** How well the compass was calibrated, from 0 to 3: iOS gives no degrees. */
   headingLevel: number | null;
   geoScore: number;
+  /** How much the photo looks like the monument; none without a photo or a reference photo. */
+  imageScore: number | null;
   /** Whether the player picked the monument among several candidates. */
   chosenByPlayer: boolean;
   /** The name of the picture, in the folder of the captures. */
@@ -27,16 +29,19 @@ const NEW_ID = `
   )
 `;
 
-// Without image recognition, the final score is the one of the geometry.
+// The geometry chooses the candidates and the photo tells them apart: the
+// final score is the likeness of the photo, or the score of the geometry when
+// the photo could not tell. Phase 4 will learn how to weigh the two.
 // A monument is captured once: a second capture changes nothing.
 const INSERT = `
   insert or ignore into captures (
     id, monument_id, captured_at, lat, lon, gps_accuracy_m, heading_deg,
-    heading_level, geo_score, final_score, status, chosen_by_player, photo_file
+    heading_level, geo_score, image_score, final_score, status, chosen_by_player,
+    photo_file
   ) values (
     ${NEW_ID}, $monumentId, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), $lat, $lon,
-    $gpsAccuracyM, $headingDeg, $headingLevel, $geoScore, $geoScore, 'accepted',
-    $chosenByPlayer, $photoFile
+    $gpsAccuracyM, $headingDeg, $headingLevel, $geoScore, $imageScore,
+    coalesce($imageScore, $geoScore), 'accepted', $chosenByPlayer, $photoFile
   )
 `;
 
@@ -63,6 +68,7 @@ export async function saveCapture(db: SQLiteDatabase, capture: NewCapture): Prom
     $headingDeg: capture.headingDeg,
     $headingLevel: capture.headingLevel,
     $geoScore: capture.geoScore,
+    $imageScore: capture.imageScore,
     $chosenByPlayer: capture.chosenByPlayer ? 1 : 0,
     $photoFile: capture.photoFile,
   });
