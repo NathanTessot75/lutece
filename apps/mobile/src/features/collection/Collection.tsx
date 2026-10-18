@@ -6,6 +6,7 @@ import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native
 import type { Capture } from '@/db/captures';
 import { type MonumentSummary, countCapturable, listMonumentsByIds } from '@/db/monuments';
 import { photoUri } from '@/features/capture/photos';
+import { useBadgeBook } from '@/features/badges/useBadgeBook';
 import { useContribution } from '@/features/contribute/ContributeProvider';
 import { formatPoints, totalPoints } from '@/features/game/rarity';
 import { useOpenMonument } from '@/features/monuments/useOpenMonument';
@@ -83,6 +84,24 @@ function ProgressLink({ theme }: { theme: Theme }) {
   );
 }
 
+function BadgesLink({ theme }: { theme: Theme }) {
+  const router = useRouter();
+  const states = useBadgeBook();
+  const won = states?.filter((state) => state.wonAt !== null).length;
+  return (
+    <Pressable
+      style={[styles.card, styles.progress, { backgroundColor: theme.surface }]}
+      onPress={() => router.push('/badges')}
+      accessibilityRole="button"
+    >
+      <Text style={[styles.title, { color: theme.text }]}>Badges</Text>
+      <Text style={[styles.details, { color: theme.secondaryText }]}>
+        {states === null ? ' ' : `${won}/${states.length}`}
+      </Text>
+    </Pressable>
+  );
+}
+
 function countLine(captured: number, capturable: number, points: number): string {
   const what = captured > 1 ? 'monuments capturés' : 'monument capturé';
   return `${formatCount(captured)} ${what} sur ${formatCount(capturable)} · ${formatPoints(points)}`;
@@ -139,6 +158,7 @@ export function Collection() {
             {capturable === null ? ' ' : countLine(captures.length, capturable, totalPoints(captures))}
           </Text>
           <ProgressLink theme={theme} />
+          <BadgesLink theme={theme} />
         </>
       }
       ListEmptyComponent={

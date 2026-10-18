@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
 
+import { useBadgeBook } from '@/features/badges/useBadgeBook';
 import { useCaptures } from '@/features/collection/CapturesProvider';
 import { advancesOf, formatProgress, isComplete } from '@/features/game/progress';
 
@@ -15,10 +16,12 @@ import { useTheme } from '@/lib/theme';
 
 import { photoUri } from './photos';
 
-// The reward comes after the photo and the name, then the progress, then the buttons.
+// The reward comes after the photo and the name, then the progress, the
+// badges won, and the buttons.
 const REWARD_DELAY_MS = 650;
 const PROGRESS_DELAY_MS = 900;
-const ACTIONS_DELAY_MS = 1150;
+const BADGES_DELAY_MS = 1150;
+const ACTIONS_DELAY_MS = 1400;
 
 type Props = {
   monument: MonumentSummary;
@@ -38,6 +41,8 @@ export function Captured({ monument, photoFile, points, onContinue }: Props) {
   const groups = useGroups();
   const { byMonument } = useCaptures();
   const advances = groups === null ? [] : advancesOf(monument, groups, byMonument);
+  const book = useBadgeBook();
+  const won = (book ?? []).filter((state) => state.wonWith === monument.id);
 
   // A rare place earns a second touch, stronger, when its reward appears.
   useEffect(() => {
@@ -49,6 +54,19 @@ export function Captured({ monument, photoFile, points, onContinue }: Props) {
     const timer = setTimeout(() => void Haptics.impactAsync(style), REWARD_DELAY_MS);
     return () => clearTimeout(timer);
   }, [tier]);
+
+  // A badge won earns its own touch when it appears.
+  const anyWon = won.length > 0;
+  useEffect(() => {
+    if (!anyWon) {
+      return;
+    }
+    const timer = setTimeout(
+      () => void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success),
+      BADGES_DELAY_MS,
+    );
+    return () => clearTimeout(timer);
+  }, [anyWon]);
 
   return (
     <ScrollView
@@ -120,6 +138,27 @@ export function Captured({ monument, photoFile, points, onContinue }: Props) {
               </View>
             );
           })}
+        </Animated.View>
+      )}
+      {anyWon && (
+        <Animated.View
+          entering={ZoomIn.delay(BADGES_DELAY_MS).springify().damping(12)}
+          style={[styles.badges, { backgroundColor: theme.surface, borderColor: theme.accent }]}
+        >
+          <Text style={[styles.badgesTitle, { color: theme.accent }]}>
+            {won.length > 1 ? 'Badges gagnés !' : 'Badge gagné !'}
+          </Text>
+          {won.map(({ badge }) => (
+            <View key={badge.slug} style={styles.badge}>
+              <Text style={styles.badgeIcon}>{badge.icon}</Text>
+              <View style={styles.advanceText}>
+                <Text style={[styles.advanceLabel, { color: theme.text }]}>{badge.name}</Text>
+                <Text style={[styles.badgeCondition, { color: theme.secondaryText }]}>
+                  {badge.condition}
+                </Text>
+              </View>
+            </View>
+          ))}
         </Animated.View>
       )}
       <Animated.View entering={FadeIn.delay(ACTIONS_DELAY_MS)} style={styles.actions}>
@@ -226,6 +265,33 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     fontVariant: ['tabular-nums'],
+  },
+  badges: {
+    alignSelf: 'stretch',
+    borderRadius: 14,
+    borderWidth: 2,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    gap: 8,
+  },
+  badgesTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    textAlign: 'center',
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  badgeIcon: {
+    fontSize: 30,
+  },
+  badgeCondition: {
+    fontSize: 13,
+    marginTop: 1,
   },
   actions: {
     alignSelf: 'stretch',
