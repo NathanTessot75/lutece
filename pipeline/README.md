@@ -37,6 +37,7 @@ uv run ruff format .    # formatage
 | — `embed_references` | `uv run python -m lutece_pipeline.embed_references` | `reference_photos.parquet`, les photos, un modèle exporté | `data/interim/embeddings/<modèle>-<cadrage>.parquet` |
 | — `check_reference_photos` | `uv run python -m lutece_pipeline.check_reference_photos` | `reference_photos.parquet`, les vecteurs `float32-crop`, `commons_files.parquet`, `landmark_files.parquet`, `review/landmarks.csv`, `review/reference_photo_labels.csv` | `data/interim/reference_photo_checks.parquet`, `data/interim/reference_photo_checks_evaluation.csv` |
 | — `evaluate_retrieval` | `uv run python -m lutece_pipeline.evaluate_retrieval` | `reference_photos.parquet`, les vecteurs, `geometries.parquet`, `landmarks.parquet`, `reference_photo_checks.parquet` | `data/processed/retrieval_evaluation.json` |
+| — `pull_field_samples` | `uv run python -m lutece_pipeline.pull_field_samples` | la base du joueur et les photos du mode collecte, sur l'iPhone | `eval/testset/samples.csv`, `eval/testset/candidates.csv`, `eval/testset/photos/`, `data/interim/field_vectors.parquet` |
 
 Options :
 
@@ -61,6 +62,9 @@ Options :
   sans rien télécharger.
 - `embed_references --model float32|fp16|int8` choisit le poids du modèle et
   `--framing crop|squash` le cadrage ; chaque couple écrit son propre fichier.
+- `pull_field_samples` lit l'iPhone appairé, déverrouillé et à portée ;
+  `--device` en désigne un autre, `--simulator <identifiant>` lit un
+  simulateur, `--offline` reconstruit le jeu de test depuis la dernière copie.
 
 Les fichiers Parquet se lisent avec `pd.read_parquet(chemin)`. Ajouter
 `dtype_backend="pyarrow"` conserve les entiers avec valeurs manquantes au lieu
@@ -1698,6 +1702,56 @@ Commons, plus nettes que celles d'un téléphone dans la rue. La capture
 enregistre sa ressemblance (`image_score`) à côté de son score géométrique ;
 son score final est la ressemblance, ou le score géométrique quand la photo
 n'a rien pu dire. La phase 4 apprendra comment combiner les deux.
+
+## Jeu de test terrain
+
+C'est la phase 4 du SPEC (§8) : des photos prises dans la rue avec le
+téléphone, chacune avec tout ce que l'app savait et l'étiquette vérifiée du
+monument. Les photos de Commons ont servi jusqu'ici ; celles-ci disent ce que
+vaut vraiment la reconnaissance, et serviront à régler ses seuils.
+
+### Le mode collecte, dans l'app
+
+Le lien `lutece://collect` (depuis Safari ou une note) ouvre l'écran « Mode
+collecte ». Rien dans l'app n'y mène. Une fois le mode allumé, l'écran de
+capture affiche un bandeau, et chaque appui :
+
+1. prend la photo, **même quand la géométrie ne voit rien** dans l'axe : ces
+   cas comptent aussi ;
+2. calcule ce que ferait une capture (candidats, ressemblances, décision),
+   sans rien ajouter à la collection ;
+3. demande « Qu'as-tu photographié ? » : les candidats d'abord, puis les lieux
+   à moins de 300 m du plus proche au plus loin, et « Aucun monument de
+   Lutèce » pour les photos pièges qui mesurent les fausses captures ; deux
+   cases facultatives, « De biais » et « En partie caché ».
+
+Chaque photo est gardée sur le téléphone, réduite à 1 600 px de côté, dans une
+table `samples` de la base du joueur : heure, position et précision, cap et
+niveau de la boussole, chaque candidat à portée (distance, angle, dans l'axe
+ou non, score géométrique, ressemblance), le vecteur de la photo, la décision
+qu'aurait prise l'app, l'étiquette, et les versions du fichier embarqué, du
+modèle et de l'app. Rien ne quitte le téléphone.
+
+### `pull_field_samples` : le jeu de test sur le Mac
+
+L'étape copie la base du joueur et les photos depuis l'iPhone, par les outils
+de développement de Xcode (`devicectl`), sans écran d'export dans l'app. Les
+photos ne sont copiées que s'il en manque. Elle écrit :
+
+| Fichier | Contenu | Dans git |
+|---|---|---|
+| `eval/testset/samples.csv` | une ligne par photo : heure, position, cap, étiquette et son titre, cases, décision de l'app, versions | oui |
+| `eval/testset/candidates.csv` | une ligne par photo et par candidat à portée : distance, angle, dans l'axe, score géométrique, ressemblance | oui |
+| `eval/testset/photos/` | les photos | non |
+| `data/interim/field_vectors.parquet` | le vecteur que le téléphone a calculé pour chaque photo | non |
+
+Les métadonnées sont versionnées comme le prévoit le SPEC : elles donnent la
+position et l'heure de chaque photo, c'est-à-dire le tracé des balades de
+Nathan, qui l'a accepté (décision du 18 octobre 2026).
+
+> Limites. Les étiquettes sont celles d'un seul photographe, qui connaît
+> l'app. La contribution des autres joueurs, avec leur accord, viendra avec un
+> serveur hébergé.
 
 ## Écarts constatés avec le SPEC
 
