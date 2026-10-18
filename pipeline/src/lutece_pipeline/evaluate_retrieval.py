@@ -50,6 +50,11 @@ NEIGHBOUR_M = 150.0
 # of right places that it may turn down.
 FALSE_ACCEPTS = (0.01, 0.05, 0.10)
 FALSE_REFUSALS = (0.01, 0.05, 0.10)
+# The rules of the app (src/features/capture/decision.ts), read on these photos:
+# how far ahead of the second the first place must be to be taken without
+# asking, and under which likeness nothing is recognised.
+CLEAR_LEADS = (0.05, 0.10, 0.15)
+RECOGNISED_FROM = (0.35, 0.42, 0.50)
 SEED = 0
 
 INDEX_PARQUET = fetch_reference_photos.INDEX_PARQUET
@@ -156,13 +161,15 @@ def score_queries(
             if other != place and other not in neighbours.get(place, ())
         ]
         elsewhere = far[random.integers(len(far))] if far else None
+        ranked = sorted(around, reverse=True)
         rows.append(
             {
                 "place": place,
                 "title": photos.titles[line],
                 "own": float(likeness[own].max()),
                 "candidates": 1 + len(around),
-                "best_around": max(around, default=np.nan),
+                "best_around": ranked[0] if ranked else np.nan,
+                "second_around": ranked[1] if len(ranked) > 1 else np.nan,
                 "elsewhere": (
                     float(likeness[lines[elsewhere]].max()) if elsewhere else np.nan
                 ),
@@ -176,6 +183,37 @@ def separation(right: np.ndarray, wrong: np.ndarray) -> float:
     """The chance that a right place looks more like the photo than a wrong one."""
     labels = np.concatenate([np.ones(len(right)), np.zeros(len(wrong))])
     return float(roc_auc_score(labels, np.concatenate([right, wrong])))
+
+
+def read_rules(queries: pd.DataFrame) -> dict[str, list[dict[str, float]]]:
+    """What the rules of the app would do with the photos played as captures.
+
+    A place is taken without asking when the photo looks more like it than
+    like the second by a clear lead; the share of such captures, and of right
+    ones among them. A shot is refused when no candidate reaches a likeness;
+    the share of photos refused although they show their place.
+    """
+    contested = queries[queries["candidates"] > 1]
+    likeness = contested[["own", "best_around", "second_around"]].to_numpy()
+    ordered = np.sort(np.nan_to_num(likeness, nan=-np.inf), axis=1)
+    lead = ordered[:, -1] - ordered[:, -2]
+    right = (contested["own"] > contested["best_around"]).to_numpy()
+    leads = []
+    for clear in CLEAR_LEADS:
+        taken = lead >= clear
+        leads.append(
+            {
+                "clear_lead": clear,
+                "taken_without_asking": round(float(taken.mean()), 3),
+                "right_among_them": round(float(right[taken].mean()), 3),
+            }
+        )
+    best = np.fmax(queries["own"].to_numpy(), queries["best_around"].to_numpy())
+    refusals = [
+        {"recognised_from": level, "refused": round(float((best < level).mean()), 3)}
+        for level in RECOGNISED_FROM
+    ]
+    return {"leads": leads, "refusals": refusals}
 
 
 def measure(queries: pd.DataFrame, wrong: np.ndarray) -> dict[str, Any]:
@@ -219,6 +257,7 @@ def measure(queries: pd.DataFrame, wrong: np.ndarray) -> dict[str, Any]:
         "likeness_elsewhere_median": round(float(np.median(elsewhere)), 3),
         "strict_thresholds": strict,
         "lenient_thresholds": lenient,
+        **read_rules(queries),
     }
 
 

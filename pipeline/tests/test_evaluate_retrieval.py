@@ -139,6 +139,23 @@ def test_each_photo_is_played_as_a_capture() -> None:
     # which look like nothing of the church or the tower, stay out.
     assert lenient[0]["threshold"] < 0.7
     assert lenient[0]["elsewhere_kept_out"] > 0.5
+    # The leads of the first place over the second: 0.08 for the first two
+    # church photos, 0.01 for the third, 0.23 for the first tower photo, and
+    # 0.46 for the confusing one, which looks far more like the church.
+    leads = {row["clear_lead"]: row for row in summary["leads"]}
+    assert leads[0.05] == {
+        "clear_lead": 0.05,
+        "taken_without_asking": 0.8,
+        "right_among_them": 0.75,
+    }
+    assert leads[0.15] == {
+        "clear_lead": 0.15,
+        "taken_without_asking": 0.4,
+        "right_among_them": 0.5,
+    }
+    refusals = {row["recognised_from"]: row["refused"] for row in summary["refusals"]}
+    assert refusals[0.35] == 0.0
+    assert set(refusals) == {0.35, 0.42, 0.5}
 
 
 def test_photo_alone_in_its_session_and_place_is_not_played() -> None:
