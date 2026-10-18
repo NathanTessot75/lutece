@@ -32,6 +32,42 @@ moment de la photo, pour mesurer et améliorer la reconnaissance.
 Un nouveau texte de consentement : changer `CONSENT_VERSION`. Les joueurs
 retrouvent alors l'interrupteur éteint et relisent le texte avant de rallumer.
 
+## Classements (phase 5)
+
+Les joueurs qui le veulent comparent leurs points, pour tout Paris et par
+arrondissement, sous un pseudonyme.
+
+- **Dans l'app** : l'écran « Classement », depuis la Collection. La première
+  fois, il explique ce qui part et qui voit quoi, et demande un pseudonyme
+  (3 à 20 caractères, unique sans tenir compte des majuscules). Ensuite,
+  chaque capture part une fois, dans l'ordre, y compris celles faites avant
+  l'inscription ; ce qui échoue repart au retour dans l'app. « Quitter les
+  classements » efface le profil et, avec lui, les captures.
+- **`places`** : les 394 lieux de l'app (contour, distance de capture,
+  arrondissement, rareté), que le serveur lit pour vérifier une capture.
+  Le pipeline les écrit dans `seeds/places.sql`
+  (`uv run python -m lutece_pipeline.export_places`) ; `supabase db push
+  --include-seed` les envoie au projet hébergé, sans mot de passe. Un lieu
+  qui quitte le fichier embarqué reste sur le serveur.
+- **`profiles`** et **`captures`** (SPEC §5.3) : chaque joueur ne lit et ne
+  supprime que son profil et ses captures. Il n'ajoute une capture que par
+  la fonction `submit_capture`, qui la vérifie et lui donne ses points
+  d'après la rareté du lieu sur le serveur :
+  - refusée si sa date est dans le futur, ou si la position est à plus du
+    double de la portée (le plus grand de la distance de capture du lieu et
+    de 150 m, plus la précision du GPS jusqu'à 100 m) ;
+  - en attente au-delà de la portée, au-dessus de 60 km/h depuis la capture
+    précédente, ou au-delà de 30 captures dans la journée ;
+  - acceptée sinon. Seuils provisoires (décision du 19 octobre 2026).
+  Une capture en attente ne compte qu'une fois validée à la main : passer son
+  `status` à `accepted` dans le tableau de bord (Table Editor, `captures`).
+- **`leaderboard(in_arrondissement, size)`** ne renvoie que le rang, le
+  pseudonyme, les points et le nombre de captures acceptées, et toujours la
+  ligne du joueur qui demande. Les autres joueurs ne voient jamais où ni quand.
+
+Un nouveau texte d'inscription : changer `LEADERBOARD_CONSENT_VERSION`
+(`apps/mobile/src/features/ranking/send.ts`).
+
 ## Brancher l'app
 
 L'app lit l'URL du projet et sa clé publiable dans `apps/mobile/.env` (modèle
@@ -45,8 +81,17 @@ passe de la base ne vont jamais dans l'app.
 |---|---|
 | `supabase test db` | tests des droits (pgTAP, `tests/database/`) sur la pile locale |
 | `supabase db push` | appliquer les migrations au projet hébergé (lié par `supabase link`) |
+| `supabase db push --include-seed` | y envoyer aussi les lieux de `seeds/places.sql` |
 
 ## Écarts au SPEC
+
+- **Vérification des captures** : le SPEC (§7) prévoit une Edge Function
+  `validate-capture`. Une fonction de la base, `submit_capture`, fait les
+  mêmes contrôles en une seule opération, se teste comme le reste et n'a pas
+  de service à déployer.
+- **Lieux des captures** : la table `monuments` du SPEC exige une notice
+  Mérimée ; les captures renvoient à `places`, qui tient aussi les lieux non
+  protégés.
 
 - **Connexion anonyme** : le SPEC prévoit Sign in with Apple et le lien
   magique (§4) pour les comptes de la phase 5. Contribuer ne demande pas de
