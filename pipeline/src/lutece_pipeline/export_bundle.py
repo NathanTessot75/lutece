@@ -42,6 +42,7 @@ from lutece_pipeline import (
     resolve_entities,
     selection,
     series,
+    story_files,
     visibility,
 )
 from lutece_pipeline.paths import PIPELINE_ROOT, REVIEW_DIR
@@ -72,6 +73,7 @@ LANDMARKS_PARQUET = landmark_places.PLACES_PARQUET
 LANDMARK_FILES_PARQUET = landmark_places.FILES_PARQUET
 CHECKS_PARQUET = check_reference_photos.CHECKS_PARQUET
 RARITY_PARQUET = rarity.RARITY_PARQUET
+STORIES_DIR = story_files.STORIES_DIR
 SERIES_PARQUET = series.SERIES_PARQUET
 SERIES_MEMBERS_PARQUET = series.MEMBERS_PARQUET
 ASSETS_FOLDER = PIPELINE_ROOT.parent / "apps" / "mobile" / "assets" / "data"
@@ -120,7 +122,14 @@ create table monuments (
     capture_reach_m integer not null,
     photo_count integer not null,
     rarity_score real,
-    rarity_tier text
+    rarity_tier text,
+    -- The story page (SPEC §5.4), drafted from the sources it cites, and
+    -- whether a person has read it; none until one is written.
+    summary_fr text,
+    story_fr text,
+    did_you_know_fr text,
+    story_sources text,
+    story_reviewed integer
 ) strict;
 
 create index monuments_arrondissement on monuments (arrondissement);
@@ -190,6 +199,11 @@ MONUMENT_COLUMNS = [
     "photo_count",
     "rarity_score",
     "rarity_tier",
+    "summary_fr",
+    "story_fr",
+    "did_you_know_fr",
+    "story_sources",
+    "story_reviewed",
 ]
 PHOTO_COLUMNS = [
     "monument_id",
@@ -327,6 +341,7 @@ def build_monuments(
                 "photo_count": photo_counts.get(merimee_id, 0),
                 "rarity_score": None,
                 "rarity_tier": None,
+                **NO_STORY,
             }
         )
     tell_apart(rows)
@@ -377,6 +392,7 @@ def build_landmarks(
                 "photo_count": photo_counts.get(place["qid"], 0),
                 "rarity_score": None,
                 "rarity_tier": None,
+                **NO_STORY,
             }
         )
     return rows
@@ -385,6 +401,62 @@ def build_landmarks(
 def place_key(row: Record) -> str:
     """How the later steps know a place: by its notice, or by its Wikidata item."""
     return row["merimee_id"] or row["wikidata_qid"]
+
+
+NO_STORY = {
+    "summary_fr": None,
+    "story_fr": None,
+    "did_you_know_fr": None,
+    "story_sources": None,
+    "story_reviewed": None,
+}
+# How a story page credits each of its sources, and under which licence.
+WIKIPEDIA_LICENCE = "CC BY-SA 4.0"
+MERIMEE_LICENCE = "Licence Ouverte 2.0"
+
+
+def story_sources(story: Record, merimee_id: str | None) -> list[dict[str, str]]:
+    """The sources a story was drafted from, with a link to what was read."""
+    sources = []
+    if "wikipedia" in story["sources"] and story["wikipedia"]:
+        title = story["wikipedia"].replace(" ", "_")
+        url = f"https://fr.wikipedia.org/wiki/{title}"
+        if story["revision"]:
+            url = f"https://fr.wikipedia.org/w/index.php?title={title}&oldid={story['revision']}"
+        sources.append(
+            {
+                "label": f"Wikipédia : {story['wikipedia']}",
+                "url": url,
+                "licence": WIKIPEDIA_LICENCE,
+            }
+        )
+    if "merimee" in story["sources"] and merimee_id:
+        sources.append(
+            {
+                "label": f"Notice Mérimée {merimee_id}",
+                "url": f"https://pop.culture.gouv.fr/notice/merimee/{merimee_id}",
+                "licence": MERIMEE_LICENCE,
+            }
+        )
+    return sources
+
+
+def add_stories(rows: Sequence[dict[str, Any]], stories: Mapping[str, Record]) -> int:
+    """Give each place its story page; tell how many have one to show."""
+    shown = 0
+    for row in rows:
+        story = stories.get(place_key(row))
+        if story is None or story["story"] is None:
+            continue
+        row["summary_fr"] = story["summary"]
+        row["story_fr"] = story["story"]
+        row["did_you_know_fr"] = story["did_you_know"]
+        row["story_sources"] = json.dumps(
+            story_sources(story, row["merimee_id"]), ensure_ascii=False
+        )
+        row["story_reviewed"] = int(story["status"] == story_files.REVIEWED)
+        shown += 1
+    return shown
 
 
 def read_rarity(path: Path) -> dict[str, tuple[float, str]]:
@@ -690,6 +762,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     unrated = add_rarity(monuments, read_rarity(RARITY_PARQUET))
     if unrated:
         logger.warning("%d places have no rarity: run the rarity step", unrated)
+    told = add_stories(
+        monuments,
+        story_files.read_stories(STORIES_DIR) if STORIES_DIR.exists() else {},
+    )
+    logger.info("%d places have a story page", told)
     series_rows, members = read_series(SERIES_PARQUET, SERIES_MEMBERS_PARQUET)
     if not series_rows:
         logger.warning("No series in %s: run the series step", SERIES_PARQUET)

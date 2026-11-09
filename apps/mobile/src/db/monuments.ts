@@ -20,6 +20,13 @@ export type MonumentSummary = {
 
 export type Visibility = 'visible' | 'non_visible' | 'inconnu';
 
+/** A source of a story page, with what its licence asks to show. */
+export type StorySource = {
+  label: string;
+  url: string;
+  licence: string;
+};
+
 /** Everything the page of a monument says about it. */
 export type MonumentDetails = MonumentSummary & {
   /** The notice of a protected monument; none for a place that is not one. */
@@ -32,6 +39,13 @@ export type MonumentDetails = MonumentSummary & {
   /** « classé » or « inscrit »; none for a place that is not protected. */
   protection: string | null;
   visibility: Visibility;
+  /** The story page, drafted from its sources (SPEC §5.4); none until one is written. */
+  summary: string | null;
+  story: string | null;
+  didYouKnow: string | null;
+  storySources: StorySource[];
+  /** Whether a person has read the story page. */
+  storyReviewed: boolean;
 };
 
 /** A photo of a monument on Wikimedia Commons, with what its licence asks to show. */
@@ -79,6 +93,8 @@ export type CapturableMonument = MonumentSummary & {
   reachM: number;
   /** Its outline, as the GeoJSON multipolygon that the pipeline wrote. */
   footprint: string;
+  /** What the capture tells of it, when its story page is written. */
+  summary: string | null;
 };
 
 export type Bounds = {
@@ -134,7 +150,12 @@ const DETAILS = `
     wikidata_qid as wikidataQid,
     wikipedia,
     protection,
-    visibility
+    visibility,
+    summary_fr as summary,
+    story_fr as story,
+    did_you_know_fr as didYouKnow,
+    story_sources as storySources,
+    story_reviewed as storyReviewed
   from monuments
   where id = $id
 `;
@@ -153,7 +174,8 @@ const CAPTURABLE_AROUND = `
     id, title, arrondissement, category, century, readiness,
     rarity_tier as rarityTier,
     capture_reach_m as reachM,
-    footprint
+    footprint,
+    summary_fr as summary
   from monuments
   where readiness <> 'not_ready'
     and $lat between min_lat - (max(capture_reach_m, $leastReach) + $margin) / $metresPerLat
@@ -165,7 +187,11 @@ const CAPTURABLE_AROUND = `
 const METRES_PER_DEGREE = 111_195;
 
 // The bundle writes the architects as a JSON array.
-type DetailsRow = Omit<MonumentDetails, 'architects'> & { architects: string };
+type DetailsRow = Omit<MonumentDetails, 'architects' | 'storySources' | 'storyReviewed'> & {
+  architects: string;
+  storySources: string | null;
+  storyReviewed: number | null;
+};
 
 type CellRow = MonumentPlace & {
   cell_row: number;
@@ -219,7 +245,14 @@ export async function getFootprint(db: SQLiteDatabase, id: string): Promise<stri
 
 export async function getMonument(db: SQLiteDatabase, id: string): Promise<MonumentDetails | null> {
   const row = await db.getFirstAsync<DetailsRow>(DETAILS, { $id: id });
-  return row && { ...row, architects: JSON.parse(row.architects) as string[] };
+  return (
+    row && {
+      ...row,
+      architects: JSON.parse(row.architects) as string[],
+      storySources: row.storySources ? (JSON.parse(row.storySources) as StorySource[]) : [],
+      storyReviewed: row.storyReviewed === 1,
+    }
+  );
 }
 
 /** The photos of a monument, the best one first. */

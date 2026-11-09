@@ -24,7 +24,8 @@ const BADGES_DELAY_MS = 1150;
 const ACTIONS_DELAY_MS = 1400;
 
 type Props = {
-  monument: MonumentSummary;
+  /** With what its story page tells of it, when one is written. */
+  monument: MonumentSummary & { summary: string | null };
   photoFile: string | null;
   /** What the capture brought. */
   points: number;
@@ -95,6 +96,9 @@ export function Captured({ monument, photoFile, points, onContinue }: Props) {
         <Text style={[styles.details, { color: theme.secondaryText }]}>
           {describeMonument(monument)}
         </Text>
+        {monument.summary !== null && (
+          <Text style={[styles.summary, { color: theme.text }]}>{monument.summary}</Text>
+        )}
       </Animated.View>
       <Animated.View
         entering={ZoomIn.delay(REWARD_DELAY_MS).springify().damping(10)}
@@ -213,6 +217,12 @@ const styles = StyleSheet.create({
   details: {
     fontSize: 15,
     textAlign: 'center',
+  },
+  summary: {
+    fontSize: 16,
+    lineHeight: 23,
+    textAlign: 'center',
+    marginTop: 8,
   },
   reward: {
     alignSelf: 'stretch',

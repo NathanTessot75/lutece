@@ -107,6 +107,17 @@ function describeCaveat(monument: MonumentDetails): string | null {
   return null;
 }
 
+/** Where the story comes from, and whether a person has read it. */
+function describeCredit(monument: MonumentDetails): string {
+  const fromWikipedia = monument.storySources.some((source) => source.licence.startsWith('CC BY-SA'));
+  const parts = ['Texte rédigé avec l’aide d’une IA à partir des sources ci-dessous'];
+  if (fromWikipedia) {
+    parts.push('et diffusé sous la même licence CC BY-SA 4.0');
+  }
+  const credit = `${parts.join(', ')}.`;
+  return monument.storyReviewed ? credit : `${credit} Pas encore relu.`;
+}
+
 function Section({ title, theme }: { title: string; theme: Theme }) {
   return <Text style={[styles.section, { color: theme.secondaryText }]}>{title}</Text>;
 }
@@ -215,11 +226,41 @@ export function MonumentPage({ monument, photos, capture }: Props) {
       )}
 
       <Section title="Histoire" theme={theme} />
-      <View style={[styles.group, { backgroundColor: theme.surface }]}>
-        <Text style={[styles.note, { color: theme.secondaryText }]}>
-          Fiche à enrichir : l’histoire de ce lieu n’est pas encore rédigée.
-        </Text>
-      </View>
+      {monument.story === null ? (
+        <View style={[styles.group, { backgroundColor: theme.surface }]}>
+          <Text style={[styles.note, { color: theme.secondaryText }]}>
+            Fiche à enrichir : l’histoire de ce lieu n’est pas encore rédigée.
+          </Text>
+        </View>
+      ) : (
+        <View style={[styles.group, styles.story, { backgroundColor: theme.surface }]}>
+          {monument.story.split(/\n\s*\n/).map((paragraph) => (
+            <Text key={paragraph} style={[styles.paragraph, { color: theme.text }]}>
+              {paragraph}
+            </Text>
+          ))}
+          {monument.didYouKnow !== null && (
+            <View style={[styles.didYouKnow, { borderColor: theme.accent }]}>
+              <Text style={[styles.didYouKnowTitle, { color: theme.accent }]}>Le saviez-vous ?</Text>
+              <Text style={[styles.paragraph, { color: theme.text }]}>{monument.didYouKnow}</Text>
+            </View>
+          )}
+          <Text style={[styles.credit, { color: theme.secondaryText }]}>
+            {describeCredit(monument)}
+          </Text>
+          {monument.storySources.map((source) => (
+            <Pressable
+              key={source.url}
+              onPress={() => void Linking.openURL(source.url)}
+              accessibilityRole="link"
+            >
+              <Text style={[styles.credit, { color: theme.accent }]}>
+                {source.label} ({source.licence})
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
 
       <Section title="Sources" theme={theme} />
       <View style={[styles.group, { backgroundColor: theme.surface }]}>
@@ -306,6 +347,27 @@ const styles = StyleSheet.create({
   },
   value: {
     fontSize: 16,
+  },
+  story: {
+    paddingVertical: 12,
+    gap: 12,
+  },
+  paragraph: {
+    fontSize: 16,
+    lineHeight: 23,
+  },
+  didYouKnow: {
+    borderLeftWidth: 3,
+    paddingLeft: 12,
+    gap: 4,
+  },
+  didYouKnowTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  credit: {
+    fontSize: 13,
+    lineHeight: 18,
   },
   note: {
     fontSize: 15,

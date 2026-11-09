@@ -132,9 +132,14 @@ def test_monument_row_is_what_the_app_shows() -> None:
         "readiness": "ready",
         "capture_reach_m": 222,
         "photo_count": 15,
-        # The rarity step comes later: see add_rarity.
+        # The rarity and story steps come later: see add_rarity, add_stories.
         "rarity_score": None,
         "rarity_tier": None,
+        "summary_fr": None,
+        "story_fr": None,
+        "did_you_know_fr": None,
+        "story_sources": None,
+        "story_reviewed": None,
     }
     assert rows[1]["title"] == "Immeuble, 62 rue Saint-Antoine"
     assert rows[1]["wikidata_qid"] is None
@@ -257,6 +262,48 @@ def test_places_get_their_rarity_by_notice_or_by_item() -> None:
     assert (rows[0]["rarity_score"], rows[0]["rarity_tier"]) == (0.1235, "rare")
     assert (rows[1]["rarity_score"], rows[1]["rarity_tier"]) == (0.0, "commun")
     assert rows[2]["rarity_score"] is None
+
+
+def test_places_get_their_story_page_with_its_sources() -> None:
+    rows = [
+        {"merimee_id": "PA1", "wikidata_qid": "Q1", **bundle.NO_STORY},
+        {"merimee_id": None, "wikidata_qid": "Q2", **bundle.NO_STORY},
+        {"merimee_id": "PA3", "wikidata_qid": None, **bundle.NO_STORY},
+    ]
+    story = {
+        "status": "relu",
+        "sources": ["merimee", "wikipedia"],
+        "wikipedia": "Hôtel de Sully",
+        "revision": 42,
+        "summary": "Un hôtel.",
+        "story": "Une histoire.",
+        "did_you_know": None,
+    }
+    thin = {**story, "status": "à enrichir", "summary": None, "story": None}
+    stories = {
+        "PA1": story,
+        "Q2": {**story, "status": "à relire", "sources": ["wikipedia"]},
+        "PA3": thin,
+    }
+    assert bundle.add_stories(rows, stories) == 2
+    assert rows[0]["story_fr"] == "Une histoire."
+    assert rows[0]["story_reviewed"] == 1
+    assert json.loads(rows[0]["story_sources"]) == [
+        {
+            "label": "Wikipédia : Hôtel de Sully",
+            "url": "https://fr.wikipedia.org/w/index.php?title=Hôtel_de_Sully&oldid=42",
+            "licence": "CC BY-SA 4.0",
+        },
+        {
+            "label": "Notice Mérimée PA1",
+            "url": "https://pop.culture.gouv.fr/notice/merimee/PA1",
+            "licence": "Licence Ouverte 2.0",
+        },
+    ]
+    # A place without a notice cites Wikipedia only; a thin one gets no page.
+    assert rows[1]["story_reviewed"] == 0
+    assert len(json.loads(rows[1]["story_sources"])) == 1
+    assert rows[2]["story_fr"] is None
 
 
 def test_series_keep_the_places_that_the_bundle_holds() -> None:
@@ -423,6 +470,7 @@ def run_main(folder: Path, out: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         "LANDMARK_FILES_PARQUET": out / "landmark_files.parquet",
         "CHECKS_PARQUET": out / "reference_photo_checks.parquet",
         "RARITY_PARQUET": out / "rarity.parquet",
+        "STORIES_DIR": out / "stories",
         "SERIES_PARQUET": out / "series.parquet",
         "SERIES_MEMBERS_PARQUET": out / "series_members.parquet",
         "EMBEDDINGS_PARQUET": out / "int8-crop.parquet",
