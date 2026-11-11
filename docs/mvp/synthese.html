@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Lutèce — synthèse du MVP</title>
+<style>
+  @page { size: A4; margin: 15mm 17mm 13mm; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 10pt;
+    line-height: 1.4;
+    color: #1d1d1f;
+  }
+  h1 { font-size: 19pt; margin: 0 0 2pt; color: #0B1F44; }
+  .subtitle { font-size: 10.5pt; margin: 0 0 2pt; }
+  .meta { font-size: 8.5pt; color: #6e6e73; margin: 0 0 11pt; }
+  h2 { font-size: 10.5pt; margin: 9pt 0 2.5pt; color: #0B1F44; }
+  p { margin: 0 0 3.5pt; text-align: left; }
+  .link { color: #2F5F9A; }
+</style>
+</head>
+<body>
+<h1>Lutèce</h1>
+<p class="subtitle">Capturer les monuments de Paris en les photographiant</p>
+<p class="meta">Nathan Tessot · MVP · novembre 2026</p>
+
+<h2>Contexte</h2>
+<p>À Paris, 1&nbsp;878 bâtiments sont protégés au titre des monuments historiques. Chacun a sa notice dans
+la base Mérimée du ministère de la Culture&nbsp;: nom, adresse, dates, architectes, historique. Mais une
+notice ne dit ni où se trouve exactement le bâtiment, ni à quoi il ressemble&nbsp;: il faut la relier à
+d'autres bases ouvertes. Wikidata, la base de connaissances liée à Wikipédia, sert de pivot entre les
+sources&nbsp;; OpenStreetMap, la carte collaborative, donne le contour de chaque bâtiment&nbsp;; Wikimedia
+Commons fournit des photos libres. Pour reconnaître un monument sur une photo, un modèle de vision
+résume chaque image en un vecteur, une liste de 384 nombres&nbsp;: deux photos du même lieu ont des
+vecteurs proches.</p>
+
+<h2>1. Quoi et pour qui</h2>
+<p>Lutèce est une application iPhone qui fait de Paris un terrain de jeu&nbsp;: on se promène, on vise un
+monument avec l'appareil photo et on le «&nbsp;capture&nbsp;» pour l'ajouter à sa collection et découvrir son
+histoire. Elle s'adresse aux promeneurs curieux, Parisiens comme visiteurs, et les pousse vers les
+lieux méconnus&nbsp;: un monument peu connu rapporte plus de points qu'un monument célèbre. C'est aussi un
+projet de data science&nbsp;: construire une base patrimoniale unifiée à partir de sources ouvertes, et
+évaluer rigoureusement la reconnaissance des monuments.</p>
+
+<h2>2. Ce que fait le MVP</h2>
+<p>Le MVP est une application qui tourne sur mon iPhone, nourrie par un pipeline de données en Python.
+Le pipeline relie les sources et choisit les 394 lieux de la carte&nbsp;: 323 monuments parmi les plus
+connus et 71 lieux célèbres non protégés, comme la tour Montparnasse ou le Moulin Rouge. Pour capturer,
+le téléphone combine trois indices&nbsp;: la position GPS, la direction de la boussole et la photo, que le
+modèle de vision analyse sur place, sans réseau. Sur 4&nbsp;311 photos de Commons, le bon lieu arrive en
+tête dans 89,8&nbsp;% des cas, contre 33,6&nbsp;% au hasard parmi les lieux voisins, et l'application refuse à
+tort 4,1&nbsp;% des photos qui montrent pourtant leur monument. Chaque capture rapporte des points selon la
+rareté du lieu, mesurée par les lectures de son article Wikipédia, fait avancer des séries (les ponts,
+les passages couverts…) et débloque des badges&nbsp;; un classement en ligne vérifie chaque capture sur le
+serveur. Les fiches histoire sont rédigées par un modèle de langage à partir de la notice et de
+l'article, sources citées.</p>
+
+<h2>3. Critère de réussite</h2>
+<p>Le projet sera réussi si, sur une centaine de photos prises dans la rue et étiquetées à la main,
+l'application capture le bon monument dans au moins 85&nbsp;% des cas, et se trompe de monument moins
+d'une fois sur vingt.</p>
+
+<h2>4. Suites</h2>
+<p>La prochaine étape est de constituer ce jeu de test. L'application a déjà un mode collecte, qui
+enregistre chaque photo avec tout ce que l'application savait au moment de la prise (position, cap,
+décision), et les joueurs volontaires peuvent envoyer les leurs. Je mesurerai la reconnaissance en
+conditions réelles et réglerai les seuils de décision, encore fixés sur les photos de Commons, plus
+nettes que celles d'un téléphone. Viendront ensuite la relecture des fiches, l'écran d'accueil, les
+crédits et la politique de confidentialité. Le rendu final visé est l'application publiée sur l'App
+Store, ce qui demande un compte développeur Apple payant, et un rapport méthodologique sur la
+construction de la base et l'évaluation de la reconnaissance.</p>
+
+<h2>5. Documents associés</h2>
+<p>Je joins le code et son mode d'emploi (lien GitHub)&nbsp;: l'application, le pipeline de données et le
+serveur, avec leurs tests. Le dépôt contient aussi le fichier des 394 lieux embarqué dans
+l'application, le rapport de qualité de la base patrimoniale et la documentation détaillée du
+pipeline, qui sert d'ébauche au rapport final. J'ajoute une vidéo d'une capture dans la rue et des
+captures d'écran, puisque l'application ne peut pas encore s'installer ailleurs que sur mon
+téléphone.</p>
+</body>
+</html>
