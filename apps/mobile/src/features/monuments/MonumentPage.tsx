@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import type { Capture } from '@/db/captures';
 import type { MonumentDetails, MonumentPhoto } from '@/db/monuments';
@@ -11,6 +11,7 @@ import { capitalize, formatArrondissement, formatCentury, formatDate } from '@/l
 import { type Theme, useTheme } from '@/lib/theme';
 
 import { useGroups } from '@/features/progress/useGroups';
+import { Text, fonts } from '@/lib/typography';
 
 import { PhotoCarousel } from './PhotoCarousel';
 
@@ -82,8 +83,8 @@ function describeStatus(monument: MonumentDetails, capture: Capture | null, them
   if (capture !== null) {
     return {
       text: `Capturé le ${formatDate(capture.capturedAt)}`,
-      background: theme.accent,
-      color: theme.onAccent,
+      background: theme.gold,
+      color: theme.onGold,
     };
   }
   if (monument.readiness !== 'not_ready') {
@@ -288,8 +289,9 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   title: {
-    fontSize: 26,
-    fontWeight: '700',
+    fontFamily: fonts.title,
+    fontSize: 28,
+    lineHeight: 34,
     marginBottom: 6,
   },
   location: {

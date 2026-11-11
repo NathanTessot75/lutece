@@ -1,9 +1,10 @@
-import { Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
+import { Pressable, SectionList, StyleSheet, View } from 'react-native';
 
 import { useOpenMonument } from '@/features/monuments/useOpenMonument';
 import { formatDistance, formatHeading } from '@/lib/format';
 import type { CompassReading, Position } from '@/lib/location';
 import { type Theme, useTheme } from '@/lib/theme';
+import { Text } from '@/lib/typography';
 
 import type { Candidate } from './candidates';
 import { describeCandidate } from './describe';

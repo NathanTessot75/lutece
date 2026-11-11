@@ -1,10 +1,11 @@
 import { Directory, File, Paths } from 'expo-file-system';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { listReferenceSamples } from '@/db/monuments';
 import { type Theme, useTheme } from '@/lib/theme';
+import { Text } from '@/lib/typography';
 
 import { cosine } from './likeness';
 import { embed, openModel } from './model';

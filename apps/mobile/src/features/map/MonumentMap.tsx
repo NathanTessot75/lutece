@@ -1,7 +1,6 @@
-import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import MapView, { type LatLng, Marker, Polygon, type Region } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -9,6 +8,7 @@ import { type MonumentPlace, getFootprint } from '@/db/monuments';
 import { useCaptures } from '@/features/collection/CapturesProvider';
 import { useLocationAccess } from '@/lib/location';
 import { type Theme, useTheme } from '@/lib/theme';
+import { Text } from '@/lib/typography';
 
 import { type Outline, parseFootprint } from './footprint';
 import { NEIGHBOURHOOD_SPAN, PARIS, isInParis } from './grid';
@@ -42,10 +42,10 @@ function hasPin(marks: Mark[], monument: MonumentPlace): boolean {
   return marks.some((mark) => mark.kind === 'monument' && mark.monument.id === monument.id);
 }
 
-/** The city takes colour as it is captured: grey until then (SPEC §2). */
+/** The city turns gold as it is captured (SPEC §2). */
 function pinColor(monument: MonumentPlace, captured: boolean, theme: Theme): string {
   if (captured) {
-    return theme.accent;
+    return theme.gold;
   }
   return monument.readiness === 'not_ready' ? theme.muted : theme.pending;
 }
@@ -74,7 +74,6 @@ function Group({ count, theme }: { count: number; theme: Theme }) {
 
 export function MonumentMap() {
   const db = useSQLiteContext();
-  const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { byMonument: captured } = useCaptures();
@@ -231,13 +230,6 @@ export function MonumentMap() {
               </Text>
             </Pressable>
           )}
-          <Pressable
-            style={[styles.button, { backgroundColor: theme.accent }]}
-            onPress={() => router.push('/capture')}
-            accessibilityRole="button"
-          >
-            <Text style={[styles.buttonLabel, { color: theme.onAccent }]}>Capturer</Text>
-          </Pressable>
         </View>
         {selection && (
           <View onLayout={({ nativeEvent }) => setCardHeight(nativeEvent.layout.height)}>

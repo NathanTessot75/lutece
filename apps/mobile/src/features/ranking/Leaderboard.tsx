@@ -1,19 +1,12 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import {
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { formatPoints } from '@/features/game/rarity';
 import { formatCount } from '@/lib/format';
 import { supabase } from '@/lib/supabase';
 import { type Theme, useTheme } from '@/lib/theme';
+import { Text, fonts } from '@/lib/typography';
 
 import { useRanking } from './RankingProvider';
 import { PseudonymRefused, type Standing, fetchLeaderboard } from './send';
@@ -319,7 +312,14 @@ const styles = StyleSheet.create({
   section: { gap: 4 },
   heading: { fontSize: 15, fontWeight: '600' },
   note: { fontSize: 14, lineHeight: 20 },
-  input: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 17, marginTop: 8 },
+  input: {
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontFamily: fonts.regular,
+    fontSize: 17,
+    marginTop: 8,
+  },
   problem: { fontSize: 14 },
   button: { alignItems: 'center', borderRadius: 14, paddingVertical: 14 },
   buttonLabel: { fontSize: 17, fontWeight: '600' },

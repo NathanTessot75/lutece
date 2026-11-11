@@ -1,9 +1,10 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import type { MonumentSummary } from '@/db/monuments';
 import { describeMonument } from '@/features/monuments/describe';
 import { useOpenMonument } from '@/features/monuments/useOpenMonument';
 import { useTheme } from '@/lib/theme';
+import { Text, fonts } from '@/lib/typography';
 
 /** What the map says about the monument whose pin was touched; it opens its page. */
 export function SelectedMonumentCard({ monument }: { monument: MonumentSummary }) {
@@ -48,8 +49,8 @@ const styles = StyleSheet.create({
     fontSize: 24,
   },
   title: {
-    fontSize: 17,
-    fontWeight: '600',
+    fontFamily: fonts.title,
+    fontSize: 19,
   },
   details: {
     fontSize: 14,

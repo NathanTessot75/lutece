@@ -1,6 +1,6 @@
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
-import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Image, Pressable, StyleSheet, View } from 'react-native';
 
 import type { Capture } from '@/db/captures';
 import { type MonumentSummary, listMonumentsByIds } from '@/db/monuments';
@@ -11,6 +11,7 @@ import { describeMonument } from '@/features/monuments/describe';
 import { useOpenMonument } from '@/features/monuments/useOpenMonument';
 import { formatDate } from '@/lib/format';
 import { type Theme, useTheme } from '@/lib/theme';
+import { Text } from '@/lib/typography';
 
 type RowProps = {
   monument: MonumentSummary;
@@ -109,7 +110,7 @@ export function GroupPage({ description, ids }: Props) {
             {progress.captured} sur {progress.total} {progress.captured > 1 ? 'capturés' : 'capturé'}
           </Text>
           <View style={[styles.track, { backgroundColor: theme.separator }]}>
-            <View style={[styles.fill, { width: `${share * 100}%`, backgroundColor: theme.accent }]} />
+            <View style={[styles.fill, { width: `${share * 100}%`, backgroundColor: theme.gold }]} />
           </View>
         </View>
       }

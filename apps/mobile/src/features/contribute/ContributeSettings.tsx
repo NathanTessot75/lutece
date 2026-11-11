@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 
 import { formatCount } from '@/lib/format';
 import { type Theme, useTheme } from '@/lib/theme';
+import { Text } from '@/lib/typography';
 
 import { useContribution } from './ContributeProvider';
 

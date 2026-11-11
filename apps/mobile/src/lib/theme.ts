@@ -1,6 +1,9 @@
+import { DarkTheme, DefaultTheme } from 'expo-router';
 import { useColorScheme } from 'react-native';
 
 import type { RarityTier } from '@/db/monuments';
+
+import { fonts } from './typography';
 
 export type Theme = {
   background: string;
@@ -8,9 +11,12 @@ export type Theme = {
   text: string;
   secondaryText: string;
   separator: string;
-  /** What the player has captured, and what the app invites to touch. */
+  /** What the app invites to touch: buttons, links, what is chosen. */
   accent: string;
   onAccent: string;
+  /** What is won: a capture, its points, a reward. */
+  gold: string;
+  onGold: string;
   /** What remains to capture. */
   pending: string;
   /** What can only be looked at. */
@@ -19,43 +25,78 @@ export type Theme = {
   rarity: Record<RarityTier, string>;
 };
 
+// The palette of the art direction (10 November 2026): Paris blue, sky
+// blue, cream, soft gold and city green.
+const PARIS_BLUE = '#0B1F44';
+const CREAM = '#F9F6F1';
+const SOFT_GOLD = '#F6C453';
+
 const LIGHT: Theme = {
-  background: '#F2F2F7',
+  background: CREAM,
   surface: '#FFFFFF',
-  text: '#1C1C1E',
-  secondaryText: '#6C6C70',
-  separator: '#D1D1D6',
-  accent: '#B5472B',
+  text: PARIS_BLUE,
+  secondaryText: '#5D6880',
+  separator: '#E5DFD3',
+  accent: PARIS_BLUE,
   onAccent: '#FFFFFF',
-  pending: '#55555A',
-  muted: '#B0B0B6',
+  gold: SOFT_GOLD,
+  onGold: PARIS_BLUE,
+  pending: '#2E4B7C',
+  muted: '#B9C1CE',
   rarity: {
-    commun: '#6C6C70',
-    peu_commun: '#1F7A45',
-    rare: '#2459B8',
-    légendaire: '#9A6500',
+    commun: '#5D6880',
+    peu_commun: '#4E7A4D',
+    rare: '#2F5F9A',
+    légendaire: '#A8780A',
   },
 };
 
-const DARK: Theme = {
-  background: '#000000',
-  surface: '#1C1C1E',
-  text: '#FFFFFF',
-  secondaryText: '#98989F',
-  separator: '#38383A',
-  accent: '#E0694A',
-  onAccent: '#FFFFFF',
-  pending: '#C7C7CC',
-  muted: '#6E6E75',
+/** The night of Paris: the dark appearance, and the screens of a victory. */
+export const NIGHT: Theme = {
+  background: '#081631',
+  surface: '#132A55',
+  text: CREAM,
+  secondaryText: '#AEB9CC',
+  separator: '#25407A',
+  accent: SOFT_GOLD,
+  onAccent: PARIS_BLUE,
+  gold: SOFT_GOLD,
+  onGold: PARIS_BLUE,
+  pending: '#8FB0D6',
+  muted: '#4A5C80',
   rarity: {
-    commun: '#AEAEB2',
-    peu_commun: '#4CD787',
-    rare: '#7AA8FF',
-    légendaire: '#F2C14E',
+    commun: '#B8C2D3',
+    peu_commun: '#A7BFA6',
+    rare: '#8FB3DF',
+    légendaire: SOFT_GOLD,
   },
 };
 
 /** The colours of the current appearance of the phone, light or dark. */
 export function useTheme(): Theme {
-  return useColorScheme() === 'dark' ? DARK : LIGHT;
+  return useColorScheme() === 'dark' ? NIGHT : LIGHT;
+}
+
+/** The navigation bars and tab bar in the colours and faces of the app. */
+export function useNavigationTheme(): typeof DefaultTheme {
+  const dark = useColorScheme() === 'dark';
+  const base = dark ? DarkTheme : DefaultTheme;
+  const theme = dark ? NIGHT : LIGHT;
+  return {
+    ...base,
+    colors: {
+      ...base.colors,
+      primary: theme.accent,
+      background: theme.background,
+      card: theme.background,
+      text: theme.text,
+      border: theme.separator,
+    },
+    fonts: {
+      regular: { fontFamily: fonts.regular, fontWeight: 'normal' },
+      medium: { fontFamily: fonts.medium, fontWeight: 'normal' },
+      bold: { fontFamily: fonts.bold, fontWeight: 'normal' },
+      heavy: { fontFamily: fonts.heavy, fontWeight: 'normal' },
+    },
+  };
 }

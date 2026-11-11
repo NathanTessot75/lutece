@@ -1,7 +1,8 @@
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { useFonts } from 'expo-font';
+import { Stack, ThemeProvider } from 'expo-router';
 import { SQLiteProvider } from 'expo-sqlite';
 import { Suspense, useEffect } from 'react';
-import { ActivityIndicator, StyleSheet, useColorScheme, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { BUNDLE_ASSET, BUNDLE_DATABASE_NAME, removeStaleBundles } from '@/db/bundle';
 import { PlayerDatabaseProvider } from '@/db/PlayerDatabase';
@@ -9,7 +10,8 @@ import { CollectProvider } from '@/features/collect/CollectProvider';
 import { CapturesProvider } from '@/features/collection/CapturesProvider';
 import { ContributeProvider } from '@/features/contribute/ContributeProvider';
 import { RankingProvider } from '@/features/ranking/RankingProvider';
-import { useTheme } from '@/lib/theme';
+import { useNavigationTheme, useTheme } from '@/lib/theme';
+import { FONT_ASSETS, HEADER_FACES } from '@/lib/typography';
 
 function Loading() {
   const theme = useTheme();
@@ -22,7 +24,8 @@ function Loading() {
 
 export default function RootLayout() {
   // The navigation bars follow the appearance of the phone, like the screens.
-  const navigationTheme = useColorScheme() === 'dark' ? DarkTheme : DefaultTheme;
+  const navigationTheme = useNavigationTheme();
+  const [fontsLoaded, fontsFailed] = useFonts(FONT_ASSETS);
   useEffect(() => {
     try {
       removeStaleBundles();
@@ -30,6 +33,10 @@ export default function RootLayout() {
       // Old copies only take room: they will go at the next start.
     }
   }, []);
+  // Without its faces, the app would show its first screen in the system font.
+  if (!fontsLoaded && !fontsFailed) {
+    return <Loading />;
+  }
   return (
     <ThemeProvider value={navigationTheme}>
       <Suspense fallback={<Loading />}>
@@ -43,7 +50,7 @@ export default function RootLayout() {
               <CollectProvider>
                 <ContributeProvider>
                   <RankingProvider>
-                    <Stack>
+                    <Stack screenOptions={HEADER_FACES}>
                       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                     </Stack>
                   </RankingProvider>

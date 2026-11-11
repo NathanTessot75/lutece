@@ -1,9 +1,11 @@
-import { Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
+import type { ReactNode } from 'react';
+import { Pressable, SectionList, StyleSheet, View } from 'react-native';
 
 import type { MonumentSummary } from '@/db/monuments';
 import { tierLabel } from '@/features/game/rarity';
 import { formatArrondissement, formatCount } from '@/lib/format';
 import { type Theme, useTheme } from '@/lib/theme';
+import { Text } from '@/lib/typography';
 
 import { describeMonument } from './describe';
 import type { MonumentSection } from './sections';
@@ -58,19 +60,24 @@ function Header({ section, theme }: { section: MonumentSection; theme: Theme }) 
 }
 
 type Props = {
+  /** What comes above the list, before its caption. */
+  header?: ReactNode;
   sections: MonumentSection[];
   /** A line shown above the first arrondissement. */
   caption: string;
 };
 
-export function MonumentList({ sections, caption }: Props) {
+export function MonumentList({ header, sections, caption }: Props) {
   const theme = useTheme();
   const open = useOpenMonument();
   return (
     <SectionList
       sections={sections}
       ListHeaderComponent={
-        <Text style={[styles.caption, { color: theme.secondaryText }]}>{caption}</Text>
+        <>
+          {header}
+          <Text style={[styles.caption, { color: theme.secondaryText }]}>{caption}</Text>
+        </>
       }
       keyExtractor={(monument) => monument.id}
       renderItem={({ item }) => <Row monument={item} theme={theme} onOpen={open} />}

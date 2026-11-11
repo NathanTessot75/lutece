@@ -1,18 +1,27 @@
 import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
-import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Image, Pressable, StyleSheet, View } from 'react-native';
 
+import { BUNDLE_MONUMENT_COUNT } from '@/db/bundle';
 import type { Capture } from '@/db/captures';
-import { type MonumentSummary, countCapturable, listMonumentsByIds } from '@/db/monuments';
+import {
+  type MonumentSummary,
+  countCapturable,
+  listMonuments,
+  listMonumentsByIds,
+} from '@/db/monuments';
 import { photoUri } from '@/features/capture/photos';
 import { useBadgeBook } from '@/features/badges/useBadgeBook';
 import { useContribution } from '@/features/contribute/ContributeProvider';
 import { formatPoints, totalPoints } from '@/features/game/rarity';
 import { useRanking } from '@/features/ranking/RankingProvider';
+import { MonumentList } from '@/features/monuments/MonumentList';
+import { type MonumentSection, groupByArrondissement } from '@/features/monuments/sections';
 import { useOpenMonument } from '@/features/monuments/useOpenMonument';
 import { formatCount, formatDate } from '@/lib/format';
 import { type Theme, useTheme } from '@/lib/theme';
+import { Text } from '@/lib/typography';
 
 import { useCaptures } from './CapturesProvider';
 
@@ -123,6 +132,37 @@ function LeaderboardLink({ theme }: { theme: Theme }) {
   );
 }
 
+type Shown = 'captures' | 'places';
+
+const VIEWS: readonly { view: Shown; label: string }[] = [
+  { view: 'captures', label: 'Mes captures' },
+  { view: 'places', label: 'Tous les lieux' },
+];
+
+/** The two views of the collection, as tabs under the title. */
+function Views({ shown, onShow, theme }: { shown: Shown; onShow: (view: Shown) => void; theme: Theme }) {
+  return (
+    <View style={[styles.views, { borderColor: theme.separator }]} accessibilityRole="tablist">
+      {VIEWS.map(({ view, label }) => {
+        const chosen = view === shown;
+        return (
+          <Pressable
+            key={view}
+            style={[styles.view, chosen && { borderColor: theme.accent }]}
+            onPress={() => onShow(view)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: chosen }}
+          >
+            <Text style={[styles.viewLabel, { color: chosen ? theme.accent : theme.secondaryText }]}>
+              {label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 function countLine(captured: number, capturable: number, points: number): string {
   const what = captured > 1 ? 'monuments capturés' : 'monument capturé';
   return `${formatCount(captured)} ${what} sur ${formatCount(capturable)} · ${formatPoints(points)}`;
@@ -136,6 +176,8 @@ export function Collection() {
   const { captures } = useCaptures();
   const [monuments, setMonuments] = useState<ReadonlyMap<string, MonumentSummary>>(new Map());
   const [capturable, setCapturable] = useState<number | null>(null);
+  const [view, setView] = useState<Shown>('captures');
+  const [sections, setSections] = useState<MonumentSection[] | null>(null);
 
   useEffect(() => {
     let current = true;
@@ -162,6 +204,34 @@ export function Collection() {
     };
   }, [db, captures]);
 
+  // Every place, by arrondissement, the first time it is asked for.
+  const wantsPlaces = view === 'places';
+  useEffect(() => {
+    if (!wantsPlaces) {
+      return;
+    }
+    let current = true;
+    void listMonuments(db).then((found) => {
+      if (current) {
+        setSections(groupByArrondissement(found));
+      }
+    });
+    return () => {
+      current = false;
+    };
+  }, [db, wantsPlaces]);
+
+  const tabs = <Views shown={view} onShow={setView} theme={theme} />;
+  if (view === 'places') {
+    return (
+      <MonumentList
+        header={tabs}
+        sections={sections ?? []}
+        caption={`${formatCount(BUNDLE_MONUMENT_COUNT)} monuments et lieux de Paris`}
+      />
+    );
+  }
+
   // A capture whose monument has left the bundle is kept, but not shown.
   const shown = captures.flatMap((capture) => {
     const monument = monuments.get(capture.monumentId);
@@ -175,6 +245,7 @@ export function Collection() {
       style={{ backgroundColor: theme.background }}
       ListHeaderComponent={
         <>
+          {tabs}
           <Text style={[styles.caption, { color: theme.secondaryText }]}>
             {capturable === null ? ' ' : countLine(captures.length, capturable, totalPoints(captures))}
           </Text>
@@ -186,7 +257,7 @@ export function Collection() {
       ListEmptyComponent={
         captures.length === 0 ? (
           <Text style={[styles.empty, { color: theme.secondaryText }]}>
-            Ta collection est vide. Ouvre la carte, approche-toi d’un monument et capture-le.
+            Ta collection est vide. Approche-toi d’un monument et capture-le depuis l’onglet Photo.
           </Text>
         ) : null
       }
@@ -199,6 +270,24 @@ export function Collection() {
 }
 
 const styles = StyleSheet.create({
+  views: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  view: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 2,
+    borderColor: 'transparent',
+    marginBottom: -StyleSheet.hairlineWidth,
+  },
+  viewLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
   caption: {
     fontSize: 15,
     paddingHorizontal: 16,

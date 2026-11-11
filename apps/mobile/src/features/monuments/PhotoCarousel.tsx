@@ -1,17 +1,9 @@
 import { useState } from 'react';
-import {
-  FlatList,
-  Image,
-  Linking,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-  useWindowDimensions,
-} from 'react-native';
+import { FlatList, Image, Linking, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import type { MonumentPhoto } from '@/db/monuments';
 import { type Theme, useTheme } from '@/lib/theme';
+import { Text } from '@/lib/typography';
 
 // Photos are shown four units wide for three high, whatever their own shape.
 const HEIGHT_PER_WIDTH = 0.75;

@@ -1,8 +1,9 @@
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import { type BadgeState, FAMILIES } from '@/features/game/badges';
 import { formatDate } from '@/lib/format';
 import { type Theme, useTheme } from '@/lib/theme';
+import { Text } from '@/lib/typography';
 
 import { useBadgeBook } from './useBadgeBook';
 

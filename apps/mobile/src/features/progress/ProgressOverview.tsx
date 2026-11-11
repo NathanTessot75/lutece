@@ -1,10 +1,11 @@
 import { useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { useCaptures } from '@/features/collection/CapturesProvider';
 import { countProgress } from '@/features/game/progress';
 import { formatArrondissement } from '@/lib/format';
 import { useTheme } from '@/lib/theme';
+import { Text } from '@/lib/typography';
 
 import { GroupRow } from './GroupRow';
 import { useGroups } from './useGroups';

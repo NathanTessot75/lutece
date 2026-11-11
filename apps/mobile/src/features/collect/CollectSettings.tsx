@@ -1,13 +1,14 @@
 import { useSQLiteContext } from 'expo-sqlite';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 
 import { listMonumentsByIds } from '@/db/monuments';
 import { formatCount, formatDate } from '@/lib/format';
 import { useTheme } from '@/lib/theme';
 
 import { useContribution } from '@/features/contribute/ContributeProvider';
+import { Text } from '@/lib/typography';
 
 import { useCollect } from './CollectProvider';
 

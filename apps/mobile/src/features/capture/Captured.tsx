@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { useEffect } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
 
 import { useBadgeBook } from '@/features/badges/useBadgeBook';
@@ -12,7 +12,8 @@ import { formatPoints, tierLabel, tierNote } from '@/features/game/rarity';
 import { describeMonument } from '@/features/monuments/describe';
 import { useOpenMonument } from '@/features/monuments/useOpenMonument';
 import { useGroups } from '@/features/progress/useGroups';
-import { useTheme } from '@/lib/theme';
+import { NIGHT } from '@/lib/theme';
+import { Text, fonts } from '@/lib/typography';
 
 import { photoUri } from './photos';
 
@@ -34,7 +35,8 @@ type Props = {
 
 /** The monument is in the collection: the moment a capture is for. */
 export function Captured({ monument, photoFile, points, onContinue }: Props) {
-  const theme = useTheme();
+  // Whatever the appearance of the phone, a victory is shown at night.
+  const theme = NIGHT;
   const open = useOpenMonument();
   const tier = monument.rarityTier;
   const color = tier === null ? theme.accent : theme.rarity[tier];
@@ -111,7 +113,7 @@ export function Captured({ monument, photoFile, points, onContinue }: Props) {
         {tier !== null && (
           <Text style={[styles.tier, { color }]}>{tierLabel(tier).toLocaleUpperCase('fr')}</Text>
         )}
-        <Text style={[styles.points, { color }]}>+{formatPoints(points)}</Text>
+        <Text style={[styles.points, { color: theme.gold }]}>+{formatPoints(points)}</Text>
         {note !== null && (
           <Text style={[styles.note, { color: theme.secondaryText }]}>{note}</Text>
         )}
@@ -192,8 +194,8 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   cheer: {
-    fontSize: 34,
-    fontWeight: '800',
+    fontFamily: fonts.title,
+    fontSize: 38,
     marginBottom: 6,
   },
   photoFrame: {
@@ -210,8 +212,9 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   title: {
-    fontSize: 22,
-    fontWeight: '700',
+    fontFamily: fonts.title,
+    fontSize: 24,
+    lineHeight: 30,
     textAlign: 'center',
   },
   details: {

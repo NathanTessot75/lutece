@@ -1,7 +1,7 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import {
   type MonumentDetails,
@@ -12,6 +12,7 @@ import {
 import { useCaptures } from '@/features/collection/CapturesProvider';
 import { MonumentPage } from '@/features/monuments/MonumentPage';
 import { useTheme } from '@/lib/theme';
+import { Text } from '@/lib/typography';
 
 type Loaded = {
   id: string;

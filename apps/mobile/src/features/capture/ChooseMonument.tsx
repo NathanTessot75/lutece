@@ -1,9 +1,10 @@
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { listPhotos } from '@/db/monuments';
 import { useTheme } from '@/lib/theme';
+import { Text } from '@/lib/typography';
 
 import type { Scored } from './decision';
 import { describeCandidate } from './describe';

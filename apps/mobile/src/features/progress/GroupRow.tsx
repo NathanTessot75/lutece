@@ -1,7 +1,8 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { type Progress, formatProgress, isComplete } from '@/features/game/progress';
 import { useTheme } from '@/lib/theme';
+import { Text } from '@/lib/typography';
 
 type Props = {
   label: string;
@@ -36,7 +37,7 @@ export function GroupRow({ label, progress, following, onPress }: Props) {
         <View
           style={[
             styles.fill,
-            { width: `${share * 100}%`, backgroundColor: complete ? theme.accent : theme.pending },
+            { width: `${share * 100}%`, backgroundColor: complete ? theme.gold : theme.pending },
           ]}
         />
       </View>

@@ -3,7 +3,7 @@ import { useIsFocused } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { BUNDLE_MODEL, BUNDLE_VERSION } from '@/db/bundle';
 import {
@@ -30,6 +30,7 @@ import { likeness } from '@/features/recognition/likeness';
 import { embedPhoto, openModel } from '@/features/recognition/model';
 import { type CompassReading, type Position, useLocationAccess } from '@/lib/location';
 import { useTheme } from '@/lib/theme';
+import { Text } from '@/lib/typography';
 
 import { CandidateList } from './CandidateList';
 import { type Candidate, coneHalfWidth } from './candidates';
@@ -331,7 +332,7 @@ export function Capture() {
           accessibilityRole="button"
           accessibilityLabel="Capturer"
         >
-          <View style={[styles.shutterCore, { backgroundColor: theme.accent }]} />
+          <View style={[styles.shutterCore, { backgroundColor: theme.gold }]} />
         </Pressable>
       </View>
       {collect.enabled && (
