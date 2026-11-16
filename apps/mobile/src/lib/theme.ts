@@ -19,6 +19,10 @@ export type Theme = {
   onGold: string;
   /** What remains to capture. */
   pending: string;
+  /** The places on the map, dark in both appearances: to capture, captured, and what is drawn on them. */
+  mapToCapture: string;
+  mapCaptured: string;
+  onMap: string;
   /** What can only be looked at. */
   muted: string;
   /** Each tier of rarity, readable as text on the surface and the background. */
@@ -32,7 +36,7 @@ const LIMESTONE = '#F2EDE3';
 const POLISHED_STONE = '#FBF8F2';
 const INK = '#24272B';
 const SLATE = '#2E4050';
-const ZINC = '#5A7184';
+const VERDIGRIS = '#43705F';
 const GILDING = '#C9A24A';
 const NIGHT_STONE = '#16181B';
 const LAMPLIGHT = '#D9B45F';
@@ -47,11 +51,14 @@ const LIGHT: Theme = {
   onAccent: POLISHED_STONE,
   gold: GILDING,
   onGold: INK,
-  pending: ZINC,
+  pending: SLATE,
+  mapToCapture: SLATE,
+  mapCaptured: VERDIGRIS,
+  onMap: POLISHED_STONE,
   muted: '#C9C0B2',
   rarity: {
     commun: '#73695D',
-    peu_commun: '#43705F',
+    peu_commun: VERDIGRIS,
     rare: '#3A6283',
     légendaire: '#85631A',
   },
@@ -70,6 +77,9 @@ export const NIGHT: Theme = {
   gold: LAMPLIGHT,
   onGold: NIGHT_STONE,
   pending: '#9DB3C4',
+  mapToCapture: '#3B5A78',
+  mapCaptured: '#3E7A63',
+  onMap: '#EEE7DA',
   muted: '#4A5057',
   rarity: {
     commun: '#BFB6A8',

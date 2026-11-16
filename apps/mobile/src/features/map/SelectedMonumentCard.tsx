@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import type { MonumentSummary } from '@/db/monuments';
 import { describeMonument } from '@/features/monuments/describe';
 import { useOpenMonument } from '@/features/monuments/useOpenMonument';
+import { TAB_BAR_HEIGHT } from '@/lib/tabBar';
 import { useTheme } from '@/lib/theme';
 import { Text, fonts } from '@/lib/typography';
 
@@ -34,8 +35,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    borderRadius: 16,
-    paddingHorizontal: 16,
+    // As round as the tabs below it.
+    borderRadius: TAB_BAR_HEIGHT / 2,
+    paddingHorizontal: 24,
     paddingVertical: 14,
     shadowColor: '#000000',
     shadowOpacity: 0.18,

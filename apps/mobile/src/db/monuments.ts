@@ -84,6 +84,8 @@ export type MonumentCell = {
   count: number;
   lat: number;
   lon: number;
+  /** The monuments of the square that can be captured. */
+  capturableIds: string[];
   monument: MonumentPlace | null;
 };
 
@@ -131,7 +133,8 @@ const CELLS = `
     min(category) as category,
     min(century) as century,
     min(readiness) as readiness,
-    min(rarity_tier) as rarityTier
+    min(rarity_tier) as rarityTier,
+    group_concat(case when readiness <> 'not_ready' then id end) as capturable_ids
   from monuments
   where cast(lat / $latStep as integer) between $firstRow and $lastRow
     and cast(lon / $lonStep as integer) between $firstColumn and $lastColumn
@@ -197,6 +200,7 @@ type CellRow = MonumentPlace & {
   cell_row: number;
   cell_column: number;
   count: number;
+  capturable_ids: string | null;
 };
 
 export async function listMonuments(db: SQLiteDatabase): Promise<MonumentSummary[]> {
@@ -227,12 +231,13 @@ export async function listCells(
     $firstColumn: range.firstColumn,
     $lastColumn: range.lastColumn,
   });
-  return rows.map(({ cell_row, cell_column, count, ...place }) => ({
+  return rows.map(({ cell_row, cell_column, count, capturable_ids, ...place }) => ({
     row: cell_row,
     column: cell_column,
     count,
     lat: place.lat,
     lon: place.lon,
+    capturableIds: capturable_ids === null ? [] : capturable_ids.split(','),
     monument: count === 1 ? place : null,
   }));
 }

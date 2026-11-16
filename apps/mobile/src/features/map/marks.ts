@@ -8,7 +8,15 @@ import { boundsOf, cellsOf, gridFor } from './grid';
 /** What the map draws: one monument, or several gathered where it is crowded. */
 export type Mark =
   | { kind: 'monument'; monument: MonumentPlace }
-  | { kind: 'group'; key: string; count: number; latitude: number; longitude: number };
+  | {
+      kind: 'group';
+      key: string;
+      count: number;
+      latitude: number;
+      longitude: number;
+      /** The monuments of the group that can be captured. */
+      capturableIds: string[];
+    };
 
 /** The marks of a region: every monument when zoomed in, groups otherwise. */
 export async function loadMarks(db: SQLiteDatabase, region: Region): Promise<Mark[]> {
@@ -28,6 +36,7 @@ export async function loadMarks(db: SQLiteDatabase, region: Region): Promise<Mar
           count: cell.count,
           latitude: cell.lat,
           longitude: cell.lon,
+          capturableIds: cell.capturableIds,
         },
   );
 }
