@@ -23,6 +23,9 @@ type Source = { label: string; url: string };
 
 function listFacts(monument: MonumentDetails): Fact[] {
   const facts: Fact[] = [];
+  if (monument.officialTitle !== null && monument.officialTitle !== monument.title) {
+    facts.push({ label: 'Nom officiel', value: monument.officialTitle });
+  }
   if (monument.category) {
     facts.push({ label: 'Genre', value: capitalize(monument.category) });
   }

@@ -111,6 +111,8 @@ def test_monument_row_is_what_the_app_shows() -> None:
         "id": str(load_postgres.monument_id("PA1")),
         "merimee_id": "PA1",
         "title": "Hôtel de Sully",
+        # The short name comes later: see add_short_titles.
+        "official_title": None,
         "name": "Hôtel de Sully",
         "address": "62 rue Saint-Antoine",
         "arrondissement": 4,
@@ -262,6 +264,38 @@ def test_places_get_their_rarity_by_notice_or_by_item() -> None:
     assert (rows[0]["rarity_score"], rows[0]["rarity_tier"]) == (0.1235, "rare")
     assert (rows[1]["rarity_score"], rows[1]["rarity_tier"]) == (0.0, "commun")
     assert rows[2]["rarity_score"] is None
+
+
+def test_places_get_their_short_name_and_monuments_keep_their_official_one() -> None:
+    rows = [
+        {
+            "merimee_id": "PA1",
+            "wikidata_qid": "Q1",
+            "title": "Ancienne église, devenue Le Panthéon",
+            "official_title": None,
+        },
+        {
+            "merimee_id": None,
+            "wikidata_qid": "Q323767",
+            "title": "Tour Montparnasse",
+            "official_title": None,
+        },
+        {
+            "merimee_id": "PA2",
+            "wikidata_qid": None,
+            "title": "Hôtel de Sully",
+            "official_title": None,
+        },
+    ]
+    missing = bundle.add_short_titles(
+        rows, {"PA1": "Panthéon", "Q323767": "Tour Montparnasse"}
+    )
+    assert missing == 1
+    assert [(row["title"], row["official_title"]) for row in rows] == [
+        ("Panthéon", "Ancienne église, devenue Le Panthéon"),
+        ("Tour Montparnasse", None),
+        ("Hôtel de Sully", "Hôtel de Sully"),
+    ]
 
 
 def test_places_get_their_story_page_with_its_sources() -> None:

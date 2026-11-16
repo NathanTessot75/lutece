@@ -31,6 +31,8 @@ export type StorySource = {
 export type MonumentDetails = MonumentSummary & {
   /** The notice of a protected monument; none for a place that is not one. */
   merimeeId: string | null;
+  /** The name of the notice, longer than the title the app shows; none without a notice. */
+  officialTitle: string | null;
   address: string | null;
   architects: string[];
   wikidataQid: string | null;
@@ -148,6 +150,7 @@ const DETAILS = `
     id, title, arrondissement, category, century, readiness,
     rarity_tier as rarityTier,
     merimee_id as merimeeId,
+    official_title as officialTitle,
     address,
     architects,
     wikidata_qid as wikidataQid,

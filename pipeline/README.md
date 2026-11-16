@@ -30,9 +30,10 @@ uv run ruff format .    # formatage
 | — `landmarks` | `uv run python -m lutece_pipeline.landmarks` | `selection.parquet`, `geometries.parquet`, Wikidata, statistiques de Wikipédia | `data/interim/landmark_candidates.parquet`, `data/interim/landmark_candidates.csv` |
 | — `landmark_places` | `uv run python -m lutece_pipeline.landmark_places` | `review/landmarks.csv`, les réponses de `landmarks`, OpenStreetMap, Commons | `data/interim/landmarks.parquet`, `data/interim/landmark_files.parquet` |
 | 9. `rarity` | `uv run python -m lutece_pipeline.rarity` | `selection.parquet`, `merimee.parquet`, `landmarks.parquet` | `data/interim/rarity.parquet`, `data/interim/rarity_ranking.csv` |
+| 10. `short_titles` | `uv run python -m lutece_pipeline.short_titles` | `selection.parquet`, `merimee.parquet`, `entities.parquet`, `wikidata_items.parquet`, `landmarks.parquet`, `review/short_titles.csv` | `review/short_titles.csv` |
 | — `series` | `uv run python -m lutece_pipeline.series` | `selection.parquet`, `merimee.parquet`, `landmarks.parquet`, `review/series.csv`, `review/series_overrides.csv` | `data/interim/series.parquet`, `data/interim/series_members.parquet`, `data/interim/series_review.csv` |
 | 11. `load_postgres` | `uv run python -m lutece_pipeline.load_postgres` | les sorties des étapes 1 à 7, une base Postgres | tables `monuments` et `reference_images` |
-| 11. `export_bundle` | `uv run python -m lutece_pipeline.export_bundle` | les sorties des étapes 1 à 7, `selection.parquet`, `landmarks.parquet`, `landmark_files.parquet`, `reference_photo_checks.parquet`, `rarity.parquet`, `series.parquet`, `series_members.parquet`, les vecteurs `int8-crop`, le modèle `int8`, `review/capture_reach.csv` | `apps/mobile/assets/data/lutece.db`, `apps/mobile/assets/data/bundle.json`, `apps/mobile/assets/models/dinov2-small-int8.onnx` |
+| 11. `export_bundle` | `uv run python -m lutece_pipeline.export_bundle` | les sorties des étapes 1 à 7, `selection.parquet`, `landmarks.parquet`, `landmark_files.parquet`, `reference_photo_checks.parquet`, `rarity.parquet`, `series.parquet`, `series_members.parquet`, les vecteurs `int8-crop`, le modèle `int8`, `review/capture_reach.csv`, `review/short_titles.csv` | `apps/mobile/assets/data/lutece.db`, `apps/mobile/assets/data/bundle.json`, `apps/mobile/assets/models/dinov2-small-int8.onnx` |
 | 11. `export_places` | `uv run python -m lutece_pipeline.export_places` | `apps/mobile/assets/data/lutece.db`, `bundle.json` | `supabase/seeds/places.sql` |
 | 12. `quality_report` | `uv run python -m lutece_pipeline.quality_report` | les sorties des étapes 1 à 7 | `data/processed/monuments_quality.parquet`, `data/processed/quality_problems.csv`, `docs/rapport/qualite-donnees.md` |
 | — `fetch_reference_photos` | `uv run python -m lutece_pipeline.fetch_reference_photos` | `commons_files.parquet`, `landmark_files.parquet`, `selection.parquet`, Wikimedia Commons | `data/raw/commons/photos/`, `data/interim/reference_photos.parquet` |
@@ -1214,6 +1215,39 @@ La progression par arrondissement vient de la colonne `arrondissement` de
 comptent les lieux qui peuvent être capturés (`readiness` autre que
 `not_ready`).
 
+## Noms courts
+
+Les notices nomment les lieux longuement : « Ancienne église Sainte-Geneviève,
+devenue Le Panthéon ». L'app montre le nom qu'emploierait un passant
+(décision du 17 novembre 2026). L'étape `short_titles` en propose un par lieu :
+
+- **`wikipedia`** : le titre de l'article qui parle du lieu, sans les mots
+  entre parenthèses (« Musée Picasso (Paris) ») ni « de Paris » à la fin,
+  sauf s'il ne resterait qu'un mot (« Théâtre de Paris » garde son nom) ;
+- **`wikidata`** : le libellé de l'élément Wikidata, avec une majuscule, quand
+  plusieurs lieux partagent un article ;
+- **`notice`** : sinon, le nom de la notice coupé avant ce que le lieu a été,
+  est devenu ou s'appelle aussi (« actuellement », « anciennement »,
+  « devenu », « dit », « ou ») ;
+- **`landmark`** : un lieu non protégé garde le titre de sa revue
+  (`review/landmarks.csv`).
+
+`review/short_titles.csv` (`key`, `name`, `article`, `proposal`, `rule`,
+`short_title`) se relit à la main : on corrige `short_title`. `key` est la
+référence Mérimée, ou l'élément Wikidata d'un lieu sans notice. Relancer
+l'étape ne change jamais un `short_title` déjà présent : elle ajoute les lieux
+nouvellement montrés, retire ceux qui ne le sont plus et rafraîchit les autres
+colonnes. `export_bundle` lit ce fichier.
+
+### Premières propositions (17 novembre 2026)
+
+394 noms : 316 tirés de Wikipédia, 7 de Wikidata, 71 titres de lieux non
+protégés ; 84 titres de plus de 40 caractères avant, aucun au-delà de 46
+après. Quatre noms corrigés d'emblée (« Hôtel du Petit-Sully », « Abbaye de
+Saint-Germain-des-Prés », « Musée Guimet », « Théâtre de la Ville ») ; les
+deux pavillons de la barrière du Trône partagent encore leur nom, comme dans
+leurs notices. Le reste attend une relecture.
+
 ## Chargement dans Postgres
 
 L'étape `load_postgres` remplit les tables `monuments` et `reference_images`,
@@ -1317,7 +1351,7 @@ SHA-256 du modèle.
 | `meta` | 5 | version du contenu et effectifs |
 
 Colonnes de `monuments` : `id` (le même identifiant que dans Postgres),
-`merimee_id`, `title`, `name`, `address`, `arrondissement`, `lat`, `lon`,
+`merimee_id`, `title`, `official_title`, `name`, `address`, `arrondissement`, `lat`, `lon`,
 `min_lat`, `max_lat`, `min_lon`, `max_lon` (le cadre de l'emprise),
 `footprint` (multipolygone GeoJSON en WGS84, 6 décimales), `footprint_source`,
 `category`, `century`, `architects` (tableau JSON), `wikidata_qid`,
@@ -1329,11 +1363,15 @@ Un lieu non protégé a une ligne comme un monument, sans `merimee_id`, sans
 `protection` et sans `address`. Son identifiant est tiré de son identifiant
 Wikidata, comme celui d'un monument l'est de sa notice.
 
-- **`title`** est ce que l'app affiche : le nom du monument, ou son genre suivi
+- **`title`** est ce que l'app affiche : le nom court relu dans
+  `review/short_titles.csv` (voir « Noms courts »). Un lieu absent de ce
+  fichier garde le titre de sa notice.
+- **`official_title`** est le titre de la notice : son nom, ou son genre suivi
   de sa première adresse quand il n'a pas de nom propre (« Immeuble, 12 rue
   Volta »). Les monuments qui portent le même titre reçoivent aussi leur
   adresse : trente immeubles s'appellent « Immeuble en bordure du
-  Palais-Royal ».
+  Palais-Royal ». Vide pour un lieu non protégé. La même règle de l'adresse
+  sépare deux lieux qui partagent un nom court.
 - **`readiness`** reprend les niveaux du rapport de qualité : `ready`,
   `approximate`, `not_ready`.
 - **`capture_reach_m`** est la distance, en mètres, jusqu'à laquelle on peut

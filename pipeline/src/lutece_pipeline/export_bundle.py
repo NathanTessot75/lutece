@@ -42,6 +42,7 @@ from lutece_pipeline import (
     resolve_entities,
     selection,
     series,
+    short_titles,
     story_files,
     visibility,
 )
@@ -76,6 +77,7 @@ RARITY_PARQUET = rarity.RARITY_PARQUET
 STORIES_DIR = story_files.STORIES_DIR
 SERIES_PARQUET = series.SERIES_PARQUET
 SERIES_MEMBERS_PARQUET = series.MEMBERS_PARQUET
+SHORT_TITLES_CSV = short_titles.REVIEW_CSV
 ASSETS_FOLDER = PIPELINE_ROOT.parent / "apps" / "mobile" / "assets" / "data"
 BUNDLE_DB = ASSETS_FOLDER / "lutece.db"
 # What the app must know before it opens the file: which version it carries.
@@ -99,7 +101,9 @@ create table meta (
 create table monuments (
     id text primary key,
     merimee_id text unique,
+    -- The short name the app shows, and the name of the notice, if any.
     title text not null,
+    official_title text,
     name text not null,
     address text,
     arrondissement integer,
@@ -176,6 +180,7 @@ MONUMENT_COLUMNS = [
     "id",
     "merimee_id",
     "title",
+    "official_title",
     "name",
     "address",
     "arrondissement",
@@ -315,6 +320,7 @@ def build_monuments(
                 "id": str(load_postgres.monument_id(merimee_id)),
                 "merimee_id": merimee_id,
                 "title": display_title(notice["name"], notice["address"], kinds),
+                "official_title": None,
                 "name": notice["name"],
                 "address": notice["address"],
                 "arrondissement": notice["arrondissement"],
@@ -365,6 +371,7 @@ def build_landmarks(
                 "id": landmark_id(place["qid"]),
                 "merimee_id": None,
                 "title": place["title"],
+                "official_title": None,
                 "name": place["title"],
                 "address": None,
                 "arrondissement": place["arrondissement"],
@@ -401,6 +408,23 @@ def build_landmarks(
 def place_key(row: Record) -> str:
     """How the later steps know a place: by its notice, or by its Wikidata item."""
     return row["merimee_id"] or row["wikidata_qid"]
+
+
+def add_short_titles(rows: Sequence[dict[str, Any]], short: Mapping[str, str]) -> int:
+    """Give each place the short name of the review; return how many have none.
+
+    A monument keeps the name of its notice as its official title.
+    """
+    missing = 0
+    for row in rows:
+        if row["merimee_id"] is not None:
+            row["official_title"] = row["title"]
+        name = short.get(place_key(row))
+        if name is None:
+            missing += 1
+        else:
+            row["title"] = name
+    return missing
 
 
 NO_STORY = {
@@ -759,6 +783,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         # A place may bear the name of a monument: the address tells them apart.
         tell_apart(monuments)
+    unnamed = add_short_titles(
+        monuments, short_titles.read_short_titles(SHORT_TITLES_CSV)
+    )
+    if unnamed:
+        logger.warning(
+            "%d places have no short name: run the short_titles step", unnamed
+        )
+    # Two places may share a short name too.
+    tell_apart(monuments)
     unrated = add_rarity(monuments, read_rarity(RARITY_PARQUET))
     if unrated:
         logger.warning("%d places have no rarity: run the rarity step", unrated)
