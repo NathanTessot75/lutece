@@ -8,7 +8,7 @@ const AHEAD_DEG = 5;
 /** Where a candidate stands: « 25 m · 6° à droite ». */
 export function describeCandidate({ distanceM, offsetDeg }: Candidate): string {
   if (distanceM === 0) {
-    return 'Tu es dedans';
+    return 'Vous y êtes';
   }
   const distance = formatDistance(distanceM);
   if (offsetDeg === null) {

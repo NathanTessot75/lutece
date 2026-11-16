@@ -63,10 +63,10 @@ export function LabelSample({ choices, onLabel, onCancel }: Props) {
       {...tabBarInsets}
       contentContainerStyle={styles.content}
     >
-      <Text style={[styles.question, { color: theme.text }]}>Qu’as-tu photographié ?</Text>
+      <Text style={[styles.question, { color: theme.text }]}>Qu’avez-vous photographié ?</Text>
       <Text style={[styles.hint, { color: theme.secondaryText }]}>
-        Mode collecte : choisis le monument que montre ta photo. Elle rejoint le jeu de test, pas
-        ta collection.
+        Mode collecte : choisissez le monument que montre votre photo. Elle rejoint le jeu de test,
+        pas votre collection.
       </Text>
       <View style={styles.toggles}>
         <Toggle label="De biais" on={oblique} onPress={() => setOblique(!oblique)} theme={theme} />

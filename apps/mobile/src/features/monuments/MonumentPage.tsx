@@ -140,7 +140,7 @@ export function MonumentPage({ monument, photos, capture }: Props) {
   const { byMonument } = useCaptures();
   const advances = groups === null ? [] : advancesOf(monument, groups, byMonument);
   const own = capture?.photoFile
-    ? { uri: photoUri(capture.photoFile), caption: `Ta photo du ${formatDate(capture.capturedAt)}` }
+    ? { uri: photoUri(capture.photoFile), caption: `Votre photo du ${formatDate(capture.capturedAt)}` }
     : null;
   return (
     <ScrollView

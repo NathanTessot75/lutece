@@ -61,9 +61,9 @@ export function CollectSettings() {
       </Pressable>
       <Text style={[styles.note, { color: theme.secondaryText }]}>
         Chaque photo prise depuis l’écran de capture devient un exemple du jeu de test : Lutèce
-        garde la photo, ta position, ton cap, ce qu’elle aurait décidé et le monument que tu lui
-        indiques. Rien n’est ajouté à ta collection, et rien ne quitte le téléphone, sauf si tu
-        contribues tes photos.
+        garde la photo, votre position, votre cap, ce qu’elle aurait décidé et le monument que vous
+        lui indiquez. Rien n’est ajouté à votre collection, et rien ne quitte le téléphone, sauf si
+        vous contribuez vos photos.
       </Text>
       {contribution.available && (
         <Pressable

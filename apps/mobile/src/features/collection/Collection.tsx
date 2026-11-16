@@ -260,7 +260,7 @@ export function Collection() {
       ListEmptyComponent={
         captures.length === 0 ? (
           <Text style={[styles.empty, { color: theme.secondaryText }]}>
-            Ta collection est vide. Approche-toi d’un monument et capture-le depuis l’onglet Photo.
+            Votre collection est vide. Approchez-vous d’un monument et capturez-le depuis l’onglet Photo.
           </Text>
         ) : null
       }

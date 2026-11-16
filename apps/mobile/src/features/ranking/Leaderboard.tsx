@@ -56,29 +56,29 @@ function Join({ theme }: { theme: Theme }) {
       keyboardShouldPersistTaps="handled"
     >
       <Text style={[styles.lead, { color: theme.text }]}>
-        Compare tes points avec ceux des autres joueurs, pour tout Paris et par arrondissement.
+        Comparez vos points avec ceux des autres joueurs, pour tout Paris et par arrondissement.
         C’est facultatif.
       </Text>
       <Section title="Ce qui part" theme={theme}>
-        Pour chaque capture : le monument, l’heure, ta position et ce que Lutèce a mesuré, pour
-        vérifier que tu étais sur place. Pas tes photos : elles ne partent que si tu contribues.
-        Tes captures déjà faites partent aussi.
+        Pour chaque capture : le monument, l’heure, votre position et ce que Lutèce a mesuré, pour
+        vérifier que vous étiez sur place. Pas vos photos : elles ne partent que si vous
+        contribuez. Vos captures déjà faites partent aussi.
       </Section>
       <Section title="Qui voit quoi" theme={theme}>
-        Les autres joueurs voient ton pseudonyme, tes points et ton nombre de captures, jamais où
-        ni quand tu as capturé. Le développeur de Lutèce voit tout, pour vérifier les captures
+        Les autres joueurs voient votre pseudonyme, vos points et votre nombre de captures, jamais
+        où ni quand vous avez capturé. Le développeur de Lutèce voit tout, pour vérifier les captures
         douteuses : elles ne comptent qu’une fois validées.
       </Section>
       <Section title="Sans compte" theme={theme}>
-        Ton inscription est liée à ce téléphone : si tu en changes ou si tu supprimes l’app, tu
-        repars de zéro. Tu peux quitter les classements quand tu veux, ton pseudonyme et tes
-        captures sont alors effacés du serveur.
+        Votre inscription est liée à ce téléphone : si vous en changez ou si vous supprimez l’app,
+        vous repartez de zéro. Vous pouvez quitter les classements quand vous voulez, votre
+        pseudonyme et vos captures sont alors effacés du serveur.
       </Section>
       <TextInput
         style={[styles.input, { backgroundColor: theme.surface, color: theme.text }]}
         value={name}
         onChangeText={setName}
-        placeholder="Ton pseudonyme"
+        placeholder="Votre pseudonyme"
         placeholderTextColor={theme.secondaryText}
         maxLength={20}
         autoCorrect={false}
@@ -140,7 +140,7 @@ function summary(counts: ReturnType<typeof useRanking>['counts']): string {
   if (counts.waiting > 0) {
     parts.push(`${formatCount(counts.waiting)} à envoyer`);
   }
-  return `Tes captures : ${parts.join(' · ')}`;
+  return `Vos captures : ${parts.join(' · ')}`;
 }
 
 /** The leaderboard of Paris or of an arrondissement, and the player's own standing. */
@@ -179,7 +179,7 @@ function Board({ theme }: { theme: Theme }) {
   const confirmLeave = () =>
     Alert.alert(
       'Quitter les classements ?',
-      'Ton pseudonyme et tes captures seront effacés du serveur. Ta collection reste sur le téléphone.',
+      'Votre pseudonyme et vos captures seront effacés du serveur. Votre collection reste sur le téléphone.',
       [
         { text: 'Annuler', style: 'cancel' },
         {
@@ -189,7 +189,7 @@ function Board({ theme }: { theme: Theme }) {
             setLeaving(true);
             leave()
               .catch(() =>
-                Alert.alert('Impossible de quitter', 'Le serveur n’a pas répondu. Réessaie plus tard.'),
+                Alert.alert('Impossible de quitter', 'Le serveur n’a pas répondu. Réessayez plus tard.'),
               )
               .finally(() => setLeaving(false));
           },
@@ -251,10 +251,10 @@ function Board({ theme }: { theme: Theme }) {
 
       <View style={styles.footer}>
         <Text style={[styles.note, { color: theme.secondaryText }]}>
-          Tu joues sous le pseudonyme « {username} ».
+          Vous jouez sous le pseudonyme « {username} ».
         </Text>
         <Text style={[styles.note, { color: theme.secondaryText }]}>
-          {sending ? 'Envoi de tes captures…' : summary(counts)}
+          {sending ? 'Envoi de vos captures…' : summary(counts)}
         </Text>
         {counts.pending_review > 0 && (
           <Text style={[styles.note, { color: theme.secondaryText }]}>
@@ -264,7 +264,7 @@ function Board({ theme }: { theme: Theme }) {
         {failed !== null && !sending && (
           <View style={styles.section}>
             <Text style={[styles.note, { color: theme.secondaryText }]}>
-              Le dernier envoi a échoué (pas de réseau ?). Lutèce réessaiera à ton retour dans l’app.
+              Le dernier envoi a échoué (pas de réseau ?). Lutèce réessaiera à votre retour dans l’app.
             </Text>
             <Pressable onPress={retry} accessibilityRole="button" hitSlop={8}>
               <Text style={[styles.action, { color: theme.accent }]}>Réessayer</Text>

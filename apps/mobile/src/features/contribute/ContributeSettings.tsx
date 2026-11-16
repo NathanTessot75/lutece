@@ -29,8 +29,8 @@ export function ContributeSettings() {
 
   const confirmErase = () =>
     Alert.alert(
-      'Supprimer tes contributions ?',
-      `Les ${photos(sent)} envoyées seront effacées du serveur avec leurs informations, et la contribution s’arrêtera. Ta collection reste sur le téléphone.`,
+      'Supprimer vos contributions ?',
+      `Les ${photos(sent)} envoyées seront effacées du serveur avec leurs informations, et la contribution s’arrêtera. Votre collection reste sur le téléphone.`,
       [
         { text: 'Annuler', style: 'cancel' },
         {
@@ -42,7 +42,7 @@ export function ContributeSettings() {
               .catch(() =>
                 Alert.alert(
                   'Suppression impossible',
-                  'Le serveur n’a pas répondu. Vérifie ta connexion et réessaie.',
+                  'Le serveur n’a pas répondu. Vérifiez votre connexion et réessayez.',
                 ),
               )
               .finally(() => setErasing(false));
@@ -82,24 +82,25 @@ export function ContributeSettings() {
       contentContainerStyle={styles.content}
     >
       <Text style={[styles.lead, { color: theme.text }]}>
-        Envoie tes photos pour aider Lutèce à mieux reconnaître les monuments. C’est facultatif : tu
-        peux arrêter et tout supprimer quand tu veux.
+        Envoyez vos photos pour aider Lutèce à mieux reconnaître les monuments. C’est facultatif :
+        vous pouvez arrêter et tout supprimer quand vous voulez.
       </Text>
       <Section title="Ce qui part" theme={theme}>
         Chaque photo prise pour une capture ou en mode collecte, réduite à 1 600 pixels, y compris
-        celles déjà prises. Avec elle : l’heure, ta position et ton cap au moment de la photo, et ce
-        que Lutèce a reconnu. Ta position dit où tu étais et quand.
+        celles déjà prises. Avec elle : l’heure, votre position et votre cap au moment de la photo,
+        et ce que Lutèce a reconnu. Votre position dit où vous étiez et quand.
       </Section>
       <Section title="Qui les reçoit" theme={theme}>
         Le développeur de Lutèce, sur un serveur Supabase en Europe (Paris). Elles ne sont pas
         publiques : elles servent à mesurer et à améliorer la reconnaissance.
       </Section>
       <Section title="Sans compte" theme={theme}>
-        Lutèce te donne un identifiant anonyme, sans nom ni adresse e-mail, gardé sur ce téléphone.
-        Si tu supprimes l’app, tu ne pourras plus effacer tes photos : supprime-les d’abord ici.
+        Lutèce vous donne un identifiant anonyme, sans nom ni adresse e-mail, gardé sur ce
+        téléphone. Si vous supprimez l’app, vous ne pourrez plus effacer vos photos : supprimez-les
+        d’abord ici.
       </Section>
       <Section title="Les autres" theme={theme}>
-        Évite de photographier des personnes de près : leur visage partirait avec la photo.
+        Évitez de photographier des personnes de près : leur visage partirait avec la photo.
       </Section>
       <Pressable
         style={[styles.group, styles.switchRow, { backgroundColor: theme.surface }]}
@@ -120,7 +121,7 @@ export function ContributeSettings() {
       {enabled && failed !== null && !sending && (
         <View style={styles.section}>
           <Text style={[styles.note, { color: theme.secondaryText }]}>
-            Le dernier envoi a échoué (pas de réseau ?). Lutèce réessaiera à ton retour dans l’app.
+            Le dernier envoi a échoué (pas de réseau ?). Lutèce réessaiera à votre retour dans l’app.
           </Text>
           <Pressable onPress={retry} accessibilityRole="button" hitSlop={8}>
             <Text style={[styles.action, { color: theme.accent }]}>Réessayer</Text>

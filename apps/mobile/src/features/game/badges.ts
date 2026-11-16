@@ -147,12 +147,12 @@ const isRare = (capture: Played) => capture.tier === 'rare' || capture.tier === 
 /** Every badge, those of the series made from the series of the bundle. */
 export function buildBadges(groups: Groups): Badge[] {
   const counts: [number, string, string, string, string][] = [
-    [1, 'premiere-capture', 'Première capture', 'Capture ton premier monument.', '🎯'],
-    [10, 'flaneur', 'Flâneur', 'Capture 10 monuments.', '🚶'],
-    [25, 'arpenteur', 'Arpenteur', 'Capture 25 monuments.', '🧭'],
-    [50, 'explorateur', 'Explorateur', 'Capture 50 monuments.', '🗺️'],
-    [100, 'erudit', 'Érudit', 'Capture 100 monuments.', '📚'],
-    [200, 'encyclopediste', 'Encyclopédiste', 'Capture 200 monuments.', '🏛️'],
+    [1, 'premiere-capture', 'Première capture', 'Capturez votre premier monument.', '🎯'],
+    [10, 'flaneur', 'Flâneur', 'Capturez 10 monuments.', '🚶'],
+    [25, 'arpenteur', 'Arpenteur', 'Capturez 25 monuments.', '🧭'],
+    [50, 'explorateur', 'Explorateur', 'Capturez 50 monuments.', '🗺️'],
+    [100, 'erudit', 'Érudit', 'Capturez 100 monuments.', '📚'],
+    [200, 'encyclopediste', 'Encyclopédiste', 'Capturez 200 monuments.', '🏛️'],
   ];
   const series = groups.series.filter((one) => one.ids.length > 0);
   return [
@@ -168,7 +168,7 @@ export function buildBadges(groups: Groups): Badge[] {
       slug: 'hors-des-sentiers',
       family: 'rarete',
       name: 'Hors des sentiers',
-      condition: 'Capture un lieu rare ou légendaire.',
+      condition: 'Capturez un lieu rare ou légendaire.',
       icon: '🌿',
       measure: whether((played) => played.some(isRare)),
     },
@@ -176,7 +176,7 @@ export function buildBadges(groups: Groups): Badge[] {
       slug: 'legende',
       family: 'rarete',
       name: 'Légende',
-      condition: 'Capture un lieu légendaire.',
+      condition: 'Capturez un lieu légendaire.',
       icon: '✨',
       measure: whether((played) => played.some((capture) => capture.tier === 'légendaire')),
     },
@@ -184,7 +184,7 @@ export function buildBadges(groups: Groups): Badge[] {
       slug: 'chasseur-de-legendes',
       family: 'rarete',
       name: 'Chasseur de légendes',
-      condition: 'Capture 10 lieux légendaires.',
+      condition: 'Capturez 10 lieux légendaires.',
       icon: '👑',
       measure: atLeast(10, (played) => played.filter((capture) => capture.tier === 'légendaire').length),
     },
@@ -192,7 +192,7 @@ export function buildBadges(groups: Groups): Badge[] {
       slug: 'deux-rives',
       family: 'paris',
       name: 'Les deux rives',
-      condition: 'Capture un lieu sur la rive gauche et un sur la rive droite le même jour.',
+      condition: 'Capturez un lieu sur la rive gauche et un sur la rive droite le même jour.',
       icon: '⛵',
       measure: whether((played) =>
         [...byDay(played).values()].some(
@@ -206,7 +206,7 @@ export function buildBadges(groups: Groups): Badge[] {
       slug: 'tour-de-paris',
       family: 'paris',
       name: 'Tour de Paris',
-      condition: 'Capture un lieu dans chacun des 20 arrondissements.',
+      condition: 'Capturez un lieu dans chacun des 20 arrondissements.',
       icon: '🗼',
       measure: atLeast(
         20,
@@ -218,7 +218,7 @@ export function buildBadges(groups: Groups): Badge[] {
       slug: 'quartier-conquis',
       family: 'paris',
       name: 'Quartier conquis',
-      condition: 'Capture tous les lieux d’un arrondissement.',
+      condition: 'Capturez tous les lieux d’un arrondissement.',
       icon: '🚩',
       measure: whether((played) => {
         const captured = capturedIds(played);
@@ -231,7 +231,7 @@ export function buildBadges(groups: Groups): Badge[] {
       slug: 'collectionneur',
       family: 'series',
       name: 'Collectionneur',
-      condition: 'Termine une série.',
+      condition: 'Terminez une série.',
       icon: '🏅',
       measure: whether((played) => {
         const captured = capturedIds(played);
@@ -243,7 +243,7 @@ export function buildBadges(groups: Groups): Badge[] {
         slug: `serie-${one.slug}`,
         family: 'series',
         name: one.name,
-        condition: `Capture tous les lieux de la série « ${one.name} ».`,
+        condition: `Capturez tous les lieux de la série « ${one.name} ».`,
         icon: SERIES_ICONS[one.slug] ?? '🏅',
         measure: atLeast(one.ids.length, (played) => {
           const captured = capturedIds(played);
@@ -255,7 +255,7 @@ export function buildBadges(groups: Groups): Badge[] {
       slug: 'leve-tot',
       family: 'moments',
       name: 'Lève-tôt',
-      condition: 'Capture un lieu dans l’heure qui suit le lever du soleil.',
+      condition: 'Capturez un lieu dans l’heure qui suit le lever du soleil.',
       icon: '🌅',
       measure: whether((played) => played.some(atDawn)),
     },
@@ -263,7 +263,7 @@ export function buildBadges(groups: Groups): Badge[] {
       slug: 'noctambule',
       family: 'moments',
       name: 'Noctambule',
-      condition: 'Capture un lieu la nuit, entre le coucher et le lever du soleil.',
+      condition: 'Capturez un lieu la nuit, entre le coucher et le lever du soleil.',
       icon: '🌙',
       measure: whether((played) => played.some(atNight)),
     },
@@ -271,7 +271,7 @@ export function buildBadges(groups: Groups): Badge[] {
       slug: 'journee-chargee',
       family: 'moments',
       name: 'Journée chargée',
-      condition: 'Capture 10 lieux le même jour.',
+      condition: 'Capturez 10 lieux le même jour.',
       icon: '📸',
       measure: atLeast(10, (played) =>
         Math.max(0, ...[...byDay(played).values()].map((captures) => captures.length)),
@@ -281,7 +281,7 @@ export function buildBadges(groups: Groups): Badge[] {
       slug: 'une-semaine-a-paris',
       family: 'moments',
       name: 'Une semaine à Paris',
-      condition: 'Capture au moins un lieu 7 jours de suite.',
+      condition: 'Capturez au moins un lieu 7 jours de suite.',
       icon: '📅',
       unit: 'jours',
       measure: atLeast(7, longestStreak),
@@ -290,7 +290,7 @@ export function buildBadges(groups: Groups): Badge[] {
       slug: 'quatre-saisons',
       family: 'moments',
       name: 'Quatre saisons',
-      condition: 'Capture un lieu à chaque saison.',
+      condition: 'Capturez un lieu à chaque saison.',
       icon: '🍂',
       unit: 'saisons',
       measure: atLeast(4, (played) => new Set(played.map(({ capturedAt }) => seasonOf(parisDay(capturedAt)))).size),
@@ -303,7 +303,7 @@ export function buildBadges(groups: Groups): Badge[] {
         slug,
         family: 'marche',
         name,
-        condition: `Parcours ${goal} km d’une capture à l’autre : les trajets entre les captures d’une même journée s’additionnent, à vol d’oiseau.`,
+        condition: `Parcourez ${goal} km d’une capture à l’autre : les trajets entre les captures d’une même journée s’additionnent, à vol d’oiseau.`,
         icon,
         unit: 'km',
         measure: atLeast(goal, (played) => Math.floor(walkedKm(played))),

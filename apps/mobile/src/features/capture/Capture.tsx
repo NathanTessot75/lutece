@@ -71,11 +71,11 @@ type Stage =
 
 const REFUSALS: Record<Refusal, CaptureMessage> = {
   out_of_reach: { icon: 'mappin.slash', text: 'Aucun monument à portée' },
-  not_facing: { icon: 'scope', text: 'Vise le monument' },
-  compass_lost: { icon: 'safari', text: 'Boussole perdue : fais des 8' },
+  not_facing: { icon: 'scope', text: 'Visez le monument' },
+  compass_lost: { icon: 'safari', text: 'Boussole perdue : faites des 8' },
   already_captured: { icon: 'checkmark.seal.fill', text: 'Déjà capturé' },
-  not_recognised: { icon: 'eye.slash', text: 'Non reconnu : rapproche-toi' },
-  too_far_without_photo: { icon: 'figure.walk', text: 'Sans photo : approche à 30 m' },
+  not_recognised: { icon: 'eye.slash', text: 'Non reconnu : rapprochez-vous' },
+  too_far_without_photo: { icon: 'figure.walk', text: 'Sans photo : approchez-vous à 30 m' },
 };
 
 // A message stays this long over the camera.
@@ -125,7 +125,7 @@ export function Capture() {
     return (
       <View style={[styles.message, { backgroundColor: theme.background }]}>
         <Text style={[styles.messageText, { color: theme.secondaryText }]}>
-          Pour capturer un monument, Lutèce a besoin de ta position.
+          Pour capturer un monument, Lutèce a besoin de votre position.
         </Text>
         <Pressable
           style={[styles.button, { backgroundColor: theme.accent }]}

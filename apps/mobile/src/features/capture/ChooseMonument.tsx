@@ -23,11 +23,11 @@ function wording(confirm: boolean, count: number) {
   if (!confirm) {
     return {
       question: 'C’est lequel ?',
-      hint: 'Ta photo ressemble à plusieurs monuments. Lequel viens-tu de photographier ?',
+      hint: 'Votre photo ressemble à plusieurs monuments. Lequel venez-vous de photographier ?',
       cancel: 'Aucun de ceux-là',
     };
   }
-  const hint = 'Lutèce ne peut pas le vérifier sur ta photo : confirme que tu es bien devant.';
+  const hint = 'Lutèce ne peut pas le vérifier sur votre photo : confirmez que vous êtes bien devant.';
   return count === 1
     ? { question: 'C’est bien lui ?', hint, cancel: 'Ce n’est pas lui' }
     : { question: 'C’est lequel ?', hint, cancel: 'Aucun de ceux-là' };
