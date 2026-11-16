@@ -21,6 +21,7 @@
     "expo-splash-screen": "~57.0.9",
     "expo-sqlite": "~57.0.4",
     "expo-status-bar": "~57.0.1",
+    "expo-symbols": "~57.0.3",
     "expo-system-ui": "~57.0.4",
     "fast-png": "^8.0.0",
     "onnxruntime-react-native": "^1.24.3",

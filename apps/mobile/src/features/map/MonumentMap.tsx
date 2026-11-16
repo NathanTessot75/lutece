@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type MonumentPlace, getFootprint } from '@/db/monuments';
 import { useCaptures } from '@/features/collection/CapturesProvider';
 import { useLocationAccess } from '@/lib/location';
+import { useTabBarRoom } from '@/lib/tabBar';
 import { type Theme, useTheme } from '@/lib/theme';
 import { Text } from '@/lib/typography';
 
@@ -76,6 +77,8 @@ export function MonumentMap() {
   const db = useSQLiteContext();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  // The floating tabs cover the bottom of the map.
+  const tabBarRoom = useTabBarRoom();
   const { byMonument: captured } = useCaptures();
   const location = useLocationAccess();
   const map = useRef<MapView>(null);
@@ -170,7 +173,12 @@ export function MonumentMap() {
         tintColor={POSITION_COLOR}
         pitchEnabled={false}
         // The credits of the map stay readable above the card of a monument.
-        mapPadding={{ top: 0, right: 0, bottom: selection ? cardHeight + CARD_GAP : 0, left: 0 }}
+        mapPadding={{
+          top: 0,
+          right: 0,
+          bottom: tabBarRoom + (selection ? cardHeight + CARD_GAP : 0),
+          left: 0,
+        }}
         onMapReady={() => {
           ready.current = true;
           centreOnce();
@@ -217,7 +225,10 @@ export function MonumentMap() {
           ),
         )}
       </MapView>
-      <View style={[styles.overlay, { bottom: insets.bottom + CARD_GAP }]} pointerEvents="box-none">
+      <View
+        style={[styles.overlay, { bottom: insets.bottom + Math.max(tabBarRoom, CARD_GAP) }]}
+        pointerEvents="box-none"
+      >
         <View style={styles.buttons}>
           {(located || !location.granted) && (
             <Pressable

@@ -3,6 +3,7 @@ import { Pressable, SectionList, StyleSheet, View } from 'react-native';
 import { useOpenMonument } from '@/features/monuments/useOpenMonument';
 import { formatDistance, formatHeading } from '@/lib/format';
 import type { CompassReading, Position } from '@/lib/location';
+import { useTabBarInsets } from '@/lib/tabBar';
 import { type Theme, useTheme } from '@/lib/theme';
 import { Text } from '@/lib/typography';
 
@@ -62,6 +63,7 @@ type Props = {
 /** What the phone measures, and the monuments within reach: aimed at, then around. */
 export function CandidateList({ position, compass, candidates, captured }: Props) {
   const theme = useTheme();
+  const tabBarInsets = useTabBarInsets();
   const open = useOpenMonument();
   const sections = [
     {
@@ -81,6 +83,8 @@ export function CandidateList({ position, compass, candidates, captured }: Props
       keyExtractor={(candidate) => candidate.target.id}
       stickySectionHeadersEnabled={false}
       contentContainerStyle={styles.content}
+      contentInsetAdjustmentBehavior="automatic"
+      {...tabBarInsets}
       ListHeaderComponent={
         <View style={[styles.readings, { backgroundColor: theme.surface }]}>
           <Reading

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { formatDistance } from '@/lib/format';
+import { useTabBarInsets } from '@/lib/tabBar';
 import { type Theme, useTheme } from '@/lib/theme';
 import { Text } from '@/lib/typography';
 
@@ -50,6 +51,7 @@ function Toggle(props: { label: string; on: boolean; onPress: () => void; theme:
 /** In collect mode, the player tells what the photo shows: the label of the sample. */
 export function LabelSample({ choices, onLabel, onCancel }: Props) {
   const theme = useTheme();
+  const tabBarInsets = useTabBarInsets();
   const [oblique, setOblique] = useState(false);
   const [hidden, setHidden] = useState(false);
   const label = (monumentId: string | null) => onLabel({ monumentId, oblique, hidden });
@@ -58,6 +60,7 @@ export function LabelSample({ choices, onLabel, onCancel }: Props) {
     <ScrollView
       style={{ backgroundColor: theme.background }}
       contentInsetAdjustmentBehavior="automatic"
+      {...tabBarInsets}
       contentContainerStyle={styles.content}
     >
       <Text style={[styles.question, { color: theme.text }]}>Qu’as-tu photographié ?</Text>

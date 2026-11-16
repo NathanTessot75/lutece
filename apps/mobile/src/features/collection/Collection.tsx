@@ -20,6 +20,7 @@ import { MonumentList } from '@/features/monuments/MonumentList';
 import { type MonumentSection, groupByArrondissement } from '@/features/monuments/sections';
 import { useOpenMonument } from '@/features/monuments/useOpenMonument';
 import { formatCount, formatDate } from '@/lib/format';
+import { useTabBarInsets } from '@/lib/tabBar';
 import { type Theme, useTheme } from '@/lib/theme';
 import { Text } from '@/lib/typography';
 
@@ -172,6 +173,7 @@ function countLine(captured: number, capturable: number, points: number): string
 export function Collection() {
   const db = useSQLiteContext();
   const theme = useTheme();
+  const tabBarInsets = useTabBarInsets();
   const open = useOpenMonument();
   const { captures } = useCaptures();
   const [monuments, setMonuments] = useState<ReadonlyMap<string, MonumentSummary>>(new Map());
@@ -242,6 +244,7 @@ export function Collection() {
       data={shown}
       keyExtractor={({ capture }) => capture.monumentId}
       contentInsetAdjustmentBehavior="automatic"
+      {...tabBarInsets}
       style={{ backgroundColor: theme.background }}
       ListHeaderComponent={
         <>

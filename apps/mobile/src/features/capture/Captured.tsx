@@ -12,6 +12,7 @@ import { formatPoints, tierLabel, tierNote } from '@/features/game/rarity';
 import { describeMonument } from '@/features/monuments/describe';
 import { useOpenMonument } from '@/features/monuments/useOpenMonument';
 import { useGroups } from '@/features/progress/useGroups';
+import { useNightTabBar, useTabBarInsets } from '@/lib/tabBar';
 import { NIGHT } from '@/lib/theme';
 import { Text, fonts } from '@/lib/typography';
 
@@ -37,6 +38,8 @@ type Props = {
 export function Captured({ monument, photoFile, points, onContinue }: Props) {
   // Whatever the appearance of the phone, a victory is shown at night.
   const theme = NIGHT;
+  useNightTabBar();
+  const tabBarInsets = useTabBarInsets();
   const open = useOpenMonument();
   const tier = monument.rarityTier;
   const color = tier === null ? theme.accent : theme.rarity[tier];
@@ -75,6 +78,7 @@ export function Captured({ monument, photoFile, points, onContinue }: Props) {
     <ScrollView
       style={{ backgroundColor: theme.background }}
       contentInsetAdjustmentBehavior="automatic"
+      {...tabBarInsets}
       contentContainerStyle={styles.content}
     >
       <Animated.Text

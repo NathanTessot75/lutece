@@ -4,6 +4,7 @@ import { Pressable, SectionList, StyleSheet, View } from 'react-native';
 import type { MonumentSummary } from '@/db/monuments';
 import { tierLabel } from '@/features/game/rarity';
 import { formatArrondissement, formatCount } from '@/lib/format';
+import { useTabBarInsets } from '@/lib/tabBar';
 import { type Theme, useTheme } from '@/lib/theme';
 import { Text } from '@/lib/typography';
 
@@ -69,6 +70,7 @@ type Props = {
 
 export function MonumentList({ header, sections, caption }: Props) {
   const theme = useTheme();
+  const tabBarInsets = useTabBarInsets();
   const open = useOpenMonument();
   return (
     <SectionList
@@ -83,6 +85,7 @@ export function MonumentList({ header, sections, caption }: Props) {
       renderItem={({ item }) => <Row monument={item} theme={theme} onOpen={open} />}
       renderSectionHeader={({ section }) => <Header section={section} theme={theme} />}
       contentInsetAdjustmentBehavior="automatic"
+      {...tabBarInsets}
       // A pinned header would slide under the translucent navigation bar.
       stickySectionHeadersEnabled={false}
       style={{ backgroundColor: theme.background }}

@@ -3,6 +3,7 @@ import { Stack, ThemeProvider } from 'expo-router';
 import { SQLiteProvider } from 'expo-sqlite';
 import { Suspense, useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { BUNDLE_ASSET, BUNDLE_DATABASE_NAME, removeStaleBundles } from '@/db/bundle';
 import { PlayerDatabaseProvider } from '@/db/PlayerDatabase';
@@ -38,33 +39,38 @@ export default function RootLayout() {
     return <Loading />;
   }
   return (
-    <ThemeProvider value={navigationTheme}>
-      <Suspense fallback={<Loading />}>
-        <SQLiteProvider
-          databaseName={BUNDLE_DATABASE_NAME}
-          assetSource={{ assetId: BUNDLE_ASSET }}
-          useSuspense
-        >
-          <PlayerDatabaseProvider>
-            <CapturesProvider>
-              <CollectProvider>
-                <ContributeProvider>
-                  <RankingProvider>
-                    <Stack screenOptions={HEADER_FACES}>
-                      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                    </Stack>
-                  </RankingProvider>
-                </ContributeProvider>
-              </CollectProvider>
-            </CapturesProvider>
-          </PlayerDatabaseProvider>
-        </SQLiteProvider>
-      </Suspense>
-    </ThemeProvider>
+    <GestureHandlerRootView style={styles.root}>
+      <ThemeProvider value={navigationTheme}>
+        <Suspense fallback={<Loading />}>
+          <SQLiteProvider
+            databaseName={BUNDLE_DATABASE_NAME}
+            assetSource={{ assetId: BUNDLE_ASSET }}
+            useSuspense
+          >
+            <PlayerDatabaseProvider>
+              <CapturesProvider>
+                <CollectProvider>
+                  <ContributeProvider>
+                    <RankingProvider>
+                      <Stack screenOptions={HEADER_FACES}>
+                        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                      </Stack>
+                    </RankingProvider>
+                  </ContributeProvider>
+                </CollectProvider>
+              </CapturesProvider>
+            </PlayerDatabaseProvider>
+          </SQLiteProvider>
+        </Suspense>
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
   loading: {
     flex: 1,
     alignItems: 'center',

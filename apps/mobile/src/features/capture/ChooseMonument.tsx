@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { listPhotos } from '@/db/monuments';
+import { useTabBarInsets } from '@/lib/tabBar';
 import { useTheme } from '@/lib/theme';
 import { Text } from '@/lib/typography';
 
@@ -36,6 +37,7 @@ function wording(confirm: boolean, count: number) {
 export function ChooseMonument({ candidates, confirm, onChoose, onCancel }: Props) {
   const db = useSQLiteContext();
   const theme = useTheme();
+  const tabBarInsets = useTabBarInsets();
   // The best reference photo of each candidate, to recognise it by.
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
 
@@ -60,6 +62,7 @@ export function ChooseMonument({ candidates, confirm, onChoose, onCancel }: Prop
     <ScrollView
       style={{ backgroundColor: theme.background }}
       contentInsetAdjustmentBehavior="automatic"
+      {...tabBarInsets}
       contentContainerStyle={styles.content}
     >
       <Text style={[styles.question, { color: theme.text }]}>{words.question}</Text>
