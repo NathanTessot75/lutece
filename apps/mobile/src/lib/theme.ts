@@ -19,6 +19,9 @@ export type Theme = {
   onGold: string;
   /** What remains to capture. */
   pending: string;
+  /** What is captured, and what is written on it. */
+  captured: string;
+  onCaptured: string;
   /** The places on the map, dark in both appearances: to capture, captured, and what is drawn on them. */
   mapToCapture: string;
   mapCaptured: string;
@@ -52,6 +55,8 @@ const LIGHT: Theme = {
   gold: GILDING,
   onGold: INK,
   pending: SLATE,
+  captured: VERDIGRIS,
+  onCaptured: POLISHED_STONE,
   mapToCapture: SLATE,
   mapCaptured: VERDIGRIS,
   onMap: POLISHED_STONE,
@@ -77,6 +82,8 @@ export const NIGHT: Theme = {
   gold: LAMPLIGHT,
   onGold: NIGHT_STONE,
   pending: '#9DB3C4',
+  captured: '#9EC3B2',
+  onCaptured: NIGHT_STONE,
   mapToCapture: '#3B5A78',
   mapCaptured: '#3E7A63',
   onMap: '#EEE7DA',

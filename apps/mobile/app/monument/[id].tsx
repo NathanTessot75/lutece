@@ -3,12 +3,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import {
-  type MonumentDetails,
-  type MonumentPhoto,
-  getMonument,
-  listPhotos,
-} from '@/db/monuments';
+import { type MonumentDetails, getMonument } from '@/db/monuments';
 import { useCaptures } from '@/features/collection/CapturesProvider';
 import { CloseSheetButton } from '@/features/monuments/CloseSheetButton';
 import { MonumentPage } from '@/features/monuments/MonumentPage';
@@ -18,7 +13,6 @@ import { Text } from '@/lib/typography';
 type Loaded = {
   id: string;
   monument: MonumentDetails | null;
-  photos: MonumentPhoto[];
 };
 
 export default function MonumentScreen() {
@@ -30,9 +24,9 @@ export default function MonumentScreen() {
 
   useEffect(() => {
     let current = true;
-    void Promise.all([getMonument(db, id), listPhotos(db, id)]).then(([monument, photos]) => {
+    void getMonument(db, id).then((monument) => {
       if (current) {
-        setLoaded({ id, monument, photos });
+        setLoaded({ id, monument });
       }
     });
     return () => {
@@ -44,11 +38,7 @@ export default function MonumentScreen() {
   return (
     <View style={styles.sheet}>
       {shown?.monument ? (
-        <MonumentPage
-          monument={shown.monument}
-          photos={shown.photos}
-          capture={byMonument.get(id) ?? null}
-        />
+        <MonumentPage monument={shown.monument} capture={byMonument.get(id) ?? null} />
       ) : (
         <View style={[styles.empty, { backgroundColor: theme.background }]}>
           {shown && (

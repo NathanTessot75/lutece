@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import type { Capture } from '@/db/captures';
-import type { MonumentDetails, MonumentPhoto } from '@/db/monuments';
+import type { MonumentDetails } from '@/db/monuments';
 import { photoUri } from '@/features/capture/photos';
 import { useCaptures } from '@/features/collection/CapturesProvider';
 import { advancesOf, formatProgress, isComplete } from '@/features/game/progress';
@@ -13,7 +13,7 @@ import { type Theme, useTheme } from '@/lib/theme';
 import { useGroups } from '@/features/progress/useGroups';
 import { Text, fonts } from '@/lib/typography';
 
-import { PhotoCarousel } from './PhotoCarousel';
+import { Plate } from './Plate';
 
 // A notice may list several addresses, separated this way.
 const ADDRESS_SEPARATOR = ';';
@@ -83,8 +83,8 @@ function describeStatus(monument: MonumentDetails, capture: Capture | null, them
   if (capture !== null) {
     return {
       text: `Capturé le ${formatDate(capture.capturedAt)}`,
-      background: theme.gold,
-      color: theme.onGold,
+      background: theme.captured,
+      color: theme.onCaptured,
     };
   }
   if (monument.readiness !== 'not_ready') {
@@ -125,12 +125,16 @@ function Section({ title, theme }: { title: string; theme: Theme }) {
 
 type Props = {
   monument: MonumentDetails;
-  photos: MonumentPhoto[];
   /** The capture of the monument by the player, if any. */
   capture: Capture | null;
 };
 
-export function MonumentPage({ monument, photos, capture }: Props) {
+/**
+ * The page of a monument, to make one want to read it: its plate, its name
+ * and its place, then what is surprising about it, its story, the facts, the
+ * progress it brings and the sources.
+ */
+export function MonumentPage({ monument, capture }: Props) {
   const theme = useTheme();
   const status = describeStatus(monument, capture, theme);
   const caveat = describeCaveat(monument);
@@ -139,16 +143,14 @@ export function MonumentPage({ monument, photos, capture }: Props) {
   const groups = useGroups();
   const { byMonument } = useCaptures();
   const advances = groups === null ? [] : advancesOf(monument, groups, byMonument);
-  const own = capture?.photoFile
-    ? { uri: photoUri(capture.photoFile), caption: `Votre photo du ${formatDate(capture.capturedAt)}` }
-    : null;
+  const ownPhoto = capture?.photoFile ? photoUri(capture.photoFile) : null;
   return (
     <ScrollView
       style={{ backgroundColor: theme.background }}
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={styles.content}
     >
-      <PhotoCarousel photos={photos} own={own} />
+      <Plate ownPhoto={ownPhoto} />
       <View style={styles.heading}>
         <Text style={[styles.title, { color: theme.text }]}>{monument.title}</Text>
         {describeLocation(monument).map((line) => (
@@ -172,6 +174,53 @@ export function MonumentPage({ monument, photos, capture }: Props) {
           <Text style={[styles.caveat, { color: theme.secondaryText }]}>{caveat}</Text>
         )}
       </View>
+
+      {monument.didYouKnow !== null && (
+        <>
+          <Section title="Le saviez-vous ?" theme={theme} />
+          <View
+            style={[
+              styles.group,
+              styles.story,
+              styles.surprise,
+              { backgroundColor: theme.surface, borderColor: theme.captured },
+            ]}
+          >
+            <Text style={[styles.paragraph, { color: theme.text }]}>{monument.didYouKnow}</Text>
+          </View>
+        </>
+      )}
+
+      <Section title="Histoire" theme={theme} />
+      {monument.story === null ? (
+        <View style={[styles.group, { backgroundColor: theme.surface }]}>
+          <Text style={[styles.note, { color: theme.secondaryText }]}>
+            Fiche à enrichir : l’histoire de ce lieu n’est pas encore rédigée.
+          </Text>
+        </View>
+      ) : (
+        <View style={[styles.group, styles.story, { backgroundColor: theme.surface }]}>
+          {monument.story.split(/\n\s*\n/).map((paragraph) => (
+            <Text key={paragraph} style={[styles.paragraph, { color: theme.text }]}>
+              {paragraph}
+            </Text>
+          ))}
+          <Text style={[styles.credit, { color: theme.secondaryText }]}>
+            {describeCredit(monument)}
+          </Text>
+          {monument.storySources.map((source) => (
+            <Pressable
+              key={source.url}
+              onPress={() => void Linking.openURL(source.url)}
+              accessibilityRole="link"
+            >
+              <Text style={[styles.credit, { color: theme.accent }]}>
+                {source.label} ({source.licence})
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
 
       <Section title="En bref" theme={theme} />
       <View style={[styles.group, { backgroundColor: theme.surface }]}>
@@ -229,43 +278,6 @@ export function MonumentPage({ monument, photos, capture }: Props) {
         </>
       )}
 
-      <Section title="Histoire" theme={theme} />
-      {monument.story === null ? (
-        <View style={[styles.group, { backgroundColor: theme.surface }]}>
-          <Text style={[styles.note, { color: theme.secondaryText }]}>
-            Fiche à enrichir : l’histoire de ce lieu n’est pas encore rédigée.
-          </Text>
-        </View>
-      ) : (
-        <View style={[styles.group, styles.story, { backgroundColor: theme.surface }]}>
-          {monument.story.split(/\n\s*\n/).map((paragraph) => (
-            <Text key={paragraph} style={[styles.paragraph, { color: theme.text }]}>
-              {paragraph}
-            </Text>
-          ))}
-          {monument.didYouKnow !== null && (
-            <View style={[styles.didYouKnow, { borderColor: theme.accent }]}>
-              <Text style={[styles.didYouKnowTitle, { color: theme.accent }]}>Le saviez-vous ?</Text>
-              <Text style={[styles.paragraph, { color: theme.text }]}>{monument.didYouKnow}</Text>
-            </View>
-          )}
-          <Text style={[styles.credit, { color: theme.secondaryText }]}>
-            {describeCredit(monument)}
-          </Text>
-          {monument.storySources.map((source) => (
-            <Pressable
-              key={source.url}
-              onPress={() => void Linking.openURL(source.url)}
-              accessibilityRole="link"
-            >
-              <Text style={[styles.credit, { color: theme.accent }]}>
-                {source.label} ({source.licence})
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-      )}
-
       <Section title="Sources" theme={theme} />
       <View style={[styles.group, { backgroundColor: theme.surface }]}>
         {listSources(monument).map((source, index) => (
@@ -289,7 +301,7 @@ const styles = StyleSheet.create({
   },
   heading: {
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 12,
   },
   title: {
     fontFamily: fonts.title,
@@ -361,14 +373,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 23,
   },
-  didYouKnow: {
-    borderLeftWidth: 3,
-    paddingLeft: 12,
-    gap: 4,
-  },
-  didYouKnowTitle: {
-    fontSize: 14,
-    fontWeight: '700',
+  // What is surprising about the place, framed in the green of a capture.
+  surprise: {
+    borderWidth: 1.5,
   },
   credit: {
     fontSize: 13,
