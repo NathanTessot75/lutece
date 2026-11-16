@@ -1,4 +1,4 @@
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -10,6 +10,7 @@ import {
   listPhotos,
 } from '@/db/monuments';
 import { useCaptures } from '@/features/collection/CapturesProvider';
+import { CloseSheetButton } from '@/features/monuments/CloseSheetButton';
 import { MonumentPage } from '@/features/monuments/MonumentPage';
 import { useTheme } from '@/lib/theme';
 import { Text } from '@/lib/typography';
@@ -41,8 +42,7 @@ export default function MonumentScreen() {
 
   const shown = loaded?.id === id ? loaded : null;
   return (
-    <>
-      <Stack.Screen options={{ title: '', headerBackButtonDisplayMode: 'minimal' }} />
+    <View style={styles.sheet}>
       {shown?.monument ? (
         <MonumentPage
           monument={shown.monument}
@@ -56,11 +56,15 @@ export default function MonumentScreen() {
           )}
         </View>
       )}
-    </>
+      <CloseSheetButton />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  sheet: {
+    flex: 1,
+  },
   empty: {
     flex: 1,
     alignItems: 'center',

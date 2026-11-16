@@ -14,6 +14,12 @@ import { RankingProvider } from '@/features/ranking/RankingProvider';
 import { useNavigationTheme, useTheme } from '@/lib/theme';
 import { FONT_ASSETS, HEADER_FACES } from '@/lib/typography';
 
+/** The navigation bar of a group page, hidden when it rises as a sheet. */
+function groupOptions({ route }: { route: { params?: object } }) {
+  const params = route.params as { sheet?: string } | undefined;
+  return { headerShown: params?.sheet !== '1' };
+}
+
 function Loading() {
   const theme = useTheme();
   return (
@@ -54,6 +60,15 @@ export default function RootLayout() {
                     <RankingProvider>
                       <Stack screenOptions={HEADER_FACES}>
                         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                        {/* The page of a monument rises from the bottom, over what showed it. */}
+                        <Stack.Screen
+                          name="monument/[id]"
+                          options={{ presentation: 'modal', headerShown: false }}
+                        />
+                        {/* Opened from the page of a monument, a group rises as a sheet:
+                            its own button lowers it, without a navigation bar. */}
+                        <Stack.Screen name="series/[slug]" options={groupOptions} />
+                        <Stack.Screen name="arrondissement/[number]" options={groupOptions} />
                       </Stack>
                     </RankingProvider>
                   </ContributeProvider>

@@ -205,10 +205,13 @@ export function MonumentPage({ monument, photos, capture }: Props) {
                 ]}
                 onPress={() =>
                   advance.kind === 'series'
-                    ? router.push({ pathname: '/series/[slug]', params: { slug: advance.key } })
+                    ? router.push({
+                        pathname: '/series/[slug]',
+                        params: { slug: advance.key, sheet: '1' },
+                      })
                     : router.push({
                         pathname: '/arrondissement/[number]',
-                        params: { number: advance.key },
+                        params: { number: advance.key, sheet: '1' },
                       })
                 }
                 accessibilityRole="button"

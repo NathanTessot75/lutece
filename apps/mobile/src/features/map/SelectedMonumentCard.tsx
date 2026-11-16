@@ -1,3 +1,4 @@
+import { SymbolView } from 'expo-symbols';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import type { MonumentSummary } from '@/db/monuments';
@@ -25,7 +26,13 @@ export function SelectedMonumentCard({ monument }: { monument: MonumentSummary }
           {describeMonument(monument)}
         </Text>
       </View>
-      <Text style={[styles.chevron, { color: theme.secondaryText }]}>›</Text>
+      {/* The page rises from the bottom. */}
+      <SymbolView
+        name="chevron.up"
+        size={16}
+        tintColor={theme.secondaryText}
+        weight="semibold"
+      />
     </Pressable>
   );
 }
@@ -46,9 +53,6 @@ const styles = StyleSheet.create({
   },
   text: {
     flex: 1,
-  },
-  chevron: {
-    fontSize: 24,
   },
   title: {
     fontFamily: fonts.title,

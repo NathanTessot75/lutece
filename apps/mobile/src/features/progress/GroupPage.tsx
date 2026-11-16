@@ -11,7 +11,7 @@ import { describeMonument } from '@/features/monuments/describe';
 import { useOpenMonument } from '@/features/monuments/useOpenMonument';
 import { formatDate } from '@/lib/format';
 import { type Theme, useTheme } from '@/lib/theme';
-import { Text } from '@/lib/typography';
+import { Text, fonts } from '@/lib/typography';
 
 type RowProps = {
   monument: MonumentSummary;
@@ -59,13 +59,15 @@ function Row({ monument, capture, theme, onOpen }: RowProps) {
 }
 
 type Props = {
+  /** Written at the top of the page when no navigation bar shows it. */
+  title?: string;
   /** What the group gathers; none for an arrondissement. */
   description: string | null;
   ids: readonly string[];
 };
 
 /** The places of a series or of an arrondissement: those captured first. */
-export function GroupPage({ description, ids }: Props) {
+export function GroupPage({ title, description, ids }: Props) {
   const db = useSQLiteContext();
   const theme = useTheme();
   const open = useOpenMonument();
@@ -103,6 +105,9 @@ export function GroupPage({ description, ids }: Props) {
       style={{ backgroundColor: theme.background }}
       ListHeaderComponent={
         <View style={styles.header}>
+          {title !== undefined && (
+            <Text style={[styles.pageTitle, { color: theme.text }]}>{title}</Text>
+          )}
           {description !== null && (
             <Text style={[styles.description, { color: theme.text }]}>{description}</Text>
           )}
@@ -128,6 +133,8 @@ export function GroupPage({ description, ids }: Props) {
 
 const styles = StyleSheet.create({
   header: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16, gap: 8 },
+  // Below the button that lowers the sheet.
+  pageTitle: { fontFamily: fonts.title, fontSize: 28, lineHeight: 34, marginTop: 60 },
   description: { fontSize: 16, lineHeight: 22 },
   count: { fontSize: 15 },
   track: { height: 6, borderRadius: 3, overflow: 'hidden' },
