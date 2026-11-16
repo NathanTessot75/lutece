@@ -44,9 +44,9 @@ export function formatDistance(metres: number): string {
   return `${formatCount(rounded)}\u00a0m`;
 }
 
-const DIRECTIONS = ['nord', 'nord-est', 'est', 'sud-est', 'sud', 'sud-ouest', 'ouest', 'nord-ouest'];
+const DIRECTIONS = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'];
 
-/** 135 → « 135° sud-est ». */
+/** 135 → « 135° SE ». */
 export function formatHeading(degrees: number): string {
   const rounded = Math.round(degrees) % 360;
   return `${rounded}° ${DIRECTIONS[Math.round(rounded / 45) % DIRECTIONS.length]}`;

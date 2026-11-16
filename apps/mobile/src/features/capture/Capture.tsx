@@ -2,8 +2,10 @@ import Constants from 'expo-constants';
 import { useIsFocused } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useSQLiteContext } from 'expo-sqlite';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BUNDLE_MODEL, BUNDLE_VERSION } from '@/db/bundle';
 import {
@@ -29,15 +31,15 @@ import { parseFootprint } from '@/features/map/footprint';
 import { likeness } from '@/features/recognition/likeness';
 import { embedPhoto, openModel } from '@/features/recognition/model';
 import { type CompassReading, type Position, useLocationAccess } from '@/lib/location';
+import { useTabBarRoom } from '@/lib/tabBar';
 import { useTheme } from '@/lib/theme';
 import { Text } from '@/lib/typography';
 
-import { CandidateList } from './CandidateList';
 import { type Candidate, coneHalfWidth } from './candidates';
 import { Captured } from './Captured';
+import { type CaptureMessage, CaptureOverlay } from './CaptureOverlay';
 import { ChooseMonument } from './ChooseMonument';
 import { type Decision, type Refusal, type Scored, decideShot, refuseBeforePhoto } from './decision';
-import { describeCandidate } from './describe';
 import { sight } from './geometry';
 import { keepPhoto } from './photos';
 import { type AimTarget, useAim } from './useAim';
@@ -67,14 +69,20 @@ type Stage =
   | { step: 'choosing'; shot: Shot; candidates: Scored<AimTarget>[]; confirm: boolean }
   | { step: 'captured'; monument: CapturableMonument; photoFile: string | null; points: number };
 
-const REFUSALS: Record<Refusal, string> = {
-  out_of_reach: 'Aucun monument à capturer ici : approche-toi d’un monument.',
-  not_facing: 'Tourne-toi vers le monument : il doit être dans le viseur.',
-  compass_lost: 'La boussole est perdue : fais des 8 avec le téléphone, puis réessaie.',
-  already_captured: 'Tu as déjà capturé ce monument.',
-  not_recognised: 'Lutèce ne reconnaît pas de monument sur ta photo : rapproche-toi ou vise sa façade.',
-  too_far_without_photo: 'Sans photo, Lutèce ne peut vérifier qu’à moins de 30 m : approche-toi.',
+const REFUSALS: Record<Refusal, CaptureMessage> = {
+  out_of_reach: { icon: 'mappin.slash', text: 'Aucun monument à portée' },
+  not_facing: { icon: 'scope', text: 'Vise le monument' },
+  compass_lost: { icon: 'safari', text: 'Boussole perdue : fais des 8' },
+  already_captured: { icon: 'checkmark.seal.fill', text: 'Déjà capturé' },
+  not_recognised: { icon: 'eye.slash', text: 'Non reconnu : rapproche-toi' },
+  too_far_without_photo: { icon: 'figure.walk', text: 'Sans photo : approche à 30 m' },
 };
+
+// A message stays this long over the camera.
+const MESSAGE_MS = 3000;
+// Between the shutter and the tabs, and between the monument aimed at and the shutter.
+const SHUTTER_GAP = 6;
+const AIM_GAP = 14;
 
 /** Aim at a monument, shoot, and add it to the collection. */
 export function Capture() {
@@ -89,8 +97,10 @@ export function Capture() {
   const viewfinder = useRef<ViewfinderHandle>(null);
   const [stage, setStage] = useState<Stage>({ step: 'aiming' });
   const [refusal, setRefusal] = useState<Refusal | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<CaptureMessage | null>(null);
   const [busy, setBusy] = useState(false);
+  const insets = useSafeAreaInsets();
+  const shutterBottom = insets.bottom + useTabBarRoom() + SHUTTER_GAP;
 
   // The model takes a moment to load: better before the first shot than during it.
   useEffect(() => {
@@ -98,6 +108,18 @@ export function Capture() {
       // It will be loaded again at the first shot.
     });
   }, []);
+
+  // A message goes by itself after a moment.
+  useEffect(() => {
+    if (refusal === null && notice === null) {
+      return;
+    }
+    const timer = setTimeout(() => {
+      setRefusal(null);
+      setNotice(null);
+    }, MESSAGE_MS);
+    return () => clearTimeout(timer);
+  }, [refusal, notice]);
 
   if (!location.granted) {
     return (
@@ -276,7 +298,10 @@ export function Capture() {
       hidden: label.hidden,
     });
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setNotice(`Photo n° ${collect.samples.length + 1} gardée pour le jeu de test.`);
+    setNotice({
+      icon: 'tray.and.arrow.down.fill',
+      text: `Photo n° ${collect.samples.length + 1} gardée`,
+    });
     setStage({ step: 'aiming' });
   };
 
@@ -311,52 +336,31 @@ export function Capture() {
     );
   }
 
-  const aimed = candidates.find(
-    (candidate) => candidate.inSight && !captured.has(candidate.target.id),
-  );
-  const label = busy
-    ? 'Je regarde ta photo…'
-    : aimed
-      ? `${aimed.target.monument.title}\n${describeCandidate(aimed)}`
-      : position === null
-        ? 'Recherche de ta position…'
-        : 'Vise un monument';
+  // The monument aimed at: one still to capture first, else one already captured.
+  const inSight = candidates.filter((candidate) => candidate.inSight);
+  const aimed =
+    inSight.find((candidate) => !captured.has(candidate.target.id)) ?? inSight[0] ?? null;
   return (
-    <View style={[styles.screen, { backgroundColor: theme.background }]}>
-      <View style={styles.top}>
-        <Viewfinder ref={viewfinder} active={focused} label={label} />
-        <Pressable
-          style={[styles.shutter, { borderColor: theme.background }, busy && styles.pressed]}
-          onPress={() => void (collect.enabled ? collectShot() : shoot())}
-          disabled={busy}
-          accessibilityRole="button"
-          accessibilityLabel="Capturer"
-        >
-          <View style={[styles.shutterCore, { backgroundColor: theme.gold }]} />
-        </Pressable>
-      </View>
-      {collect.enabled && (
-        <Text style={[styles.collect, { color: theme.onAccent, backgroundColor: theme.accent }]}>
-          Mode collecte · {collect.samples.length}{' '}
-          {collect.samples.length > 1 ? 'photos' : 'photo'}
-        </Text>
-      )}
-      {refusal !== null && (
-        <Text style={[styles.refusal, { color: theme.text, backgroundColor: theme.surface }]}>
-          {REFUSALS[refusal]}
-        </Text>
-      )}
-      {notice !== null && (
-        <Text style={[styles.refusal, { color: theme.text, backgroundColor: theme.surface }]}>
-          {notice}
-        </Text>
-      )}
-      <CandidateList
-        position={position}
+    <View style={styles.screen}>
+      {focused && <StatusBar style="light" />}
+      <Viewfinder ref={viewfinder} active={focused} />
+      <CaptureOverlay
         compass={compass}
-        candidates={candidates}
-        captured={captured}
+        aimed={aimed && { candidate: aimed, captured: captured.has(aimed.target.id) }}
+        waiting={busy ? 'photo' : position === null ? 'position' : null}
+        message={refusal !== null ? REFUSALS[refusal] : notice}
+        collected={collect.enabled ? collect.samples.length : null}
+        aimBottom={shutterBottom + SHUTTER_SIZE + AIM_GAP}
       />
+      <Pressable
+        style={[styles.shutter, { bottom: shutterBottom }, busy && styles.busy]}
+        onPress={() => void (collect.enabled ? collectShot() : shoot())}
+        disabled={busy}
+        accessibilityRole="button"
+        accessibilityLabel="Capturer"
+      >
+        {({ pressed }) => <View style={[styles.shutterCore, pressed && styles.shutterDown]} />}
+      </Pressable>
     </View>
   );
 }
@@ -364,8 +368,10 @@ export function Capture() {
 const SHUTTER_SIZE = 72;
 
 const styles = StyleSheet.create({
+  // Black under the camera, in both appearances of the phone.
   screen: {
     flex: 1,
+    backgroundColor: '#000000',
   },
   message: {
     flex: 1,
@@ -387,49 +393,29 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  // The shutter sits astride the lower edge of the viewfinder: the room left
-  // under the viewfinder keeps all of it within reach of a finger.
-  top: {
-    paddingBottom: SHUTTER_SIZE / 2,
-  },
+  // The shutter of a camera, all white: a ring, and a disc that sinks under
+  // the thumb. It sits low, above the tabs.
   shutter: {
     position: 'absolute',
     alignSelf: 'center',
-    bottom: 0,
     width: SHUTTER_SIZE,
     height: SHUTTER_SIZE,
     borderRadius: SHUTTER_SIZE / 2,
-    borderWidth: 5,
-    backgroundColor: '#FFFFFF',
+    borderWidth: 4,
+    borderColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   shutterCore: {
-    width: SHUTTER_SIZE - 22,
-    height: SHUTTER_SIZE - 22,
-    borderRadius: (SHUTTER_SIZE - 22) / 2,
+    width: SHUTTER_SIZE - 16,
+    height: SHUTTER_SIZE - 16,
+    borderRadius: (SHUTTER_SIZE - 16) / 2,
+    backgroundColor: '#FFFFFF',
   },
-  pressed: {
+  shutterDown: {
+    transform: [{ scale: 0.88 }],
+  },
+  busy: {
     opacity: 0.5,
-  },
-  collect: {
-    marginHorizontal: 16,
-    marginTop: 10,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    fontSize: 15,
-    fontWeight: '600',
-    overflow: 'hidden',
-    alignSelf: 'flex-start',
-  },
-  refusal: {
-    marginHorizontal: 16,
-    marginTop: 10,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 15,
-    overflow: 'hidden',
   },
 });

@@ -32,11 +32,12 @@ describe('formats', () => {
   });
 
   it('names the direction of a heading', () => {
-    expect(formatHeading(0)).toBe('0° nord');
-    expect(formatHeading(110)).toBe('110° est');
-    expect(formatHeading(135)).toBe('135° sud-est');
-    expect(formatHeading(359.6)).toBe('0° nord');
-    expect(formatHeading(340)).toBe('340° nord');
+    expect(formatHeading(0)).toBe('0° N');
+    expect(formatHeading(110)).toBe('110° E');
+    expect(formatHeading(135)).toBe('135° SE');
+    expect(formatHeading(225)).toBe('225° SO');
+    expect(formatHeading(359.6)).toBe('0° N');
+    expect(formatHeading(340)).toBe('340° N');
   });
 
   it('writes dates in full', () => {

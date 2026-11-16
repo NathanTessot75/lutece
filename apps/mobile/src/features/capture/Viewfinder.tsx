@@ -11,8 +11,6 @@ type Props = {
   ref: Ref<ViewfinderHandle>;
   /** Whether the screen is in front: the camera rests otherwise. */
   active: boolean;
-  /** What is aimed at, written over the image. */
-  label: string;
 };
 
 const PICTURE_QUALITY = 0.8;
@@ -23,8 +21,11 @@ function giveUp(): Promise<null> {
   return new Promise((resolve) => setTimeout(() => resolve(null), PICTURE_TIMEOUT_MS));
 }
 
-/** What the camera sees. Without a camera, a capture goes without a picture. */
-export function Viewfinder({ ref, active, label }: Props) {
+/**
+ * What the camera sees, over the whole screen. Without a camera, a capture
+ * goes without a picture.
+ */
+export function Viewfinder({ ref, active }: Props) {
   const [permission, request] = useCameraPermissions({ request: true });
   const camera = useRef<CameraView>(null);
   const [ready, setReady] = useState(false);
@@ -79,11 +80,6 @@ export function Viewfinder({ ref, active, label }: Props) {
           )}
         </View>
       )}
-      <View style={styles.caption}>
-        <Text style={styles.captionText} numberOfLines={2}>
-          {label}
-        </Text>
-      </View>
     </View>
   );
 }
@@ -91,16 +87,18 @@ export function Viewfinder({ ref, active, label }: Props) {
 // The viewfinder is dark in both appearances of the phone, like a camera.
 const styles = StyleSheet.create({
   frame: {
-    aspectRatio: 1,
-    backgroundColor: '#000000',
-    justifyContent: 'flex-end',
-  },
-  missing: {
     ...StyleSheet.absoluteFill,
+    backgroundColor: '#000000',
+  },
+  // Above the monument drawn faintly in the middle of the screen.
+  missing: {
+    position: 'absolute',
+    top: '24%',
+    left: 0,
+    right: 0,
     alignItems: 'center',
-    justifyContent: 'center',
     gap: 14,
-    padding: 32,
+    paddingHorizontal: 32,
   },
   missingText: {
     color: '#C7C7CC',
@@ -117,17 +115,5 @@ const styles = StyleSheet.create({
     color: '#1C1C1E',
     fontSize: 15,
     fontWeight: '600',
-  },
-  caption: {
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 44,
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
-  },
-  captionText: {
-    color: '#FFFFFF',
-    fontSize: 17,
-    fontWeight: '600',
-    textAlign: 'center',
   },
 });
