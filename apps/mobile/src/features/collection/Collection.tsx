@@ -1,191 +1,264 @@
-import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
+import { SymbolView } from 'expo-symbols';
 import { useEffect, useState } from 'react';
-import { FlatList, Image, Pressable, StyleSheet, View } from 'react-native';
-
-import { BUNDLE_MONUMENT_COUNT } from '@/db/bundle';
-import type { Capture } from '@/db/captures';
 import {
-  type MonumentSummary,
-  countCapturable,
-  listMonuments,
-  listMonumentsByIds,
-} from '@/db/monuments';
+  Image,
+  Pressable,
+  SectionList,
+  StyleSheet,
+  TextInput,
+  View,
+  useWindowDimensions,
+} from 'react-native';
+
+import type { Capture } from '@/db/captures';
+import { type MonumentSummary, type RarityTier, listMonuments } from '@/db/monuments';
 import { photoUri } from '@/features/capture/photos';
-import { useBadgeBook } from '@/features/badges/useBadgeBook';
-import { useContribution } from '@/features/contribute/ContributeProvider';
-import { formatPoints, totalPoints } from '@/features/game/rarity';
-import { useRanking } from '@/features/ranking/RankingProvider';
-import { MonumentList } from '@/features/monuments/MonumentList';
-import { type MonumentSection, groupByArrondissement } from '@/features/monuments/sections';
+import { formatPoints, tierLabel, totalPoints } from '@/features/game/rarity';
 import { useOpenMonument } from '@/features/monuments/useOpenMonument';
-import { formatCount, formatDate } from '@/lib/format';
+import { formatArrondissement, formatCount } from '@/lib/format';
 import { useTabBarInsets } from '@/lib/tabBar';
 import { type Theme, useTheme } from '@/lib/theme';
-import { Text } from '@/lib/typography';
+import { Text, fonts } from '@/lib/typography';
 
 import { useCaptures } from './CapturesProvider';
+import {
+  type Entry,
+  type Filter,
+  chapters,
+  countByTier,
+  formatNumber,
+  numberPlaces,
+  rows,
+} from './catalogue';
 
-type RowProps = {
-  capture: Capture;
-  monument: MonumentSummary;
+const COLUMNS = 3;
+const MARGIN = 16;
+const GAP = 10;
+const TIERS: readonly RarityTier[] = ['commun', 'peu_commun', 'rare', 'légendaire'];
+const FILTERS: readonly { filter: Filter; label: string }[] = [
+  { filter: 'all', label: 'Tous' },
+  { filter: 'captured', label: 'Capturés' },
+  { filter: 'toCapture', label: 'À capturer' },
+];
+
+type CardProps = {
+  entry: Entry;
+  capture: Capture | undefined;
+  size: number;
   theme: Theme;
   onOpen: (id: string) => void;
 };
 
-function Row({ capture, monument, theme, onOpen }: RowProps) {
+/** A place of the catalogue: its photo once captured, its silhouette before. */
+function Card({ entry, capture, size, theme, onOpen }: CardProps) {
+  const { monument, number } = entry;
+  const tier = monument.rarityTier;
+  const captured = capture !== undefined;
   return (
     <Pressable
-      style={[styles.row, { backgroundColor: theme.surface, borderColor: theme.separator }]}
+      style={({ pressed }) => [
+        styles.card,
+        {
+          width: size,
+          backgroundColor: theme.surface,
+          borderColor: captured ? theme.captured : 'transparent',
+        },
+        pressed && styles.pressed,
+      ]}
       onPress={() => onOpen(monument.id)}
       accessibilityRole="button"
+      accessibilityLabel={[
+        formatNumber(number),
+        monument.title,
+        captured ? 'capturé' : 'à capturer',
+        tier && tierLabel(tier),
+      ]
+        .filter(Boolean)
+        .join(', ')}
     >
-      {capture.photoFile === null ? (
-        <View style={[styles.photo, { backgroundColor: theme.separator }]} />
-      ) : (
-        <Image
-          source={{ uri: photoUri(capture.photoFile) }}
-          style={[styles.photo, { backgroundColor: theme.separator }]}
-          accessibilityIgnoresInvertColors
-        />
-      )}
-      <View style={styles.text}>
-        <Text style={[styles.title, { color: theme.text }]} numberOfLines={3}>
+      <View style={[styles.picture, { height: size - 4, backgroundColor: theme.background }]}>
+        {capture?.photoFile ? (
+          <Image
+            source={{ uri: photoUri(capture.photoFile) }}
+            style={StyleSheet.absoluteFill}
+            resizeMode="cover"
+            accessibilityIgnoresInvertColors
+          />
+        ) : (
+          <SymbolView
+            name="building.columns.fill"
+            size={size * 0.38}
+            tintColor={captured ? theme.captured : theme.separator}
+            type="monochrome"
+          />
+        )}
+        {captured && (
+          <View style={[styles.seal, { backgroundColor: theme.captured }]}>
+            <SymbolView
+              name="checkmark"
+              size={10}
+              tintColor={theme.onCaptured}
+              weight="bold"
+              type="monochrome"
+            />
+          </View>
+        )}
+      </View>
+      <View style={styles.label}>
+        <View style={styles.numberLine}>
+          <Text style={[styles.number, { color: theme.secondaryText }]}>{formatNumber(number)}</Text>
+          {tier !== null && <View style={[styles.dot, { backgroundColor: theme.rarity[tier] }]} />}
+        </View>
+        <Text
+          style={[styles.name, { color: captured ? theme.text : theme.secondaryText }]}
+          numberOfLines={2}
+        >
           {monument.title}
-        </Text>
-        <Text style={[styles.details, { color: theme.secondaryText }]}>
-          Capturé le {formatDate(capture.capturedAt)}
         </Text>
       </View>
     </Pressable>
   );
 }
 
-function ContributeLink({ theme }: { theme: Theme }) {
-  const router = useRouter();
-  const { available, enabled } = useContribution();
-  if (!available) {
-    return null;
-  }
+type HeroProps = {
+  monuments: readonly MonumentSummary[];
+  captured: { has: (id: string) => boolean };
+  points: number;
+  theme: Theme;
+};
+
+/** How much of the city is captured, in all and by rarity. */
+function Hero({ monuments, captured, points, theme }: HeroProps) {
+  const total = monuments.length;
+  const count = monuments.filter((monument) => captured.has(monument.id)).length;
+  const tiers = countByTier(monuments, captured);
   return (
-    <Pressable
-      style={[styles.card, styles.contribute, { backgroundColor: theme.surface }]}
-      onPress={() => router.push('/contribute')}
-      accessibilityRole="button"
-    >
-      <Text style={[styles.title, { color: theme.text }]}>Contribuer mes photos</Text>
-      <Text style={[styles.details, { color: theme.secondaryText }]}>
-        {enabled ? 'Activé' : 'Désactivé'}
-      </Text>
-    </Pressable>
-  );
-}
-
-function ProgressLink({ theme }: { theme: Theme }) {
-  const router = useRouter();
-  return (
-    <Pressable
-      style={[styles.card, styles.progress, { backgroundColor: theme.surface }]}
-      onPress={() => router.push('/progress')}
-      accessibilityRole="button"
-    >
-      <Text style={[styles.title, { color: theme.text }]}>Progression</Text>
-      <Text style={[styles.details, { color: theme.secondaryText }]}>Arrondissements et séries</Text>
-    </Pressable>
-  );
-}
-
-function BadgesLink({ theme }: { theme: Theme }) {
-  const router = useRouter();
-  const states = useBadgeBook();
-  const won = states?.filter((state) => state.wonAt !== null).length;
-  return (
-    <Pressable
-      style={[styles.card, styles.progress, { backgroundColor: theme.surface }]}
-      onPress={() => router.push('/badges')}
-      accessibilityRole="button"
-    >
-      <Text style={[styles.title, { color: theme.text }]}>Badges</Text>
-      <Text style={[styles.details, { color: theme.secondaryText }]}>
-        {states === null ? ' ' : `${won}/${states.length}`}
-      </Text>
-    </Pressable>
-  );
-}
-
-function LeaderboardLink({ theme }: { theme: Theme }) {
-  const router = useRouter();
-  const { available, username } = useRanking();
-  if (!available) {
-    return null;
-  }
-  return (
-    <Pressable
-      style={[styles.card, styles.progress, { backgroundColor: theme.surface }]}
-      onPress={() => router.push('/leaderboard')}
-      accessibilityRole="button"
-    >
-      <Text style={[styles.title, { color: theme.text }]}>Classement</Text>
-      <Text style={[styles.details, { color: theme.secondaryText }]} numberOfLines={1}>
-        {username ?? 'Rejoindre'}
-      </Text>
-    </Pressable>
-  );
-}
-
-type Shown = 'captures' | 'places';
-
-const VIEWS: readonly { view: Shown; label: string }[] = [
-  { view: 'captures', label: 'Mes captures' },
-  { view: 'places', label: 'Tous les lieux' },
-];
-
-/** The two views of the collection, as tabs under the title. */
-function Views({ shown, onShow, theme }: { shown: Shown; onShow: (view: Shown) => void; theme: Theme }) {
-  return (
-    <View style={[styles.views, { borderColor: theme.separator }]} accessibilityRole="tablist">
-      {VIEWS.map(({ view, label }) => {
-        const chosen = view === shown;
-        return (
-          <Pressable
-            key={view}
-            style={[styles.view, chosen && { borderColor: theme.accent }]}
-            onPress={() => onShow(view)}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: chosen }}
+    <View style={[styles.hero, { backgroundColor: theme.surface }]}>
+      <View style={styles.heroLine}>
+        <Text style={[styles.heroCount, { color: theme.text }]}>{formatCount(count)}</Text>
+        <Text style={[styles.heroTotal, { color: theme.secondaryText }]}>
+          / {formatCount(total)} {count > 1 ? 'lieux capturés' : 'lieu capturé'}
+        </Text>
+        <Text style={[styles.heroPoints, { color: theme.rarity.légendaire }]}>
+          {formatPoints(points)}
+        </Text>
+      </View>
+      <View style={[styles.track, { backgroundColor: theme.separator }]}>
+        <View
+          style={[
+            styles.fill,
+            {
+              width: `${total === 0 ? 0 : (count / total) * 100}%`,
+              backgroundColor: theme.captured,
+            },
+          ]}
+        />
+      </View>
+      <View style={styles.tiers}>
+        {TIERS.map((tier) => (
+          <View
+            key={tier}
+            style={styles.tier}
+            accessible
+            accessibilityLabel={`${tierLabel(tier)} : ${tiers[tier].captured} sur ${tiers[tier].total}`}
           >
-            <Text style={[styles.viewLabel, { color: chosen ? theme.accent : theme.secondaryText }]}>
-              {label}
+            <View style={[styles.dot, { backgroundColor: theme.rarity[tier] }]} />
+            <Text style={[styles.tierCount, { color: theme.secondaryText }]}>
+              {tiers[tier].captured}/{tiers[tier].total}
             </Text>
-          </Pressable>
-        );
-      })}
+          </View>
+        ))}
+      </View>
     </View>
   );
 }
 
-function countLine(captured: number, capturable: number, points: number): string {
-  const what = captured > 1 ? 'monuments capturés' : 'monument capturé';
-  return `${formatCount(captured)} ${what} sur ${formatCount(capturable)} · ${formatPoints(points)}`;
+type FiltersProps = {
+  filter: Filter;
+  onFilter: (filter: Filter) => void;
+  search: string | null;
+  onSearch: (search: string | null) => void;
+  theme: Theme;
+};
+
+/** All the places, those captured or those to capture; and a search by name or number. */
+function Filters({ filter, onFilter, search, onSearch, theme }: FiltersProps) {
+  return (
+    <View style={styles.filters}>
+      <View style={styles.chips}>
+        {FILTERS.map((one) => {
+          const chosen = one.filter === filter;
+          return (
+            <Pressable
+              key={one.filter}
+              style={[styles.chip, { backgroundColor: chosen ? theme.accent : theme.surface }]}
+              onPress={() => onFilter(one.filter)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: chosen }}
+            >
+              <Text style={[styles.chipLabel, { color: chosen ? theme.onAccent : theme.text }]}>
+                {one.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+        <Pressable
+          style={[
+            styles.chip,
+            styles.searchChip,
+            { backgroundColor: search === null ? theme.surface : theme.accent },
+          ]}
+          onPress={() => onSearch(search === null ? '' : null)}
+          accessibilityRole="button"
+          accessibilityLabel={search === null ? 'Chercher un lieu' : 'Fermer la recherche'}
+        >
+          <SymbolView
+            name="magnifyingglass"
+            size={15}
+            tintColor={search === null ? theme.text : theme.onAccent}
+            weight="semibold"
+            type="monochrome"
+          />
+        </Pressable>
+      </View>
+      {search !== null && (
+        <View style={[styles.search, { backgroundColor: theme.surface }]}>
+          <TextInput
+            style={[styles.searchInput, { color: theme.text, fontFamily: fonts.regular }]}
+            value={search}
+            onChangeText={onSearch}
+            placeholder="Nom ou numéro"
+            placeholderTextColor={theme.secondaryText}
+            autoFocus
+            autoCorrect={false}
+            clearButtonMode="while-editing"
+            returnKeyType="search"
+          />
+        </View>
+      )}
+    </View>
+  );
 }
 
-/** What the player has captured, the latest first. */
+/** Every place of the app, numbered like a catalogue, the captured ones in colour. */
 export function Collection() {
   const db = useSQLiteContext();
   const theme = useTheme();
   const tabBarInsets = useTabBarInsets();
   const open = useOpenMonument();
-  const { captures } = useCaptures();
-  const [monuments, setMonuments] = useState<ReadonlyMap<string, MonumentSummary>>(new Map());
-  const [capturable, setCapturable] = useState<number | null>(null);
-  const [view, setView] = useState<Shown>('captures');
-  const [sections, setSections] = useState<MonumentSection[] | null>(null);
+  const { width } = useWindowDimensions();
+  const { captures, byMonument } = useCaptures();
+  const [monuments, setMonuments] = useState<MonumentSummary[] | null>(null);
+  const [filter, setFilter] = useState<Filter>('all');
+  // Null while the search is closed.
+  const [search, setSearch] = useState<string | null>(null);
 
   useEffect(() => {
     let current = true;
-    void countCapturable(db).then((count) => {
+    void listMonuments(db).then((found) => {
       if (current) {
-        setCapturable(count);
+        setMonuments(found);
       }
     });
     return () => {
@@ -193,153 +266,237 @@ export function Collection() {
     };
   }, [db]);
 
-  useEffect(() => {
-    let current = true;
-    const ids = captures.map((capture) => capture.monumentId);
-    void listMonumentsByIds(db, ids).then((found) => {
-      if (current) {
-        setMonuments(new Map(found.map((monument) => [monument.id, monument])));
-      }
-    });
-    return () => {
-      current = false;
-    };
-  }, [db, captures]);
-
-  // Every place, by arrondissement, the first time it is asked for.
-  const wantsPlaces = view === 'places';
-  useEffect(() => {
-    if (!wantsPlaces) {
-      return;
-    }
-    let current = true;
-    void listMonuments(db).then((found) => {
-      if (current) {
-        setSections(groupByArrondissement(found));
-      }
-    });
-    return () => {
-      current = false;
-    };
-  }, [db, wantsPlaces]);
-
-  const tabs = <Views shown={view} onShow={setView} theme={theme} />;
-  if (view === 'places') {
-    return (
-      <MonumentList
-        header={tabs}
-        sections={sections ?? []}
-        caption={`${formatCount(BUNDLE_MONUMENT_COUNT)} monuments et lieux de Paris`}
-      />
-    );
-  }
-
-  // A capture whose monument has left the bundle is kept, but not shown.
-  const shown = captures.flatMap((capture) => {
-    const monument = monuments.get(capture.monumentId);
-    return monument ? [{ capture, monument }] : [];
-  });
+  const size = (width - 2 * MARGIN - (COLUMNS - 1) * GAP) / COLUMNS;
+  const kept = chapters(numberPlaces(monuments ?? []), filter, search ?? '', byMonument);
+  const sections = kept.map((chapter) => ({ chapter, data: rows(chapter.entries, COLUMNS) }));
+  const empty =
+    filter === 'captured' && !search
+      ? 'Votre collection est vide. Approchez-vous d’un monument et capturez-le depuis l’onglet Photo.'
+      : 'Aucun lieu ne correspond.';
   return (
-    <FlatList
-      data={shown}
-      keyExtractor={({ capture }) => capture.monumentId}
+    <SectionList
+      sections={sections}
+      keyExtractor={(row) => row[0].monument.id}
       contentInsetAdjustmentBehavior="automatic"
       {...tabBarInsets}
+      keyboardDismissMode="on-drag"
+      keyboardShouldPersistTaps="handled"
+      // A pinned header would slide under the translucent navigation bar.
+      stickySectionHeadersEnabled={false}
       style={{ backgroundColor: theme.background }}
       ListHeaderComponent={
-        <>
-          {tabs}
-          <Text style={[styles.caption, { color: theme.secondaryText }]}>
-            {capturable === null ? ' ' : countLine(captures.length, capturable, totalPoints(captures))}
-          </Text>
-          <ProgressLink theme={theme} />
-          <BadgesLink theme={theme} />
-          <LeaderboardLink theme={theme} />
-        </>
+        monuments === null ? null : (
+          <>
+            <Hero
+              monuments={monuments}
+              captured={byMonument}
+              points={totalPoints(captures)}
+              theme={theme}
+            />
+            <Filters
+              filter={filter}
+              onFilter={setFilter}
+              search={search}
+              onSearch={setSearch}
+              theme={theme}
+            />
+          </>
+        )
       }
       ListEmptyComponent={
-        captures.length === 0 ? (
-          <Text style={[styles.empty, { color: theme.secondaryText }]}>
-            Votre collection est vide. Approchez-vous d’un monument et capturez-le depuis l’onglet Photo.
-          </Text>
-        ) : null
+        monuments === null ? null : (
+          <Text style={[styles.empty, { color: theme.secondaryText }]}>{empty}</Text>
+        )
       }
-      ListFooterComponent={<ContributeLink theme={theme} />}
+      renderSectionHeader={({ section: { chapter } }) => (
+        <View style={styles.chapter}>
+          <Text style={[styles.chapterTitle, { color: theme.text }]}>
+            {chapter.arrondissement === null
+              ? 'Hors des arrondissements'
+              : formatArrondissement(chapter.arrondissement)}
+          </Text>
+          <Text style={[styles.chapterCount, { color: theme.secondaryText }]}>
+            {chapter.captured} / {chapter.total}
+          </Text>
+        </View>
+      )}
       renderItem={({ item }) => (
-        <Row capture={item.capture} monument={item.monument} theme={theme} onOpen={open} />
+        <View style={styles.row}>
+          {item.map((entry) => (
+            <Card
+              key={entry.monument.id}
+              entry={entry}
+              capture={byMonument.get(entry.monument.id)}
+              size={size}
+              theme={theme}
+              onOpen={open}
+            />
+          ))}
+        </View>
       )}
     />
   );
 }
 
 const styles = StyleSheet.create({
-  views: {
+  hero: {
+    marginHorizontal: MARGIN,
+    marginTop: 4,
+    borderRadius: 20,
+    padding: 16,
+    gap: 10,
+  },
+  heroLine: {
     flexDirection: 'row',
-    marginHorizontal: 16,
-    marginBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    alignItems: 'baseline',
+    gap: 6,
   },
-  view: {
+  // Playfair draws old-style figures: « 1er » would read « ıer ».
+  heroCount: {
+    fontFamily: fonts.title,
+    fontSize: 34,
+    lineHeight: 40,
+    fontVariant: ['lining-nums'],
+  },
+  heroTotal: {
     flex: 1,
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 2,
-    borderColor: 'transparent',
-    marginBottom: -StyleSheet.hairlineWidth,
-  },
-  viewLabel: {
     fontSize: 15,
+  },
+  heroPoints: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  track: {
+    height: 7,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  fill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  tiers: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  tier: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  tierCount: {
+    fontSize: 13,
+    fontWeight: '600',
+    fontVariant: ['tabular-nums'],
+  },
+  filters: {
+    marginHorizontal: MARGIN,
+    marginTop: 14,
+    gap: 10,
+  },
+  chips: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  chip: {
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  searchChip: {
+    marginLeft: 'auto',
+    paddingHorizontal: 12,
+    justifyContent: 'center',
+  },
+  chipLabel: {
+    fontSize: 14,
     fontWeight: '600',
   },
-  caption: {
-    fontSize: 15,
-    paddingHorizontal: 16,
-    paddingTop: 4,
-    paddingBottom: 12,
+  search: {
+    borderRadius: 14,
+    paddingHorizontal: 14,
+  },
+  searchInput: {
+    fontSize: 16,
+    paddingVertical: 11,
+  },
+  chapter: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    marginHorizontal: MARGIN,
+    marginTop: 22,
+    marginBottom: 10,
+  },
+  chapterTitle: {
+    fontFamily: fonts.title,
+    fontSize: 21,
+    fontVariant: ['lining-nums'],
+  },
+  chapterCount: {
+    fontSize: 14,
+    fontWeight: '600',
+    fontVariant: ['tabular-nums'],
+  },
+  row: {
+    flexDirection: 'row',
+    gap: GAP,
+    marginHorizontal: MARGIN,
+    marginBottom: GAP,
+  },
+  card: {
+    borderRadius: 16,
+    borderWidth: 2,
+    overflow: 'hidden',
+  },
+  pressed: {
+    opacity: 0.75,
+  },
+  picture: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  seal: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  label: {
+    paddingHorizontal: 8,
+    paddingTop: 6,
+    paddingBottom: 9,
+    gap: 2,
+  },
+  numberLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  number: {
+    fontSize: 11,
+    fontWeight: '600',
+    fontVariant: ['tabular-nums'],
+  },
+  dot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  name: {
+    fontSize: 13,
+    lineHeight: 16,
+    fontWeight: '600',
+    minHeight: 32,
   },
   empty: {
     fontSize: 16,
     lineHeight: 23,
-    paddingHorizontal: 16,
-    paddingTop: 24,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  photo: {
-    width: 72,
-    height: 72,
-    borderRadius: 10,
-  },
-  text: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  details: {
-    fontSize: 13,
-    marginTop: 3,
-  },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 14,
-  },
-  progress: {
-    marginHorizontal: 16,
-    marginBottom: 16,
-  },
-  contribute: {
-    margin: 16,
+    marginHorizontal: MARGIN,
+    marginTop: 24,
   },
 });
