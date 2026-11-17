@@ -35,6 +35,7 @@ COLUMNS = (
     "reach_m",
     "arrondissement",
     "rarity_tier",
+    "capturable",
     "bundle_version",
 )
 
@@ -48,7 +49,7 @@ def read_places(path: Path) -> list[dict[str, Any]]:
     try:
         rows = database.execute(
             "select id, title, lat, lon, footprint, capture_reach_m, arrondissement,"
-            " rarity_tier from monuments order by id"
+            " rarity_tier, readiness <> 'not_ready' as capturable from monuments order by id"
         ).fetchall()
     finally:
         database.close()
@@ -79,6 +80,8 @@ def place_values(place: Record, version: str) -> str:
             literal(place["capture_reach_m"]),
             literal(place["arrondissement"]),
             literal(place["rarity_tier"]),
+            # The daily challenge draws among the places the app lets capture.
+            "true" if place["capturable"] else "false",
             literal(version),
         ]
     )

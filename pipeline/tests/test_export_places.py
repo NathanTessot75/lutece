@@ -16,13 +16,24 @@ def make_bundle(folder: Path) -> None:
     database = sqlite3.connect(folder / "lutece.db")
     database.execute(
         "create table monuments (id text, title text, lat real, lon real, footprint text,"
-        " capture_reach_m integer, arrondissement integer, rarity_tier text)"
+        " capture_reach_m integer, arrondissement integer, rarity_tier text,"
+        " readiness text)"
     )
     database.executemany(
-        "insert into monuments values (?, ?, ?, ?, ?, ?, ?, ?)",
+        "insert into monuments values (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         [
-            ("b-id", "Hôtel d'Aumont", 48.8505, 2.3505, SQUARE, 0, 4, "légendaire"),
-            ("a-id", "Tour Eiffel", 48.858, 2.2945, SQUARE, 800, 7, None),
+            (
+                "b-id",
+                "Hôtel d'Aumont",
+                48.8505,
+                2.3505,
+                SQUARE,
+                0,
+                4,
+                "légendaire",
+                "ready",
+            ),
+            ("a-id", "Tour Eiffel", 48.858, 2.2945, SQUARE, 800, 7, None, "not_ready"),
         ],
     )
     database.commit()
@@ -56,5 +67,6 @@ def test_the_seed_inserts_or_updates_each_place(
     assert "'Hôtel d''Aumont'" in seed
     assert "extensions.st_geogfromtext('SRID=4326;POINT(2.3505 48.8505)')" in seed
     assert f"st_geomfromgeojson('{SQUARE}')" in seed
-    assert "800, 7, null, 'abc123')" in seed
+    assert "800, 7, null, false, 'abc123')" in seed
+    assert "0, 4, 'légendaire', true, 'abc123')" in seed
     assert seed.rstrip().endswith("bundle_version = excluded.bundle_version;")
