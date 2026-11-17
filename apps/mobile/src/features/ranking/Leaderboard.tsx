@@ -9,9 +9,46 @@ import { type Theme, useTheme } from '@/lib/theme';
 import { Text, fonts } from '@/lib/typography';
 
 import { useRanking } from './RankingProvider';
-import { PseudonymRefused, type Standing, fetchLeaderboard } from './send';
+import { type Period, PseudonymRefused, type Standing, fetchLeaderboard } from './send';
+import { formatWeekLeft, untilNextWeek } from './week';
 
 const ARRONDISSEMENTS = Array.from({ length: 20 }, (_, index) => index + 1);
+const PERIODS: { value: Period; label: string }[] = [
+  { value: 'week', label: 'Semaine' },
+  { value: 'all', label: 'Général' },
+];
+
+/** The week or all time, as two halves of a pill. */
+function PeriodSwitch({
+  period,
+  onChange,
+  theme,
+}: {
+  period: Period;
+  onChange: (period: Period) => void;
+  theme: Theme;
+}) {
+  return (
+    <View style={[styles.periods, { backgroundColor: theme.surface }]}>
+      {PERIODS.map(({ value, label }) => {
+        const chosen = value === period;
+        return (
+          <Pressable
+            key={value}
+            style={[styles.period, chosen && { backgroundColor: theme.accent }]}
+            onPress={() => onChange(value)}
+            accessibilityRole="button"
+            accessibilityState={{ selected: chosen }}
+          >
+            <Text style={[styles.periodLabel, { color: chosen ? theme.onAccent : theme.text }]}>
+              {label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
 
 function Section({ title, children, theme }: { title: string; children: string; theme: Theme }) {
   return (
@@ -143,9 +180,13 @@ function summary(counts: ReturnType<typeof useRanking>['counts']): string {
   return `Vos captures : ${parts.join(' · ')}`;
 }
 
-/** The leaderboard of Paris or of an arrondissement, and the player's own standing. */
+/**
+ * The leaderboard of Paris or of an arrondissement, of the week or of all
+ * time, and the player's own standing.
+ */
 function Board({ theme }: { theme: Theme }) {
   const { username, counts, sending, failed, retry, leave, round } = useRanking();
+  const [period, setPeriod] = useState<Period>('week');
   const [scope, setScope] = useState<number | null>(null);
   const [standings, setStandings] = useState<Standing[] | null>(null);
   const [unreachable, setUnreachable] = useState(false);
@@ -157,7 +198,7 @@ function Board({ theme }: { theme: Theme }) {
       return;
     }
     let current = true;
-    void fetchLeaderboard(supabase, scope)
+    void fetchLeaderboard(supabase, scope, period)
       .then((found) => {
         if (current) {
           setStandings(found);
@@ -172,9 +213,15 @@ function Board({ theme }: { theme: Theme }) {
     return () => {
       current = false;
     };
-  }, [scope, round, asked]);
+  }, [scope, period, round, asked]);
   // Back on the screen: the others may have captured meanwhile.
   useFocusEffect(useCallback(() => setAsked((value) => value + 1), []));
+
+  const choosePeriod = (value: Period) => {
+    setPeriod(value);
+    // The standings of the other period would show under the new title.
+    setStandings(null);
+  };
 
   const confirmLeave = () =>
     Alert.alert(
@@ -203,6 +250,7 @@ function Board({ theme }: { theme: Theme }) {
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={styles.board}
     >
+      <PeriodSwitch period={period} onChange={choosePeriod} theme={theme} />
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -225,6 +273,11 @@ function Board({ theme }: { theme: Theme }) {
           );
         })}
       </ScrollView>
+      {period === 'week' && (
+        <Text style={[styles.reset, styles.note, { color: theme.secondaryText }]}>
+          Remise à zéro dans {formatWeekLeft(untilNextWeek(new Date()))}, lundi à minuit.
+        </Text>
+      )}
 
       {unreachable ? (
         <View style={styles.message}>
@@ -239,7 +292,9 @@ function Board({ theme }: { theme: Theme }) {
         <Text style={[styles.message, styles.note, { color: theme.secondaryText }]}>Chargement…</Text>
       ) : standings.length === 0 ? (
         <Text style={[styles.message, styles.note, { color: theme.secondaryText }]}>
-          Personne n’a encore de capture comptée ici.
+          {period === 'week'
+            ? 'Personne n’a encore de capture comptée ici cette semaine.'
+            : 'Personne n’a encore de capture comptée ici.'}
         </Text>
       ) : (
         <View style={styles.list}>
@@ -248,6 +303,15 @@ function Board({ theme }: { theme: Theme }) {
           ))}
         </View>
       )}
+      {period === 'week' &&
+        !unreachable &&
+        standings !== null &&
+        standings.length > 0 &&
+        !standings.some((standing) => standing.isMe) && (
+          <Text style={[styles.message, styles.note, { color: theme.secondaryText }]}>
+            Vous n’avez pas encore de capture comptée ici cette semaine.
+          </Text>
+        )}
 
       <View style={styles.footer}>
         <Text style={[styles.note, { color: theme.secondaryText }]}>
@@ -324,6 +388,16 @@ const styles = StyleSheet.create({
   button: { alignItems: 'center', borderRadius: 14, paddingVertical: 14 },
   buttonLabel: { fontSize: 17, fontWeight: '600' },
   board: { paddingBottom: 32 },
+  periods: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    marginTop: 12,
+    borderRadius: 999,
+    padding: 3,
+  },
+  period: { flex: 1, alignItems: 'center', borderRadius: 999, paddingVertical: 8 },
+  periodLabel: { fontSize: 15, fontWeight: '600' },
+  reset: { paddingHorizontal: 16, paddingBottom: 4 },
   scopes: { paddingHorizontal: 16, paddingVertical: 12, gap: 8 },
   scope: { borderRadius: 16, paddingHorizontal: 14, paddingVertical: 7 },
   scopeLabel: { fontSize: 15, fontWeight: '600' },

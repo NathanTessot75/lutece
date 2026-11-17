@@ -105,15 +105,24 @@ type StandingRow = {
   is_me: boolean;
 };
 
-/** The leaderboard of Paris, or of an arrondissement. */
+/** What a leaderboard counts: the captures since Monday midnight in Paris, or all. */
+export type Period = 'week' | 'all';
+
+/**
+ * The best players of Paris, or of an arrondissement, of the week or of all
+ * time, and the player wherever they stand.
+ */
 export async function fetchLeaderboard(
   client: SupabaseClient,
   arrondissement: number | null,
+  period: Period,
+  size = 50,
 ): Promise<Standing[]> {
   await signedInPlayer(client);
   const { data, error } = await client.rpc('leaderboard', {
     in_arrondissement: arrondissement,
-    size: 50,
+    size,
+    weekly: period === 'week',
   });
   if (error) {
     throw error;

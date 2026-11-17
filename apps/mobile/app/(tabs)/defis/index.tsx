@@ -5,10 +5,11 @@ import { useBadgeBook } from '@/features/badges/useBadgeBook';
 import { DailyCard } from '@/features/challenges/DailyCard';
 import { LinkRow } from '@/features/navigation/LinkRow';
 import { useRanking } from '@/features/ranking/RankingProvider';
+import { WeeklyPodium } from '@/features/ranking/WeeklyPodium';
 import { useTabBarInsets } from '@/lib/tabBar';
 import { useTheme } from '@/lib/theme';
 
-/** What the player can aim for: the place of the day, the progress, the badges and the leaderboards. */
+/** What the player can aim for: the place of the day, the podium of the week, the progress, the badges and the leaderboards. */
 export default function ChallengesScreen() {
   const theme = useTheme();
   const tabBarInsets = useTabBarInsets();
@@ -26,6 +27,7 @@ export default function ChallengesScreen() {
         {...tabBarInsets}
       >
         <DailyCard />
+        {ranking.available && ranking.username !== null && <WeeklyPodium />}
         <LinkRow
           icon="chart.bar.fill"
           title="Progression"
@@ -37,11 +39,11 @@ export default function ChallengesScreen() {
           detail={badges === null ? undefined : `${won}/${badges.length}`}
           onPress={() => router.push('/badges')}
         />
-        {ranking.available && (
+        {ranking.available && ranking.username === null && (
           <LinkRow
             icon="list.number"
             title="Classement"
-            detail={ranking.username ?? 'Rejoindre'}
+            detail="Rejoindre"
             onPress={() => router.push('/leaderboard')}
           />
         )}
