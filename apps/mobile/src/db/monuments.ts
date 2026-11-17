@@ -221,6 +221,26 @@ export async function listAllPlaces(db: SQLiteDatabase): Promise<MonumentPlace[]
   return db.getAllAsync<MonumentPlace>(ALL_PLACES);
 }
 
+/** A photo of Wikimedia Commons with the place it shows, for the credits. */
+export type PhotoCredit = {
+  monumentId: string;
+  title: string;
+  rank: number;
+  pageUrl: string;
+  author: string | null;
+  licence: string | null;
+};
+
+/** Every photo of the app with its author and licence, by place. */
+export async function listPhotoCredits(db: SQLiteDatabase): Promise<PhotoCredit[]> {
+  return db.getAllAsync<PhotoCredit>(
+    `select p.monument_id as monumentId, m.title, p.rank, p.page_url as pageUrl, p.author, p.licence
+     from photos p
+     join monuments m on m.id = p.monument_id
+     order by p.monument_id, p.rank`,
+  );
+}
+
 /** Every monument marked inside the bounds. */
 export async function listPlaces(db: SQLiteDatabase, bounds: Bounds): Promise<MonumentPlace[]> {
   return db.getAllAsync<MonumentPlace>(PLACES, {
