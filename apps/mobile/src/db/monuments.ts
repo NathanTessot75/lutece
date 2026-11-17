@@ -221,6 +221,12 @@ export async function listAllPlaces(db: SQLiteDatabase): Promise<MonumentPlace[]
   return db.getAllAsync<MonumentPlace>(ALL_PLACES);
 }
 
+/** How many places the app knows. */
+export async function countMonuments(db: SQLiteDatabase): Promise<number> {
+  const row = await db.getFirstAsync<{ count: number }>('select count(*) as count from monuments');
+  return row?.count ?? 0;
+}
+
 /** A photo of Wikimedia Commons with the place it shows, for the credits. */
 export type PhotoCredit = {
   monumentId: string;
