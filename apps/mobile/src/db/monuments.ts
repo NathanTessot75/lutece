@@ -120,6 +120,12 @@ const PLACES = `
   where lat between $south and $north and lon between $west and $east
 `;
 
+const ALL_PLACES = `
+  select id, title, arrondissement, category, century, readiness, rarity_tier as rarityTier,
+    lat, lon
+  from monuments
+`;
+
 // Paris lies north and east of the origin, so truncating is rounding down.
 // The columns of a monument are only read from a square that holds one.
 const CELLS = `
@@ -208,6 +214,11 @@ type CellRow = MonumentPlace & {
 
 export async function listMonuments(db: SQLiteDatabase): Promise<MonumentSummary[]> {
   return db.getAllAsync<MonumentSummary>(SUMMARIES);
+}
+
+/** Every place of the app, with its reference point. */
+export async function listAllPlaces(db: SQLiteDatabase): Promise<MonumentPlace[]> {
+  return db.getAllAsync<MonumentPlace>(ALL_PLACES);
 }
 
 /** Every monument marked inside the bounds. */

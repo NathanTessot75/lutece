@@ -2,12 +2,13 @@ import { Stack, useRouter } from 'expo-router';
 import { ScrollView, StyleSheet } from 'react-native';
 
 import { useBadgeBook } from '@/features/badges/useBadgeBook';
+import { DailyCard } from '@/features/challenges/DailyCard';
 import { LinkRow } from '@/features/navigation/LinkRow';
 import { useRanking } from '@/features/ranking/RankingProvider';
 import { useTabBarInsets } from '@/lib/tabBar';
 import { useTheme } from '@/lib/theme';
 
-/** What the player can aim for: the progress, the badges and the leaderboards. */
+/** What the player can aim for: the place of the day, the progress, the badges and the leaderboards. */
 export default function ChallengesScreen() {
   const theme = useTheme();
   const tabBarInsets = useTabBarInsets();
@@ -24,6 +25,7 @@ export default function ChallengesScreen() {
         contentInsetAdjustmentBehavior="automatic"
         {...tabBarInsets}
       >
+        <DailyCard />
         <LinkRow
           icon="chart.bar.fill"
           title="Progression"

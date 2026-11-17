@@ -25,6 +25,8 @@ import {
   describeDecision,
   labelChoices,
 } from '@/features/collect/sample';
+import { DAILY_MULTIPLIER } from '@/features/challenges/daily';
+import { useDailyChallenge } from '@/features/challenges/DailyChallengeProvider';
 import { useCaptures } from '@/features/collection/CapturesProvider';
 import { pointsFor } from '@/features/game/rarity';
 import { parseFootprint } from '@/features/map/footprint';
@@ -67,7 +69,14 @@ type Stage =
   | { step: 'aiming' }
   | { step: 'labelling'; draft: Draft; choices: LabelChoice[] }
   | { step: 'choosing'; shot: Shot; candidates: Scored<AimTarget>[]; confirm: boolean }
-  | { step: 'captured'; monument: CapturableMonument; photoFile: string | null; points: number };
+  | {
+      step: 'captured';
+      monument: CapturableMonument;
+      photoFile: string | null;
+      points: number;
+      /** Whether it was the place of the day of the player. */
+      daily: boolean;
+    };
 
 const REFUSALS: Record<Refusal, CaptureMessage> = {
   out_of_reach: { icon: 'mappin.slash', text: 'Aucun monument à portée' },
@@ -91,6 +100,7 @@ export function Capture() {
   const theme = useTheme();
   const { byMonument: captured, record: recordCapture } = useCaptures();
   const collect = useCollect();
+  const challenge = useDailyChallenge();
   const location = useLocationAccess();
   const focused = useIsFocused();
   const { position, compass, candidates } = useAim(location.granted);
@@ -141,7 +151,9 @@ export function Capture() {
   const record = async (candidate: Scored<AimTarget>, shot: Shot, chosenByPlayer: boolean) => {
     const { monument } = candidate.target;
     const photoFile = shot.photoUri === null ? null : await keepPhoto(shot.photoUri, monument.id);
-    const points = pointsFor(monument.rarityTier);
+    // The place of the day is worth three times its points, as the server counts it.
+    const daily = challenge.place?.id === monument.id && !challenge.done;
+    const points = pointsFor(monument.rarityTier) * (daily ? DAILY_MULTIPLIER : 1);
     await recordCapture({
       monumentId: monument.id,
       latitude: shot.position.latitude,
@@ -156,7 +168,7 @@ export function Capture() {
       points,
     });
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setStage({ step: 'captured', monument, photoFile, points });
+    setStage({ step: 'captured', monument, photoFile, points, daily });
   };
 
   /** What the photo says of these monuments; nothing to look at without a photo. */
@@ -331,6 +343,7 @@ export function Capture() {
         monument={stage.monument}
         photoFile={stage.photoFile}
         points={stage.points}
+        daily={stage.daily}
         onContinue={() => setStage({ step: 'aiming' })}
       />
     );
@@ -346,7 +359,13 @@ export function Capture() {
       <Viewfinder ref={viewfinder} active={focused} />
       <CaptureOverlay
         compass={compass}
-        aimed={aimed && { candidate: aimed, captured: captured.has(aimed.target.id) }}
+        aimed={
+          aimed && {
+            candidate: aimed,
+            captured: captured.has(aimed.target.id),
+            daily: challenge.place?.id === aimed.target.id,
+          }
+        }
         waiting={busy ? 'photo' : position === null ? 'position' : null}
         message={refusal !== null ? REFUSALS[refusal] : notice}
         collected={collect.enabled ? collect.samples.length : null}

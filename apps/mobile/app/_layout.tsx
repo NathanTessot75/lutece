@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { BUNDLE_ASSET, BUNDLE_DATABASE_NAME, removeStaleBundles } from '@/db/bundle';
 import { PlayerDatabaseProvider } from '@/db/PlayerDatabase';
+import { DailyChallengeProvider } from '@/features/challenges/DailyChallengeProvider';
 import { CollectProvider } from '@/features/collect/CollectProvider';
 import { CapturesProvider } from '@/features/collection/CapturesProvider';
 import { ContributeProvider } from '@/features/contribute/ContributeProvider';
@@ -58,18 +59,20 @@ export default function RootLayout() {
                 <CollectProvider>
                   <ContributeProvider>
                     <RankingProvider>
-                      <Stack screenOptions={HEADER_FACES}>
-                        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                        {/* The page of a monument rises from the bottom, over what showed it. */}
-                        <Stack.Screen
-                          name="monument/[id]"
-                          options={{ presentation: 'modal', headerShown: false }}
-                        />
-                        {/* Opened from the page of a monument, a group rises as a sheet:
-                            its own button lowers it, without a navigation bar. */}
-                        <Stack.Screen name="series/[slug]" options={groupOptions} />
-                        <Stack.Screen name="arrondissement/[number]" options={groupOptions} />
-                      </Stack>
+                      <DailyChallengeProvider>
+                        <Stack screenOptions={HEADER_FACES}>
+                          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                          {/* The page of a monument rises from the bottom, over what showed it. */}
+                          <Stack.Screen
+                            name="monument/[id]"
+                            options={{ presentation: 'modal', headerShown: false }}
+                          />
+                          {/* Opened from the page of a monument, a group rises as a sheet:
+                              its own button lowers it, without a navigation bar. */}
+                          <Stack.Screen name="series/[slug]" options={groupOptions} />
+                          <Stack.Screen name="arrondissement/[number]" options={groupOptions} />
+                        </Stack>
+                      </DailyChallengeProvider>
                     </RankingProvider>
                   </ContributeProvider>
                 </CollectProvider>

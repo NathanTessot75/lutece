@@ -8,6 +8,7 @@ import { useCaptures } from '@/features/collection/CapturesProvider';
 import { advancesOf, formatProgress, isComplete } from '@/features/game/progress';
 
 import type { MonumentSummary } from '@/db/monuments';
+import { DAILY_MULTIPLIER } from '@/features/challenges/daily';
 import { formatPoints, tierLabel, tierNote } from '@/features/game/rarity';
 import { describeMonument } from '@/features/monuments/describe';
 import { useOpenMonument } from '@/features/monuments/useOpenMonument';
@@ -31,11 +32,13 @@ type Props = {
   photoFile: string | null;
   /** What the capture brought. */
   points: number;
+  /** Whether it was the place of the day of the player, its points tripled. */
+  daily: boolean;
   onContinue: () => void;
 };
 
 /** The monument is in the collection: the moment a capture is for. */
-export function Captured({ monument, photoFile, points, onContinue }: Props) {
+export function Captured({ monument, photoFile, points, daily, onContinue }: Props) {
   // Whatever the appearance of the phone, a victory is shown at night.
   const theme = NIGHT;
   useNightTabBar();
@@ -110,10 +113,18 @@ export function Captured({ monument, photoFile, points, onContinue }: Props) {
         entering={ZoomIn.delay(REWARD_DELAY_MS).springify().damping(10)}
         style={[styles.reward, { backgroundColor: theme.surface, borderColor: color }]}
         accessible
-        accessibilityLabel={[tier && tierLabel(tier), `${formatPoints(points)} gagnés`, note]
+        accessibilityLabel={[
+          daily && 'Défi du jour réussi, points triplés',
+          tier && tierLabel(tier),
+          `${formatPoints(points)} gagnés`,
+          note,
+        ]
           .filter(Boolean)
           .join('. ')}
       >
+        {daily && (
+          <Text style={[styles.daily, { color: theme.gold }]}>DÉFI DU JOUR · ×{DAILY_MULTIPLIER}</Text>
+        )}
         {tier !== null && (
           <Text style={[styles.tier, { color }]}>{tierLabel(tier).toLocaleUpperCase('fr')}</Text>
         )}
@@ -240,6 +251,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 18,
     borderWidth: 2,
+  },
+  daily: {
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 1.5,
   },
   tier: {
     fontSize: 14,

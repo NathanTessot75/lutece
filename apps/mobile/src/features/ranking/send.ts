@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { type RankStatus, forgetRanked, listUnranked, markRanked } from '@/db/ranking';
+import { challengeSeed } from '@/features/challenges/seed';
 import { signedInPlayer } from '@/lib/supabase';
 
 // The version of the text the player agreed to; a new text, a new version.
@@ -50,7 +51,15 @@ export async function sendRankings(
   db: SQLiteDatabase,
   keepGoing: () => boolean,
 ): Promise<void> {
-  await signedInPlayer(client);
+  const id = await signedInPlayer(client);
+  // The server draws the place of the day from the seed of the player: it
+  // receives it once, before the captures it counts. A server that does not
+  // know the daily challenge yet answers with an error, which changes nothing.
+  await client
+    .from('profiles')
+    .update({ challenge_seed: await challengeSeed(db) })
+    .eq('id', id)
+    .is('challenge_seed', null);
   for (const capture of await listUnranked(db)) {
     if (!keepGoing()) {
       return;

@@ -11,6 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { DAILY_MULTIPLIER } from '@/features/challenges/daily';
 import { pointsFor } from '@/features/game/rarity';
 import { useOpenMonument } from '@/features/monuments/useOpenMonument';
 import { formatDistance, formatHeading } from '@/lib/format';
@@ -33,6 +34,8 @@ export type CaptureMessage = {
 export type Aimed = {
   candidate: Candidate<AimTarget>;
   captured: boolean;
+  /** Whether it is the place of the day of the player, worth three times more. */
+  daily: boolean;
 };
 
 type Props = {
@@ -173,8 +176,12 @@ export function CaptureOverlay({ compass, aimed, waiting, message, collected, ai
                   <Chip icon="checkmark.seal.fill" text="Capturé" color={NIGHT.gold} />
                 ) : (
                   <Chip
-                    icon="star.fill"
-                    text={`+${pointsFor(monument.rarityTier)}`}
+                    icon={aimed.daily ? 'flame.fill' : 'star.fill'}
+                    text={
+                      aimed.daily
+                        ? `Défi du jour · +${pointsFor(monument.rarityTier) * DAILY_MULTIPLIER}`
+                        : `+${pointsFor(monument.rarityTier)}`
+                    }
                     color={NIGHT.gold}
                   />
                 )}
